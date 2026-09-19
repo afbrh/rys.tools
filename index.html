@@ -1844,6 +1844,78 @@
       render();
     }
 
+    // "Fill" pulls this week's Freddie Mac Primary Mortgage Market Survey average
+    // (30yr and 15yr fixed) via FRED, the standard authoritative free source for US
+    // mortgage rates — proxied because FRED doesn't allow direct browser requests
+    // (no CORS headers). 20yr/10yr aren't part of that survey, so they're estimated
+    // by linear interpolation/extrapolation along the 15yr-to-30yr line.
+    const FRED_PROXIES = [
+      url => 'https://api.allorigins.win/raw?url=' + encodeURIComponent(url),
+      url => 'https://api.codetabs.com/v1/proxy?quest=' + encodeURIComponent(url)
+    ];
+
+    function fetchWithTimeout(url, ms) {
+      const ctrl = new AbortController();
+      const timer = setTimeout(() => ctrl.abort(), ms);
+      return fetch(url, { signal: ctrl.signal }).finally(() => clearTimeout(timer));
+    }
+
+    async function fetchFredLatest(seriesId) {
+      const target = 'https://fred.stlouisfed.org/graph/fredgraph.csv?id=' + seriesId;
+      let lastError = new Error('No data source reachable');
+      for (const makeProxyUrl of FRED_PROXIES) {
+        try {
+          const res = await fetchWithTimeout(makeProxyUrl(target), 10000);
+          if (!res.ok) throw new Error('HTTP ' + res.status);
+          const text = await res.text();
+          const lines = text.trim().split('\n');
+          for (let i = lines.length - 1; i >= 1; i--) {
+            const val = parseFloat(lines[i].split(',')[1]);
+            if (!isNaN(val)) return val;
+          }
+          throw new Error('No numeric rate in response');
+        } catch (e) {
+          lastError = e;
+        }
+      }
+      throw lastError;
+    }
+
+    async function fillMarketRates() {
+      const btn = document.getElementById('mortgage-fill-rates-btn');
+      if (!btn) return;
+      const busyText = 'Fetching…';
+      btn.disabled = true;
+      btn.textContent = busyText;
+      try {
+        const [rate30, rate15] = await Promise.all([
+          fetchFredLatest('MORTGAGE30US'),
+          fetchFredLatest('MORTGAGE15US')
+        ]);
+        const slopePerFiveYears = (rate30 - rate15) / 3; // (30 - 15) years = three 5-year steps
+        const ratesByTerm = {
+          '30': rate30,
+          '20': rate15 + slopePerFiveYears,
+          '15': rate15,
+          '10': rate15 - slopePerFiveYears
+        };
+        scenarios.forEach(scenario => {
+          const rate = ratesByTerm[String(scenario.values.term)];
+          if (rate !== undefined) scenario.values.rate = Math.round(rate * 100) / 100;
+        });
+        render();
+        const freshBtn = document.getElementById('mortgage-fill-rates-btn');
+        if (freshBtn) {
+          freshBtn.textContent = 'Filled ✓';
+          setTimeout(() => { freshBtn.textContent = 'Fill'; }, 2500);
+        }
+      } catch (e) {
+        btn.disabled = false;
+        btn.textContent = 'Fetch failed — retry';
+        setTimeout(() => { if (btn.textContent === 'Fetch failed — retry') btn.textContent = 'Fill'; }, 4000);
+      }
+    }
+
     function buildHeaderRow() {
       const row = el('div', 'flex-row col-head-row');
       row.appendChild(el('div', 'row-label'));
@@ -1936,6 +2008,16 @@
         cell.appendChild(wrap);
         values.appendChild(cell);
       });
+      if (field.key === 'rate') {
+        const fillBtn = document.createElement('button');
+        fillBtn.type = 'button';
+        fillBtn.id = 'mortgage-fill-rates-btn';
+        fillBtn.className = 'add-btn';
+        fillBtn.textContent = 'Fill';
+        fillBtn.title = 'Fill every scenario\'s interest rate with this week\'s average rate for its loan term, from Freddie Mac\'s national survey';
+        fillBtn.onclick = () => fillMarketRates();
+        values.appendChild(fillBtn);
+      }
       row.appendChild(values);
       return row;
     }
