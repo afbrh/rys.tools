@@ -1464,6 +1464,8 @@
   });
 
   /* ================= tab switching ================= */
+  const TAB_NAMES = ['budget', 'income', 'mortgage', 'food', 'car', 'utilities', 'savings', 'subscriptions'];
+
   function switchTab(name) {
     document.getElementById('tab-budget').hidden = name !== 'budget';
     document.getElementById('tab-income').hidden = name !== 'income';
@@ -1476,6 +1478,13 @@
     document.querySelectorAll('.tab-btn').forEach(function (b) {
       b.classList.toggle('active', b.dataset.tab === name);
     });
+    try { localStorage.setItem('munny_active_tab', name); } catch (e) {}
+  }
+
+  function currentActiveTab() {
+    let tab;
+    try { tab = localStorage.getItem('munny_active_tab'); } catch (e) {}
+    return TAB_NAMES.indexOf(tab) !== -1 ? tab : 'budget';
   }
 
   /* ================= Budget app (namespaced) ================= */
@@ -3662,6 +3671,7 @@
     setAppearance(currentAppearance());
     syncToolMenu(currentActiveTool());
     applyToolVisibility(currentActiveTool());
+    switchTab(currentActiveTab());
 
     if (GoogleDriveSync.restoreSession()) {
       setGoogleSignedInUi(true);
