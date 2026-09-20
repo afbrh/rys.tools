@@ -386,8 +386,8 @@
   /* Lives in the sticky header now (see #mail-header-toolbar in the markup) so it stays
      put while the list scrolls, instead of scrolling away with the rest of the page.
      Capped at the same width as the list column below it so Compose + search still
-     read as "belonging to" the list, not spanning the full header/detail-pane width. */
-  .mail-toolbar { display: flex; align-items: center; flex-wrap: wrap; gap: 10px; max-width: 380px; margin: 10px 0 14px; }
+     read as "belonging to" the list. */
+  .mail-toolbar { display: flex; align-items: center; flex-wrap: wrap; gap: 10px; max-width: 700px; margin: 10px 0 14px; }
   .mail-toolbar[hidden] { display: none; }
   .mail-toolbar .mail-status { font-size: 13px; color: var(--ink-soft); margin-left: 4px; }
   .mail-search { display: flex; flex: 1 1 200px; max-width: 320px; min-width: 140px; position: relative; }
@@ -428,16 +428,15 @@
   }
   .mail-search-clear:hover { color: var(--ink); background: rgba(0,0,0,0.08); }
   .mail-search-clear[hidden] { display: none; }
-  .mail-layout { display: flex; gap: 20px; align-items: flex-start; }
-  /* The toolbar (Compose + search) lives in here too, alongside the list, so it's
-     naturally exactly as wide as the list rather than spanning the detail pane too. */
-  .mail-list-col { flex: 1 1 320px; max-width: 380px; min-width: 0; display: flex; flex-direction: column; }
+  /* One column, same on every screen size — a tap expands a message inline right below
+     its row (see toggleInlineDetail), so there's no separate detail pane to lay out
+     alongside the list. Capped narrower than .mail-app's own 1000px so expanded message
+     bodies keep a comfortable reading line length instead of stretching edge to edge. */
+  .mail-list-col { max-width: 700px; }
   .mail-list {
     border: 1.5px solid var(--ink);
     border-radius: 10px;
     overflow: hidden;
-    max-height: 70vh;
-    overflow-y: auto;
   }
   .mail-pull-indicator {
     height: 0;
@@ -488,15 +487,6 @@
   .mail-list-item .mail-subject { font-size: 13.5px; margin-bottom: 2px; overflow: hidden; text-overflow: clip; white-space: nowrap; }
   .mail-list-item .mail-snippet { font-size: 12.5px; color: var(--ink-soft); overflow: hidden; text-overflow: clip; white-space: nowrap; }
 
-  .mail-detail {
-    flex: 2 1 480px;
-    min-width: 0;
-    border: 1.5px solid var(--ink);
-    border-radius: 10px;
-    padding: 20px;
-    max-height: 70vh;
-    overflow-y: auto;
-  }
   .mail-empty { color: var(--ink-soft); font-size: 14px; text-align: center; margin: 40px 0; }
   .mail-detail-subject { font-family: var(--font-header); font-size: 20px; font-weight: 600; margin: 0 0 10px; letter-spacing: var(--letter-spacing-header); }
   .mail-detail-meta { font-size: 13px; color: var(--ink-soft); margin-bottom: 4px; }
@@ -570,27 +560,16 @@
   .compose-status { font-size: 13px; color: var(--gold); }
   .compose-status.error { color: var(--expense); }
 
-  /* Mobile: no side-by-side panes — the list is always visible, and tapping a row
-     expands its detail inline (right below that row) instead of switching to a
-     separate detail view. Desktop keeps the original two-pane layout untouched. */
+  /* Same everywhere, not just mobile — tapping a row expands its detail inline (right
+     below that row) instead of opening a separate detail pane. There's no other layout
+     to switch to at any width. */
   .mail-inline-detail {
-    display: none;
     padding: 14px 14px 18px;
     border-bottom: 1px solid var(--paper-line);
     background: var(--paper);
   }
 
   @media (max-width: 720px) {
-    .mail-layout { flex-direction: column; }
-    /* flex: none + height: auto on the column — otherwise it keeps its desktop
-       flex-basis (320px) as a used height and clips/scrolls internally instead of
-       growing with an expanded row, since flex-basis maps to height on the main axis
-       once the layout switches to flex-direction: column. */
-    .mail-list-col { flex: none; max-width: none; width: 100%; }
-    .mail-list { height: auto; max-height: none; overflow-y: visible; }
-    .mail-detail { display: none; }
-    .mail-inline-detail { display: block; }
-    .mail-toolbar { max-width: none; }
     /* Below 16px, iOS Safari auto-zooms the page on focus (its heuristic for "this text
        is too small to read/type into") — bumping these to 16px only on mobile avoids
        that without changing their size on desktop. Same fix applies to the Compose
@@ -667,15 +646,10 @@
   </div>
 
   <div class="mail-app" id="mail-app" hidden="">
-    <div class="mail-layout">
-      <div class="mail-list-col">
-        <div class="mail-pull-indicator" id="mail-pull-indicator">Pull to refresh</div>
-        <div class="mail-list" id="mail-list">
-          <div class="mail-list-empty">Loading…</div>
-        </div>
-      </div>
-      <div class="mail-detail" id="mail-detail">
-        <p class="mail-empty">Select a message to read it.</p>
+    <div class="mail-list-col">
+      <div class="mail-pull-indicator" id="mail-pull-indicator">Pull to refresh</div>
+      <div class="mail-list" id="mail-list">
+        <div class="mail-list-empty">Loading…</div>
       </div>
     </div>
   </div>
@@ -1764,9 +1738,9 @@
     // separate Refresh button. Same Pointer Events approach as the swipe-to-archive
     // gesture, just on the vertical axis, and it lives on .mail-list itself (not the
     // whole column) so it doesn't fight with interactions in the toolbar/search field.
-    // Desktop scrolls .mail-list internally; mobile scrolls the whole page instead
-    // (see the .mail-list-col media-query override), so "at the top" means different
-    // things on each — atTop() checks whichever one actually applies.
+    // The list has no scroll of its own (it grows with the page, same as everything
+    // else in .mail-list-col) — atTop() checks the page's own scroll position, with a
+    // fallback in case that ever changes back to an internally-scrolling list.
     function attachPullToRefresh(listEl, indicatorEl) {
       const THRESHOLD = 60;
       const MAX = 90;
@@ -1819,58 +1793,21 @@
       listEl.addEventListener('pointercancel', onUp);
     }
 
-    // Below 720px there's no side-by-side detail pane — a tap expands the message
-    // inline within the list instead (see openMessage/toggleInlineDetail). Desktop
-    // keeps the original two-pane layout untouched.
-    function isMobileMailLayout() {
-      return window.matchMedia('(max-width: 720px)').matches;
-    }
-
+    // Same at every width — no separate detail pane to reset, just whatever's expanded
+    // inline in the list.
     function closeDetail() {
       openMessageId = null;
       document.querySelectorAll('.mail-list-item.active').forEach(el => el.classList.remove('active'));
       document.querySelectorAll('.mail-inline-detail').forEach(el => el.remove());
-      const detailEl = document.getElementById('mail-detail');
-      if (detailEl) {
-        detailEl.innerHTML = '';
-        const empty = document.createElement('p');
-        empty.className = 'mail-empty';
-        empty.textContent = 'Select a message to read it.';
-        detailEl.appendChild(empty);
-      }
     }
 
-    async function openMessage(id) {
-      if (isMobileMailLayout()) return toggleInlineDetail(id);
-
-      openMessageId = id;
-      document.querySelectorAll('.mail-list-item').forEach(el => {
-        el.classList.toggle('active', el.dataset.id === id);
-      });
-
-      const detailEl = document.getElementById('mail-detail');
-      if (!detailEl) return;
-      detailEl.innerHTML = '';
-      const loading = document.createElement('p');
-      loading.className = 'mail-empty';
-      loading.textContent = 'Loading…';
-      detailEl.appendChild(loading);
-
-      try {
-        const msg = await GoogleDriveSync.gmailGetMessage(id, 'full');
-        if (openMessageId !== id) return; // superseded while in flight
-        detailEl.innerHTML = '';
-        detailEl.appendChild(buildDetailContent(msg));
-      } catch (e) {
-        detailEl.innerHTML = '';
-        const err = document.createElement('p');
-        err.className = 'mail-empty';
-        err.textContent = 'Couldn\'t load this message: ' + e.message;
-        detailEl.appendChild(err);
-      }
+    // A tap always expands the message inline, right below its row — same behavior at
+    // every screen size, there's no separate desktop detail pane to open instead.
+    function openMessage(id) {
+      return toggleInlineDetail(id);
     }
 
-    // Tapping a (mobile) row's header again collapses it — toggling the same id closes
+    // Tapping a row's header again collapses it — toggling the same id closes
     // it, tapping a different row closes whatever else was open first (only one message
     // expanded at a time), matching how the .mail-list-item click handler always calls
     // this same function regardless of which row is currently expanded.
