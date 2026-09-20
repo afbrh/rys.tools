@@ -143,16 +143,24 @@
     padding-bottom: 8px;
     margin-bottom: -8px;
   }
-  .tab-label-short { display: none; }
-  .tabs.labels-short .tab-label-full { display: none; }
+  .tab-label-medium, .tab-label-short { display: none; }
+  .tabs.labels-medium .tab-label-full { display: none; }
+  .tabs.labels-medium .tab-label-medium { display: inline; }
+  .tabs.labels-short .tab-label-full,
+  .tabs.labels-short .tab-label-medium { display: none; }
   .tabs.labels-short .tab-label-short { display: inline; }
-  /* Single letters don't need the same horizontal breathing room full words do — tighten
-     each tab's padding and the gaps between them so the shrunk row has the best chance
-     of fitting without horizontal scroll on narrow/mobile widths. */
+  /* Abbreviations/initials don't need the same horizontal breathing room full words do —
+     tighten each tab's padding and the gaps between them so the shrunk row has the best
+     chance of fitting without horizontal scroll on narrow/mobile widths. */
+  .tabs.labels-medium .tab-btn,
   .tabs.labels-short .tab-btn { padding-left: 6px; padding-right: 6px; }
+  .tabs.labels-medium .tab-separator,
   .tabs.labels-short .tab-separator { padding: 0 1px; }
+  .tabs.labels-medium .tabs-fixed,
+  .tabs.labels-medium .tabs-scroll,
   .tabs.labels-short .tabs-fixed,
   .tabs.labels-short .tabs-scroll { gap: 2px; }
+  .tabs.labels-medium,
   .tabs.labels-short { gap: 2px; }
   .tab-btn {
     font-family: var(--font-body);
@@ -1258,20 +1266,20 @@
   <div class="tab-bar">
     <div class="tabs">
       <div class="tabs-fixed">
-        <button class="tab-btn tab-btn-income" data-tab="income" onclick="switchTab('income')"><span class="tab-label-full">Income</span><span class="tab-label-short" aria-hidden="true">I</span></button>
+        <button class="tab-btn tab-btn-income" data-tab="income" onclick="switchTab('income')"><span class="tab-label-full">Income</span><span class="tab-label-medium" aria-hidden="true">Inc</span><span class="tab-label-short" aria-hidden="true">I</span></button>
         <span class="tab-separator" aria-hidden="true">&minus;</span>
       </div>
       <div class="tabs-scroll">
-        <button class="tab-btn" data-tab="mortgage" onclick="switchTab('mortgage')"><span class="tab-label-full">Housing</span><span class="tab-label-short" aria-hidden="true">H</span></button>
-        <button class="tab-btn" data-tab="food" onclick="switchTab('food')"><span class="tab-label-full">Food</span><span class="tab-label-short" aria-hidden="true">F</span></button>
-        <button class="tab-btn" data-tab="car" onclick="switchTab('car')"><span class="tab-label-full">Car</span><span class="tab-label-short" aria-hidden="true">C</span></button>
-        <button class="tab-btn" data-tab="utilities" onclick="switchTab('utilities')"><span class="tab-label-full">Utilities</span><span class="tab-label-short" aria-hidden="true">U</span></button>
-        <button class="tab-btn" data-tab="savings" onclick="switchTab('savings')"><span class="tab-label-full">Savings</span><span class="tab-label-short" aria-hidden="true">Sa</span></button>
-        <button class="tab-btn" data-tab="subscriptions" onclick="switchTab('subscriptions')"><span class="tab-label-full">Subs</span><span class="tab-label-short" aria-hidden="true">Su</span></button>
+        <button class="tab-btn" data-tab="mortgage" onclick="switchTab('mortgage')"><span class="tab-label-full">Housing</span><span class="tab-label-medium" aria-hidden="true">Hous</span><span class="tab-label-short" aria-hidden="true">H</span></button>
+        <button class="tab-btn" data-tab="food" onclick="switchTab('food')"><span class="tab-label-full">Food</span><span class="tab-label-medium" aria-hidden="true">Food</span><span class="tab-label-short" aria-hidden="true">F</span></button>
+        <button class="tab-btn" data-tab="car" onclick="switchTab('car')"><span class="tab-label-full">Car</span><span class="tab-label-medium" aria-hidden="true">Car</span><span class="tab-label-short" aria-hidden="true">C</span></button>
+        <button class="tab-btn" data-tab="utilities" onclick="switchTab('utilities')"><span class="tab-label-full">Utilities</span><span class="tab-label-medium" aria-hidden="true">Util</span><span class="tab-label-short" aria-hidden="true">U</span></button>
+        <button class="tab-btn" data-tab="savings" onclick="switchTab('savings')"><span class="tab-label-full">Savings</span><span class="tab-label-medium" aria-hidden="true">Sav</span><span class="tab-label-short" aria-hidden="true">Sa</span></button>
+        <button class="tab-btn" data-tab="subscriptions" onclick="switchTab('subscriptions')"><span class="tab-label-full">Subs</span><span class="tab-label-medium" aria-hidden="true">Subs</span><span class="tab-label-short" aria-hidden="true">Su</span></button>
       </div>
       <div class="tabs-fixed">
         <span class="tab-separator" aria-hidden="true">=</span>
-        <button class="tab-btn tab-btn-summary active" data-tab="budget" onclick="switchTab('budget')"><span class="tab-label-full">Budget</span><span class="tab-label-short" aria-hidden="true">B</span></button>
+        <button class="tab-btn tab-btn-summary active" data-tab="budget" onclick="switchTab('budget')"><span class="tab-label-full">Budget</span><span class="tab-label-medium" aria-hidden="true">Bud</span><span class="tab-label-short" aria-hidden="true">B</span></button>
       </div>
     </div>
   </div>
@@ -3596,14 +3604,23 @@
   // when they'd otherwise need horizontal scrolling to all fit — content-aware, not a
   // fixed viewport breakpoint. Horizontal scroll stays as a fallback for anything still
   // too narrow even with the shrunk labels.
+  // Tries, in order: full words, then short abbreviations ("Housing" -> "Hous"), then
+  // single/double-letter initials as a last resort — landing on the most readable tier
+  // that actually fits without horizontal scroll, re-checked on resize.
   function updateTabLabelFit() {
     const tabsEl = document.querySelector('.tabs');
     const scrollEl = document.querySelector('.tabs-scroll');
     if (!tabsEl || !scrollEl) return;
-    tabsEl.classList.remove('labels-short');
-    if (scrollEl.scrollWidth > scrollEl.clientWidth + 1) {
-      tabsEl.classList.add('labels-short');
-    }
+    function fits() { return scrollEl.scrollWidth <= scrollEl.clientWidth + 1; }
+
+    tabsEl.classList.remove('labels-medium', 'labels-short');
+    if (fits()) return;
+
+    tabsEl.classList.add('labels-medium');
+    if (fits()) return;
+
+    tabsEl.classList.remove('labels-medium');
+    tabsEl.classList.add('labels-short');
   }
 
   let tabLabelFitResizeTimer = null;
