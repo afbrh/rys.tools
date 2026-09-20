@@ -121,12 +121,14 @@
     display: flex;
     align-items: flex-end;
     gap: 5px;
+    flex: 1 1 auto;
     min-width: 0;
   }
   .tabs-fixed { display: flex; align-items: flex-end; gap: 5px; flex-shrink: 0; }
   .tabs-scroll {
     display: flex;
     align-items: flex-end;
+    justify-content: space-between;
     gap: 5px;
     overflow-x: auto;
     overflow-y: hidden;
@@ -152,6 +154,10 @@
   .tabs.labels-short .tabs-fixed,
   .tabs.labels-short .tabs-scroll { gap: 2px; }
   .tabs.labels-short { gap: 2px; }
+  /* Once shrunk to single letters, keep them clustered together (a tight, compact
+     group) rather than spread thin across the full width — space-between only makes
+     sense as a "fill the row nicely" treatment for full-word labels. */
+  .tabs.labels-short .tabs-scroll { justify-content: flex-start; }
   .tab-btn {
     font-family: var(--font-body);
     font-weight: 600;
