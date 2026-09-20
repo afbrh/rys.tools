@@ -1373,7 +1373,6 @@
         </div>
       </div>
       <div class="tool-controls" id="tool-controls">
-        <button class="save-btn" id="save-btn" onclick="saveApp()" hidden="">Save</button>
         <button class="save-btn export-btn" id="google-signin-btn" onclick="handleGoogleSignIn()">Google Sign-In</button>
         <span class="save-status" id="save-status"></span>
       </div>
@@ -1697,6 +1696,7 @@
       netLine.classList.toggle('negative', net < 0);
 
       sizeAmountInputs();
+      queueAutoSave();
     }
 
     function collectData() {
@@ -1874,6 +1874,7 @@
       document.getElementById('income-total-value').textContent = currency(total);
       BudgetApp.setLockedAmount('income', total);
       sizeAllCurrencyInputs();
+      queueAutoSave();
     }
 
     function getState() {
@@ -2249,6 +2250,7 @@
         }
       });
       BudgetApp.setLockedAmount('house-payment', budgetTotal);
+      queueAutoSave();
     }
 
     function getState() {
@@ -2446,6 +2448,7 @@
         }
       });
       BudgetApp.setLockedAmount('food', budgetTotal);
+      queueAutoSave();
     }
 
     function getState() {
@@ -2660,6 +2663,7 @@
         }
       });
       BudgetApp.setLockedAmount('car', budgetTotal);
+      queueAutoSave();
     }
 
     function getState() {
@@ -2860,6 +2864,7 @@
         }
       });
       BudgetApp.setLockedAmount('utilities', budgetTotal);
+      queueAutoSave();
     }
 
     function getState() {
@@ -3088,6 +3093,7 @@
         }
       });
       BudgetApp.setLockedAmount('savings', budgetTotal);
+      queueAutoSave();
     }
 
     function getState() {
@@ -3310,6 +3316,7 @@
         if (scenario.id === primaryId) budgetTotal = total;
       });
       BudgetApp.setLockedAmount('subscriptions', budgetTotal);
+      queueAutoSave();
     }
 
     function getState() {
@@ -3597,9 +3604,7 @@
 
   function setGoogleSignedInUi(signedIn) {
     const signinBtn = document.getElementById('google-signin-btn');
-    const saveBtn = document.getElementById('save-btn');
     if (signinBtn) signinBtn.hidden = signedIn;
-    if (saveBtn) saveBtn.hidden = !signedIn;
     updateDropdownLabelFit();
   }
 
@@ -3622,33 +3627,48 @@
       await GoogleDriveSync.signIn();
       setGoogleSignedInUi(true);
       status.textContent = 'Loading your data from Drive…';
+      // Suppressed here too, not just around the initial page load — restoring saved
+      // data fires every tab's recalculate()/render(), which would otherwise look
+      // indistinguishable from the user actually editing everything at once.
+      suppressAutoSave = true;
       const remote = await GoogleDriveSync.load();
       applyLoadedData(extractOwnToolData(remote)); // null (brand-new Drive file, or no saved data for this tool yet) leaves fields at their default
+      suppressAutoSave = false;
       status.textContent = '';
       await showSignedInBanner();
     } catch (e) {
+      suppressAutoSave = false;
       status.style.color = 'var(--expense)';
       status.textContent = 'Google sign-in failed: ' + e.message;
     }
   }
 
-  async function saveApp() {
+  // Replaces the old manual Save button — every tab's recalculate()/render() calls this
+  // after updating its totals, so any actual edit (typing an amount, adding/removing a
+  // scenario, toggling "used in budget", etc.) ends up here. Debounced so a burst of
+  // keystrokes/edits becomes one save shortly after things go quiet, not one Drive
+  // write per keystroke; skipped entirely while not signed in, so it never pops the
+  // Google sign-in prompt on its own — only the visible Sign-In button does that.
+  let autoSaveTimer = null;
+  let suppressAutoSave = true;
+  function queueAutoSave() {
+    if (suppressAutoSave || !GoogleDriveSync.isSignedIn()) return;
+    clearTimeout(autoSaveTimer);
+    autoSaveTimer = setTimeout(runAutoSave, 1500);
+  }
+
+  async function runAutoSave() {
     const status = document.getElementById('save-status');
-    status.style.color = 'var(--gold)';
-    status.textContent = 'Saving to Google Drive…';
+    if (status) { status.style.color = 'var(--gold)'; status.textContent = 'Saving…'; }
     try {
-      if (!GoogleDriveSync.isSignedIn()) {
-        await GoogleDriveSync.signIn();
-        setGoogleSignedInUi(true);
-        await showSignedInBanner();
-      }
       await mergeAndSave(collectAllData());
-      status.style.color = 'var(--income)';
-      status.textContent = 'Saved to Google Drive';
-      setTimeout(() => { status.textContent = ''; }, 3000);
+      if (status) {
+        status.style.color = 'var(--income)';
+        status.textContent = 'Saved';
+        setTimeout(() => { if (status.textContent === 'Saved') status.textContent = ''; }, 2000);
+      }
     } catch (e) {
-      status.style.color = 'var(--expense)';
-      status.textContent = 'Google Drive save failed: ' + e.message;
+      if (status) { status.style.color = 'var(--expense)'; status.textContent = 'Auto-save failed: ' + e.message; }
     }
   }
 
@@ -3950,6 +3970,9 @@
         setGoogleSignedInUi(false);
       }
     }
+    // Everything up to here was restoring/initializing state, not a real edit —
+    // auto-save only makes sense for whatever the user does from this point on.
+    suppressAutoSave = false;
   }
 
   loadApp();
