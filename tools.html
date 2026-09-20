@@ -415,7 +415,6 @@
   #tab-budget .row.locked input[type="text"]:hover { border-bottom: 1px solid var(--gold); }
   #tab-budget .row.locked input[type="number"] { color: var(--gold); cursor: pointer; border-radius: 3px; }
   #tab-budget .row.locked input[type="number"]:hover { border-bottom: 1px solid var(--gold); }
-  #tab-budget .row.locked .lock-icon { font-size: 13px; color: var(--gold); margin-right: 2px; flex-shrink: 0; }
   #tab-budget .amount-wrap { display: flex; align-items: center; justify-content: flex-end; font-family: var(--font-mono); font-size: 15px; }
   #tab-budget .amount-wrap span { color: var(--ink-soft); margin-right: 1px; }
   #tab-budget .row input[type="number"] {
@@ -1523,7 +1522,6 @@
         const meta = (lockKey === 'income' ? INCOME_LOCKED : LOCKED_FIELDS.find(f => f.key === lockKey)) || { label: label, tabName: 'budget' };
         row.innerHTML =
           '<div class="row-main">' +
-            '<span class="lock-icon" title="Only editable from ' + meta.label + '">&#128274;</span>' +
             '<input type="text" value="' + (label || meta.label) + '" readonly title="Open ' + meta.label + '" onclick="switchTab(\'' + meta.tabName + '\')" onkeydown="if(event.key===\'Enter\'){switchTab(\'' + meta.tabName + '\')}">' +
           '</div>' +
           '<div class="row-actions">' +
