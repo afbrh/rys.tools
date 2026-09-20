@@ -3573,6 +3573,28 @@
     return { budget: BudgetApp.getState(), income: IncomeApp.getState(), mortgage: MortgageApp.getState(), food: FoodApp.getState(), car: CarApp.getState(), utilities: UtilitiesApp.getState(), savings: SavingsApp.getState(), subscriptions: SubscriptionsApp.getState() };
   }
 
+  // All tools share one Drive file (one sign-in, one Google account), each keeping its
+  // own slice under `tools[CURRENT_TOOL]` so saving from one tool's page never touches
+  // another tool's data. Pre-multi-tool saves have no `tools` wrapper at all — Budget
+  // Planner was the only tool back then, so an unwrapped file is treated as its data.
+  // Kept in sync with the same helpers in every other tool page.
+  function withToolsWrapper(remote) {
+    if (!remote) return {};
+    if (remote.tools) return Object.assign({}, remote.tools);
+    return { budget: remote };
+  }
+
+  function extractOwnToolData(remote) {
+    return withToolsWrapper(remote)[CURRENT_TOOL] || null;
+  }
+
+  async function mergeAndSave(toolData) {
+    const remote = await GoogleDriveSync.load();
+    const tools = withToolsWrapper(remote);
+    tools[CURRENT_TOOL] = toolData;
+    await GoogleDriveSync.save({ tools: tools });
+  }
+
   function setGoogleSignedInUi(signedIn) {
     const signinBtn = document.getElementById('google-signin-btn');
     const saveBtn = document.getElementById('save-btn');
@@ -3601,7 +3623,7 @@
       setGoogleSignedInUi(true);
       status.textContent = 'Loading your data from Drive…';
       const remote = await GoogleDriveSync.load();
-      applyLoadedData(remote); // null (brand-new Drive file) leaves fields at their default
+      applyLoadedData(extractOwnToolData(remote)); // null (brand-new Drive file, or no saved data for this tool yet) leaves fields at their default
       status.textContent = '';
       await showSignedInBanner();
     } catch (e) {
@@ -3620,7 +3642,7 @@
         setGoogleSignedInUi(true);
         await showSignedInBanner();
       }
-      await GoogleDriveSync.save(collectAllData());
+      await mergeAndSave(collectAllData());
       status.style.color = 'var(--income)';
       status.textContent = 'Saved to Google Drive';
       setTimeout(() => { status.textContent = ''; }, 3000);
@@ -3919,7 +3941,7 @@
       status.textContent = 'Loading your data from Drive…';
       try {
         const remote = await GoogleDriveSync.load();
-        applyLoadedData(remote);
+        applyLoadedData(extractOwnToolData(remote));
         status.textContent = '';
         await showSignedInBanner();
       } catch (e) {
