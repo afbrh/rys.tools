@@ -1290,17 +1290,143 @@
       return { text: '', isHtml: false };
     }
 
-    function plainTextFromPayload(payload) {
-      const found = findBodyText(payload);
-      if (!found.text) return '';
-      if (!found.isHtml) return found.text;
-      const doc = new DOMParser().parseFromString(found.text, 'text/html');
-      return doc.body ? doc.body.textContent : found.text;
+    // Characters used to pad the inbox preview text on marketing/newsletter email
+    // (zero-width space/non-joiner/joiner, BOM) — real text content, but invisible, so
+    // they need stripping rather than just leaving them to render as nothing useful.
+    // Built from character codes rather than source literals/escapes, to keep
+    // actual zero-width/invisible Unicode characters out of this .html file's own
+    // bytes (they're exactly the kind of thing that's silently mangled by editors,
+    // diff tools, or copy/paste, which would quietly break the very regex meant to
+    // strip them).
+    const ZERO_WIDTH_CHARS = new RegExp('[' + [0x200B, 0x200C, 0x200D, 0xFEFF].map(c => String.fromCharCode(c)).join('') + ']', 'g');
+    const NBSP = String.fromCharCode(0xA0);
+
+    function cleanupWhitespace(text) {
+      return text
+        .replace(ZERO_WIDTH_CHARS, '')
+        .split(NBSP).join(' ')     // NBSP, heavily used for spacing in email HTML
+        .replace(/[ \t]+/g, ' ')
+        .replace(/ *\n */g, '\n')
+        .replace(/\n{3,}/g, '\n\n')
+        .trim();
     }
 
-    // Turns bare "https://..." URLs in the (already plain-text) body into real links —
+    function isHiddenElement(el) {
+      const style = (el.getAttribute('style') || '').toLowerCase();
+      return /display\s*:\s*none/.test(style) || /visibility\s*:\s*hidden/.test(style) || /mso-hide\s*:\s*all/.test(style);
+    }
+
+    // Block-level elements get a line break around them so content that was visually on
+    // its own line (a heading, a paragraph, a table row) doesn't get smashed together
+    // with its neighbor the way plain .textContent would ("You're ready to returnHi
+    // Hummer," instead of two lines). Table cells only get a space, not a full break —
+    // forcing a newline at every <td> would blow a simple nav row ("Home . Electronics
+    // . Phones") out into one item per line.
+    const NEWLINE_TAGS = new Set(['P','DIV','TR','TABLE','LI','UL','OL','H1','H2','H3','H4','H5','H6','BLOCKQUOTE','SECTION','ARTICLE','HEADER','FOOTER','TBODY','THEAD','TFOOT']);
+    const SPACE_TAGS = new Set(['TD','TH']);
+
+    // Walks the parsed HTML collecting {type:'text'} and {type:'link', href} parts —
+    // link hrefs are captured here (from the actual <a> tag) rather than lost the way
+    // plain .textContent would lose them, so "View details" / "unsubscribe" stay
+    // clickable instead of turning into dead text.
+    function walkEmailBody(node, parts) {
+      if (node.nodeType === 3) { // Node.TEXT_NODE
+        parts.push({ type: 'text', value: node.nodeValue });
+        return;
+      }
+      if (node.nodeType !== 1) return; // Node.ELEMENT_NODE
+      const tag = node.tagName;
+      if (tag === 'STYLE' || tag === 'SCRIPT' || tag === 'HEAD' || tag === 'TITLE') return;
+      if (isHiddenElement(node)) return;
+      if (tag === 'BR') { parts.push({ type: 'text', value: '\n' }); return; }
+
+      if (tag === 'A') {
+        const href = node.getAttribute('href') || '';
+        const linkText = node.textContent.replace(/\s+/g, ' ').trim();
+        if (/^https?:\/\//i.test(href) && linkText) {
+          parts.push({ type: 'link', href: href, value: linkText });
+        } else if (linkText) {
+          parts.push({ type: 'text', value: linkText });
+        }
+        return;
+      }
+
+      const newline = NEWLINE_TAGS.has(tag);
+      const space = SPACE_TAGS.has(tag);
+      if (newline) parts.push({ type: 'text', value: '\n' });
+      else if (space) parts.push({ type: 'text', value: ' ' });
+      node.childNodes.forEach(child => walkEmailBody(child, parts));
+      if (newline) parts.push({ type: 'text', value: '\n' });
+    }
+
+    // Returns { kind: 'plain', text } or { kind: 'rich', parts: [{type:'text'|'link', ...}] }.
+    function buildEmailBody(payload) {
+      const found = findBodyText(payload);
+      if (!found.text) return null;
+      if (!found.isHtml) return { kind: 'plain', text: cleanupWhitespace(found.text) };
+
+      const doc = new DOMParser().parseFromString(found.text, 'text/html');
+      const root = doc.body || doc.documentElement;
+      const parts = [];
+      walkEmailBody(root, parts);
+
+      // Whitespace cleanup needs to run across the whole joined string (so e.g. three
+      // separate blank-line text parts in a row still collapse), but must not reach
+      // into a link's own visible text — link parts get swapped for placeholder tokens
+      // first and restored after.
+      // A real NUL char (never legal in HTML/JS source text, and never something
+      // an email's visible text would contain) makes a safe delimiter that can't
+      // collide with anything in the message itself. Built at runtime via
+      // fromCharCode rather than a source literal, since it's simplest to keep
+      // an actual control character out of the .html file's own bytes.
+      const NUL = String.fromCharCode(0);
+      const links = [];
+      let joined = '';
+      parts.forEach(p => {
+        if (p.type === 'link') {
+          joined += NUL + 'L' + links.length + NUL;
+          links.push(p);
+        } else {
+          joined += p.value;
+        }
+      });
+      joined = cleanupWhitespace(joined);
+
+      const tokenPattern = new RegExp('(' + NUL + 'L\\d+' + NUL + ')');
+      const resultParts = joined.split(tokenPattern).filter(s => s !== '').map(seg => {
+        const m = new RegExp('^' + NUL + 'L(\\d+)' + NUL + '$').exec(seg);
+        return m ? links[Number(m[1])] : { type: 'text', value: seg };
+      });
+      return { kind: 'rich', parts: resultParts };
+    }
+
+    function renderEmailBody(container, payload) {
+      const built = buildEmailBody(payload);
+      container.textContent = '';
+      if (!built) { container.textContent = '(No readable body)'; return; }
+      if (built.kind === 'plain') {
+        if (!built.text) { container.textContent = '(No readable body)'; return; }
+        appendTextWithLinks(container, built.text);
+        return;
+      }
+      if (!built.parts.length) { container.textContent = '(No readable body)'; return; }
+      built.parts.forEach(p => {
+        if (p.type === 'link') {
+          const a = document.createElement('a');
+          a.href = p.href;
+          a.textContent = p.value;
+          a.target = '_blank';
+          a.rel = 'noopener noreferrer';
+          container.appendChild(a);
+        } else {
+          appendTextWithLinks(container, p.value);
+        }
+      });
+    }
+
+    // Turns bare "https://..." URLs in an (already plain-text) string into real links —
     // built as actual <a> elements via the DOM, never by parsing a string as HTML, so
-    // this can't reintroduce the XSS risk that findBodyText/plainTextFromPayload avoid.
+    // this can't reintroduce the XSS risk that findBodyText/buildEmailBody avoid.
     // Only http(s) URLs match, so a "javascript:" scheme can never end up as a href.
     const URL_PATTERN = /\bhttps?:\/\/[^\s<>"')\]]+/gi;
 
@@ -1834,12 +1960,7 @@
 
       const bodyEl = document.createElement('div');
       bodyEl.className = 'mail-detail-body';
-      const bodyText = plainTextFromPayload(msg.payload);
-      if (bodyText) {
-        appendTextWithLinks(bodyEl, bodyText);
-      } else {
-        bodyEl.textContent = '(No readable body)';
-      }
+      renderEmailBody(bodyEl, msg.payload);
       wrap.appendChild(bodyEl);
 
       return wrap;
