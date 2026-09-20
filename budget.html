@@ -220,6 +220,7 @@
      (tool-dropdown, theme-dropdown, tool-controls) need to keep behaving exactly like
      direct flex children of .save-bar, unchanged from before this wrapper existed. */
   .header-controls { display: contents; }
+  .brand-block { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; }
   .brand-mark {
     display: flex;
     align-items: center;
@@ -388,8 +389,7 @@
   .signed-in-banner {
     font-size: 12px;
     color: var(--ink-soft);
-    text-align: right;
-    margin: -6px 0 22px;
+    text-align: left;
     min-height: 16px;
   }
   .app-footnote {
@@ -1344,7 +1344,10 @@
     <button class="mobile-menu-toggle" id="mobile-menu-toggle" onclick="toggleMobileMenu(event)" aria-haspopup="true" aria-expanded="false" aria-controls="header-controls" aria-label="Open menu">
       <span aria-hidden="true">&#9776;</span>
     </button>
-    <div class="brand-mark"><span>Ry's Tools</span></div>
+    <div class="brand-block">
+      <div class="brand-mark"><span>Ry's Tools</span></div>
+      <div class="signed-in-banner" id="signed-in-banner"></div>
+    </div>
     <div class="header-controls" id="header-controls">
       <button class="mobile-menu-close" id="mobile-menu-close" onclick="closeMobileMenu()" aria-label="Close menu">&times;</button>
       <div class="tool-dropdown">
@@ -1380,7 +1383,6 @@
   </div>
   <div class="mobile-menu-backdrop" id="mobile-menu-backdrop" onclick="closeMobileMenu()"></div>
   <div id="app-header-tabs">
-  <div class="signed-in-banner" id="signed-in-banner"></div>
   <div class="tab-bar">
     <div class="tabs">
       <div class="tabs-fixed">
