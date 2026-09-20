@@ -1356,6 +1356,7 @@
         <div class="tool-dropdown-menu" id="tool-menu" role="menu" aria-label="Tool">
           <button type="button" class="tool-dropdown-item" data-value="none" role="menuitemradio" onclick="setActiveTool('none')">None</button>
           <button type="button" class="tool-dropdown-item" data-value="budget" role="menuitemradio" onclick="setActiveTool('budget')">Budget Planner</button>
+          <button type="button" class="tool-dropdown-item" data-value="email" role="menuitemradio" onclick="setActiveTool('email')">E-Mail</button>
         </div>
       </div>
       <div class="theme-dropdown">
@@ -3834,16 +3835,27 @@
     });
   });
 
+  // Each tool now lives on its own page (see the "shared chrome duplicated per file"
+  // note this was heading toward) — CURRENT_TOOL says which one *this* page is, so
+  // selecting a different tool from the dropdown navigates instead of toggling in place.
+  const CURRENT_TOOL = 'budget';
+  const TOOL_PAGES = { budget: 'tools.html', email: 'email.html' };
+  const TOOL_LABELS = { none: 'None', budget: 'Budget Planner', email: 'E-Mail' };
+
   function setActiveTool(tool) {
-    if (tool !== 'none') tool = 'budget';
+    if (tool !== 'none' && !TOOL_PAGES[tool]) tool = CURRENT_TOOL;
     try { localStorage.setItem('munny_active_tool', tool); } catch (e) {}
+    if (tool !== 'none' && tool !== CURRENT_TOOL) {
+      window.location.href = TOOL_PAGES[tool];
+      return;
+    }
     syncToolMenu(tool);
     applyToolVisibility(tool);
     closeToolMenu();
   }
 
   function syncToolMenu(tool) {
-    const label = { none: 'None', budget: 'Budget Planner' }[tool] || 'Budget Planner';
+    const label = TOOL_LABELS[tool] || TOOL_LABELS[CURRENT_TOOL];
     const toggleLabel = document.getElementById('tool-dropdown-label');
     if (toggleLabel) toggleLabel.textContent = label;
     const toggleLabelShort = document.getElementById('tool-dropdown-label-short');
@@ -3860,7 +3872,7 @@
     const controls = document.getElementById('tool-controls');
     const headerTabs = document.getElementById('app-header-tabs');
     const content = document.getElementById('app-content');
-    const show = tool === 'budget';
+    const show = tool === CURRENT_TOOL;
     if (controls) controls.hidden = !show;
     if (headerTabs) headerTabs.hidden = !show;
     if (content) content.hidden = !show;
@@ -3871,7 +3883,7 @@
   function currentActiveTool() {
     let tool;
     try { tool = localStorage.getItem('munny_active_tool'); } catch (e) {}
-    return tool === 'none' ? 'none' : 'budget';
+    return tool === 'none' ? 'none' : CURRENT_TOOL;
   }
 
   function currentAppearance() {
