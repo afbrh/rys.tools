@@ -438,6 +438,8 @@
     border-top: 1px solid var(--paper-line);
     padding-top: 16px;
   }
+  .mail-detail-body a { color: var(--gold); text-decoration: underline; }
+  .mail-detail-body a:hover { color: var(--ink); }
 
   .compose-overlay {
     display: none;
@@ -1154,6 +1156,42 @@
       return doc.body ? doc.body.textContent : found.text;
     }
 
+    // Turns bare "https://..." URLs in the (already plain-text) body into real links —
+    // built as actual <a> elements via the DOM, never by parsing a string as HTML, so
+    // this can't reintroduce the XSS risk that findBodyText/plainTextFromPayload avoid.
+    // Only http(s) URLs match, so a "javascript:" scheme can never end up as a href.
+    const URL_PATTERN = /\bhttps?:\/\/[^\s<>"')\]]+/gi;
+
+    function appendTextWithLinks(container, text) {
+      let lastIndex = 0;
+      let match;
+      URL_PATTERN.lastIndex = 0;
+      while ((match = URL_PATTERN.exec(text)) !== null) {
+        if (match.index > lastIndex) {
+          container.appendChild(document.createTextNode(text.slice(lastIndex, match.index)));
+        }
+        // Trailing punctuation right after a URL (a period ending the sentence, a comma,
+        // a closing paren that isn't part of the link) reads better left outside the link.
+        let url = match[0];
+        let trailing = '';
+        while (url.length && /[.,;:!?]/.test(url.slice(-1))) {
+          trailing = url.slice(-1) + trailing;
+          url = url.slice(0, -1);
+        }
+        const a = document.createElement('a');
+        a.href = url;
+        a.textContent = url;
+        a.target = '_blank';
+        a.rel = 'noopener noreferrer';
+        container.appendChild(a);
+        if (trailing) container.appendChild(document.createTextNode(trailing));
+        lastIndex = match.index + match[0].length;
+      }
+      if (lastIndex < text.length) {
+        container.appendChild(document.createTextNode(text.slice(lastIndex)));
+      }
+    }
+
     function render() {
       const connectEl = document.getElementById('mail-connect');
       const appEl = document.getElementById('mail-app');
@@ -1357,7 +1395,12 @@
 
       const bodyEl = document.createElement('div');
       bodyEl.className = 'mail-detail-body';
-      bodyEl.textContent = plainTextFromPayload(msg.payload) || '(No readable body)';
+      const bodyText = plainTextFromPayload(msg.payload);
+      if (bodyText) {
+        appendTextWithLinks(bodyEl, bodyText);
+      } else {
+        bodyEl.textContent = '(No readable body)';
+      }
       detailEl.appendChild(bodyEl);
     }
 
