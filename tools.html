@@ -128,7 +128,6 @@
   .tabs-scroll {
     display: flex;
     align-items: flex-end;
-    justify-content: space-between;
     gap: 5px;
     overflow-x: auto;
     overflow-y: hidden;
@@ -143,6 +142,9 @@
     padding-bottom: 8px;
     margin-bottom: -8px;
   }
+  /* Fill leftover width by growing each tab's own padding instead of stretching the
+     gaps between them — keeps tabs sitting snug next to each other at any width. */
+  .tabs-scroll .tab-btn { flex: 1 1 0%; text-align: center; }
   .tab-label-medium, .tab-label-short { display: none; }
   .tabs.labels-medium .tab-label-full { display: none; }
   .tabs.labels-medium .tab-label-medium { display: inline; }
