@@ -1357,7 +1357,6 @@
           <span class="tool-dropdown-caret">&#9662;</span>
         </button>
         <div class="tool-dropdown-menu" id="tool-menu" role="menu" aria-label="Tool">
-          <button type="button" class="tool-dropdown-item" data-value="none" role="menuitemradio" onclick="setActiveTool('none')">None</button>
           <button type="button" class="tool-dropdown-item" data-value="budget" role="menuitemradio" onclick="setActiveTool('budget')">Budget Planner</button>
           <button type="button" class="tool-dropdown-item" data-value="email" role="menuitemradio" onclick="setActiveTool('email')">E-Mail</button>
         </div>
@@ -3884,17 +3883,15 @@
   // selecting a different tool from the dropdown navigates instead of toggling in place.
   const CURRENT_TOOL = 'budget';
   const TOOL_PAGES = { budget: 'budget.html', email: 'email.html' };
-  const TOOL_LABELS = { none: 'None', budget: 'Budget Planner', email: 'E-Mail' };
+  const TOOL_LABELS = { budget: 'Budget Planner', email: 'E-Mail' };
 
   function setActiveTool(tool) {
-    if (tool !== 'none' && !TOOL_PAGES[tool]) tool = CURRENT_TOOL;
-    try { localStorage.setItem('munny_active_tool', tool); } catch (e) {}
-    if (tool !== 'none' && tool !== CURRENT_TOOL) {
+    if (!TOOL_PAGES[tool]) tool = CURRENT_TOOL;
+    if (tool !== CURRENT_TOOL) {
       window.location.href = TOOL_PAGES[tool];
       return;
     }
     syncToolMenu(tool);
-    applyToolVisibility(tool);
     closeToolMenu();
   }
 
@@ -3910,24 +3907,6 @@
       item.classList.toggle('active', isActive);
       item.setAttribute('aria-checked', isActive ? 'true' : 'false');
     });
-  }
-
-  function applyToolVisibility(tool) {
-    const controls = document.getElementById('tool-controls');
-    const headerTabs = document.getElementById('app-header-tabs');
-    const content = document.getElementById('app-content');
-    const show = tool === CURRENT_TOOL;
-    if (controls) controls.hidden = !show;
-    if (headerTabs) headerTabs.hidden = !show;
-    if (content) content.hidden = !show;
-    updateDropdownLabelFit();
-    updateTabLabelFit();
-  }
-
-  function currentActiveTool() {
-    let tool;
-    try { tool = localStorage.getItem('munny_active_tool'); } catch (e) {}
-    return tool === 'none' ? 'none' : CURRENT_TOOL;
   }
 
   function currentAppearance() {
@@ -3952,8 +3931,8 @@
     applyLoadedData(null);
     setGoogleSignedInUi(false);
     setAppearance(currentAppearance());
-    syncToolMenu(currentActiveTool());
-    applyToolVisibility(currentActiveTool());
+    syncToolMenu(CURRENT_TOOL);
+    updateTabLabelFit();
     switchTab(currentActiveTab());
 
     if (GoogleDriveSync.restoreSession()) {
