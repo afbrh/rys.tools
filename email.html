@@ -382,12 +382,13 @@
   .mail-connect-status { font-size: 13px; color: var(--gold); min-height: 16px; margin: 14px 0 0 !important; }
   .mail-connect-status.error { color: var(--expense); }
 
-  .mail-app { max-width: 1000px; margin: 20px auto 0; }
+  /* Matches .app-header-inner's own 860px cap — same content width as the sticky header
+     above it (and everywhere else in the app), so the list reads as filling the page
+     properly instead of sitting oddly narrow inside a wider column. */
+  .mail-app { max-width: 860px; margin: 20px auto 0; }
   /* Lives in the sticky header now (see #mail-header-toolbar in the markup) so it stays
-     put while the list scrolls, instead of scrolling away with the rest of the page.
-     Capped at the same width as the list column below it so Compose + search still
-     read as "belonging to" the list. */
-  .mail-toolbar { display: flex; align-items: center; flex-wrap: wrap; gap: 10px; max-width: 700px; margin: 10px 0 14px; }
+     put while the list scrolls, instead of scrolling away with the rest of the page. */
+  .mail-toolbar { display: flex; align-items: center; flex-wrap: wrap; gap: 10px; margin: 10px 0 14px; }
   .mail-toolbar[hidden] { display: none; }
   .mail-toolbar .mail-status { font-size: 13px; color: var(--ink-soft); margin-left: 4px; }
   .mail-search { display: flex; flex: 1 1 200px; max-width: 320px; min-width: 140px; position: relative; }
@@ -430,9 +431,8 @@
   .mail-search-clear[hidden] { display: none; }
   /* One column, same on every screen size — a tap expands a message inline right below
      its row (see toggleInlineDetail), so there's no separate detail pane to lay out
-     alongside the list. Capped narrower than .mail-app's own 1000px so expanded message
-     bodies keep a comfortable reading line length instead of stretching edge to edge. */
-  .mail-list-col { max-width: 700px; }
+     alongside the list. Fills .mail-app's own width (which matches the header above it)
+     rather than being capped any narrower. */
   .mail-list {
     border: 1.5px solid var(--ink);
     border-radius: 10px;
