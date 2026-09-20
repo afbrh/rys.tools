@@ -383,7 +383,12 @@
   .mail-connect-status.error { color: var(--expense); }
 
   .mail-app { max-width: 1000px; margin: 20px auto 0; }
-  .mail-toolbar { display: flex; align-items: center; flex-wrap: wrap; gap: 10px; margin-bottom: 16px; }
+  /* Lives in the sticky header now (see #mail-header-toolbar in the markup) so it stays
+     put while the list scrolls, instead of scrolling away with the rest of the page.
+     Capped at the same width as the list column below it so Compose + search still
+     read as "belonging to" the list, not spanning the full header/detail-pane width. */
+  .mail-toolbar { display: flex; align-items: center; flex-wrap: wrap; gap: 10px; max-width: 380px; margin: 10px 0 14px; }
+  .mail-toolbar[hidden] { display: none; }
   .mail-toolbar .mail-status { font-size: 13px; color: var(--ink-soft); margin-left: 4px; }
   .mail-search { display: flex; flex: 1 1 200px; max-width: 320px; min-width: 140px; }
   .mail-search input[type="search"] {
@@ -561,6 +566,7 @@
     .mail-list { height: auto; max-height: none; overflow-y: visible; }
     .mail-detail { display: none; }
     .mail-inline-detail { display: block; }
+    .mail-toolbar { max-width: none; }
   }
 </style>
 </head>
@@ -610,6 +616,13 @@
   </div>
   <div class="mobile-menu-backdrop" id="mobile-menu-backdrop" onclick="closeMobileMenu()"></div>
   <div class="signed-in-banner" id="signed-in-banner"></div>
+  <div class="mail-toolbar" id="mail-header-toolbar" hidden="">
+    <button class="save-btn" onclick="MailApp.openCompose()">Compose</button>
+    <div class="mail-search">
+      <input type="search" id="mail-search-input" placeholder="Search mail" onkeydown="if (event.key === 'Enter') { event.preventDefault(); MailApp.runSearch(); }">
+    </div>
+    <span class="mail-status" id="mail-status"></span>
+  </div>
   </div>
   </div>
 
@@ -624,13 +637,6 @@
   <div class="mail-app" id="mail-app" hidden="">
     <div class="mail-layout">
       <div class="mail-list-col">
-        <div class="mail-toolbar">
-          <button class="save-btn" onclick="MailApp.openCompose()">Compose</button>
-          <div class="mail-search">
-            <input type="search" id="mail-search-input" placeholder="Search mail" onkeydown="if (event.key === 'Enter') { event.preventDefault(); MailApp.runSearch(); }">
-          </div>
-          <span class="mail-status" id="mail-status"></span>
-        </div>
         <div class="mail-pull-indicator" id="mail-pull-indicator">Pull to refresh</div>
         <div class="mail-list" id="mail-list">
           <div class="mail-list-empty">Loading…</div>
@@ -867,8 +873,23 @@
     if (controls) controls.hidden = !show;
     if (headerTabs) headerTabs.hidden = !show;
     if (content) content.hidden = !show;
+    updateMailHeaderToolbarVisibility();
     updateDropdownLabelFit();
     updateTabLabelFit();
+  }
+
+  // The Compose/search bar lives in the sticky header (so it stays put while the list
+  // scrolls) rather than inside #app-content, so it needs its own visibility check
+  // combining both: this page's tool must actually be selected (not "None", not a
+  // different tool navigated away from), AND Gmail must be connected (no point showing
+  // Compose/search over the "Connect Gmail" prompt). Called after either condition
+  // could have changed — from applyToolVisibility() and from MailApp.render().
+  function updateMailHeaderToolbarVisibility() {
+    const el = document.getElementById('mail-header-toolbar');
+    if (!el) return;
+    const toolActive = currentActiveTool() === CURRENT_TOOL;
+    const mailReady = GoogleDriveSync.isSignedIn() && GoogleDriveSync.hasGmailScope();
+    el.hidden = !(toolActive && mailReady);
   }
 
   function currentActiveTool() {
@@ -1289,6 +1310,7 @@
           : '';
       }
 
+      updateMailHeaderToolbarVisibility();
       if (ready && !inboxLoaded) refreshInbox();
     }
 
