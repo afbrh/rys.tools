@@ -1270,22 +1270,30 @@
     // Walks a Gmail message payload for a readable body. Prefers text/plain; falls back
     // to text/html but only ever extracts its *text*, never inserts the HTML itself —
     // rendering a stranger's raw HTML email would be an XSS risk.
+    // Prefers text/html over text/plain (flipped from an earlier version that preferred
+    // plain text on the assumption it'd have fewer formatting issues by construction).
+    // In practice, senders' plain-text alternatives are often a naive dump — a "View
+    // your order" button in the HTML version becomes its full, often huge, tracking URL
+    // spelled out inline in the plain-text one, which is exactly backwards from what a
+    // reader wants. Our HTML path (buildEmailBody) now handles CSS/script/hidden-element
+    // stripping and keeps links short (real anchor text, not the raw href), so it's the
+    // better default whenever a sender bothers to provide it.
     function findBodyText(payload) {
       if (!payload) return { text: '', isHtml: false };
-      if (payload.mimeType === 'text/plain' && payload.body && payload.body.data) {
-        return { text: base64UrlDecode(payload.body.data), isHtml: false };
-      }
       if (payload.mimeType === 'text/html' && payload.body && payload.body.data) {
         return { text: base64UrlDecode(payload.body.data), isHtml: true };
       }
+      if (payload.mimeType === 'text/plain' && payload.body && payload.body.data) {
+        return { text: base64UrlDecode(payload.body.data), isHtml: false };
+      }
       if (payload.parts) {
-        let htmlFallback = null;
+        let plainFallback = null;
         for (const part of payload.parts) {
           const found = findBodyText(part);
-          if (found.text && !found.isHtml) return found;
-          if (found.text && found.isHtml && !htmlFallback) htmlFallback = found;
+          if (found.text && found.isHtml) return found;
+          if (found.text && !found.isHtml && !plainFallback) plainFallback = found;
         }
-        if (htmlFallback) return htmlFallback;
+        if (plainFallback) return plainFallback;
       }
       return { text: '', isHtml: false };
     }
