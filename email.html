@@ -1415,12 +1415,12 @@
       clearBtn.hidden = !input.value;
     }
 
-    // Typing pauses for 2s -> search automatically, same as hitting Enter. Each
+    // Typing pauses for 1s -> search automatically, same as hitting Enter. Each
     // keystroke pushes the timer back out, so it only fires once typing actually stops.
     function onSearchInput() {
       updateSearchClear();
       clearTimeout(searchDebounceTimer);
-      searchDebounceTimer = setTimeout(runSearch, 2000);
+      searchDebounceTimer = setTimeout(runSearch, 1000);
     }
 
     // Clears the field and, only if a search is actually showing (as opposed to the
