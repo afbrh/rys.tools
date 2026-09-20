@@ -1165,7 +1165,7 @@
     }
 
     // Archiving is just removing the INBOX label — the message isn't deleted or even
-    // moved, it just stops showing up in the inbox view/query.
+    // moved, it just stops showing up in the inbox view/query. Unarchiving adds it back.
     async function gmailArchive(id) {
       const resp = await api('https://gmail.googleapis.com/gmail/v1/users/me/messages/' + id + '/modify', {
         method: 'POST',
@@ -1176,7 +1176,17 @@
       return resp.json();
     }
 
-    return { isSignedIn, signIn, load, save, getUserEmail, restoreSession, hasGmailScope, gmailListInbox, gmailGetMessage, gmailSend, gmailArchive, gmailSearch };
+    async function gmailUnarchive(id) {
+      const resp = await api('https://gmail.googleapis.com/gmail/v1/users/me/messages/' + id + '/modify', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ addLabelIds: ['INBOX'] })
+      });
+      if (!resp.ok) throw new Error(await errorFromResponse(resp));
+      return resp.json();
+    }
+
+    return { isSignedIn, signIn, load, save, getUserEmail, restoreSession, hasGmailScope, gmailListInbox, gmailGetMessage, gmailSend, gmailArchive, gmailUnarchive, gmailSearch };
   })();
 
   /* ================= Mail app (namespaced) ================= */
@@ -1419,18 +1429,22 @@
       const from = header(headers, 'From');
       const subject = header(headers, 'Subject') || '(no subject)';
       const isUnread = (msg.labelIds || []).indexOf('UNREAD') !== -1;
+      // The regular inbox list only ever contains INBOX messages, but search results
+      // (which cover the whole mailbox) can include already-archived ones — swiping
+      // those should offer to put them back, not archive them again.
+      const isArchived = (msg.labelIds || []).indexOf('INBOX') === -1;
 
       // Swiping left slides .mail-list-item (the visible foreground row) to reveal the
-      // "Archive" action sitting behind it in .mail-swipe-row — the row itself never
-      // moves, only its contents do, which is what makes the action feel like it slides
-      // in from behind rather than the row just sliding off unexplained.
+      // "Archive"/"Unarchive" action sitting behind it in .mail-swipe-row — the row
+      // itself never moves, only its contents do, which is what makes the action feel
+      // like it slides in from behind rather than the row just sliding off unexplained.
       const row = document.createElement('div');
       row.className = 'mail-swipe-row';
       row.dataset.id = msg.id;
 
       const action = document.createElement('div');
       action.className = 'mail-swipe-action';
-      action.textContent = 'Archive';
+      action.textContent = isArchived ? 'Unarchive' : 'Archive';
       row.appendChild(action);
 
       const btn = document.createElement('button');
@@ -1462,7 +1476,7 @@
       btn.appendChild(snippetEl);
       row.appendChild(btn);
 
-      attachSwipeToArchive(btn, msg.id);
+      attachSwipeToArchive(btn, msg.id, isArchived);
       return row;
     }
 
@@ -1471,7 +1485,7 @@
     // moves further horizontally than vertically counts (otherwise a normal vertical
     // scroll through the list would keep getting hijacked), and only leftward swipes
     // do anything, per what was actually asked for.
-    function attachSwipeToArchive(el, id) {
+    function attachSwipeToArchive(el, id, isArchived) {
       const THRESHOLD = 70;
       const MAX = 96;
       let dragging = false, decided = false, horizontal = false;
@@ -1506,7 +1520,7 @@
         if (horizontal && dx <= -THRESHOLD) {
           suppressClick = true;
           el.style.transform = 'translateX(-100%)';
-          archiveMessage(id, el.closest('.mail-swipe-row'));
+          toggleArchiveMessage(id, el.closest('.mail-swipe-row'), isArchived);
         } else {
           if (horizontal && Math.abs(dx) > 4) suppressClick = true;
           el.style.transform = 'translateX(0)';
@@ -1523,10 +1537,15 @@
       });
     }
 
-    async function archiveMessage(id, rowEl) {
+    async function toggleArchiveMessage(id, rowEl, isArchived) {
       try {
-        await GoogleDriveSync.gmailArchive(id);
-        setMailStatus('Archived.');
+        if (isArchived) {
+          await GoogleDriveSync.gmailUnarchive(id);
+          setMailStatus('Moved back to inbox.');
+        } else {
+          await GoogleDriveSync.gmailArchive(id);
+          setMailStatus('Archived.');
+        }
         setTimeout(() => {
           if (rowEl) rowEl.remove();
           if (openMessageId === id) closeDetail();
@@ -1534,12 +1553,12 @@
           if (listEl && !listEl.querySelector('.mail-swipe-row')) {
             const empty = document.createElement('div');
             empty.className = 'mail-list-empty';
-            empty.textContent = 'Your inbox is empty.';
+            empty.textContent = searchActive ? 'No messages found.' : 'Your inbox is empty.';
             listEl.appendChild(empty);
           }
         }, 180);
       } catch (e) {
-        setMailStatus('Couldn\'t archive: ' + e.message, true);
+        setMailStatus('Couldn\'t ' + (isArchived ? 'unarchive' : 'archive') + ': ' + e.message, true);
         const btn = rowEl && rowEl.querySelector('.mail-list-item');
         if (btn) { btn.style.transition = 'transform .18s ease'; btn.style.transform = 'translateX(0)'; }
       }
