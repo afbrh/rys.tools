@@ -390,7 +390,7 @@
   .mail-toolbar { display: flex; align-items: center; flex-wrap: wrap; gap: 10px; max-width: 380px; margin: 10px 0 14px; }
   .mail-toolbar[hidden] { display: none; }
   .mail-toolbar .mail-status { font-size: 13px; color: var(--ink-soft); margin-left: 4px; }
-  .mail-search { display: flex; flex: 1 1 200px; max-width: 320px; min-width: 140px; }
+  .mail-search { display: flex; flex: 1 1 200px; max-width: 320px; min-width: 140px; position: relative; }
   .mail-search input[type="search"] {
     flex: 1;
     min-width: 0;
@@ -401,9 +401,33 @@
     background: var(--paper-line);
     border: 1.5px solid var(--ink);
     border-radius: 17px;
-    padding: 0 14px;
+    padding: 0 30px 0 14px;
   }
   .mail-search input[type="search"]:focus { outline: none; }
+  /* Browsers with their own built-in clear "x" (Chrome/Edge) get suppressed so only the
+     custom one below shows — consistent look across browsers, and only this one is
+     wired to also drop back to the inbox view, not just clear the text. */
+  .mail-search input[type="search"]::-webkit-search-cancel-button { -webkit-appearance: none; appearance: none; }
+  .mail-search-clear {
+    position: absolute;
+    right: 6px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 22px;
+    height: 22px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: none;
+    border-radius: 50%;
+    background: none;
+    color: var(--ink-soft);
+    font-size: 16px;
+    line-height: 1;
+    cursor: pointer;
+  }
+  .mail-search-clear:hover { color: var(--ink); background: rgba(0,0,0,0.08); }
+  .mail-search-clear[hidden] { display: none; }
   .mail-layout { display: flex; gap: 20px; align-items: flex-start; }
   /* The toolbar (Compose + search) lives in here too, alongside the list, so it's
      naturally exactly as wide as the list rather than spanning the detail pane too. */
@@ -626,7 +650,8 @@
   <div class="mail-toolbar" id="mail-header-toolbar" hidden="">
     <button class="save-btn" onclick="MailApp.openCompose()">Compose</button>
     <div class="mail-search">
-      <input type="search" id="mail-search-input" placeholder="Search mail" onkeydown="if (event.key === 'Enter') { event.preventDefault(); MailApp.runSearch(); }">
+      <input type="search" id="mail-search-input" placeholder="Search mail" oninput="MailApp.updateSearchClear()" onkeydown="if (event.key === 'Enter') { event.preventDefault(); MailApp.runSearch(); }">
+      <button type="button" class="mail-search-clear" id="mail-search-clear" onclick="MailApp.clearSearch()" aria-label="Clear search" hidden="">&times;</button>
     </div>
     <span class="mail-status" id="mail-status"></span>
   </div>
@@ -1346,6 +1371,7 @@
       openMessageId = null;
       const searchInput = document.getElementById('mail-search-input');
       if (searchInput) searchInput.value = '';
+      updateSearchClear();
       listEl.innerHTML = '';
       const loading = document.createElement('div');
       loading.className = 'mail-list-empty';
@@ -1378,6 +1404,23 @@
         err.textContent = 'Couldn\'t load inbox: ' + e.message;
         listEl.appendChild(err);
       }
+    }
+
+    function updateSearchClear() {
+      const input = document.getElementById('mail-search-input');
+      const clearBtn = document.getElementById('mail-search-clear');
+      if (!input || !clearBtn) return;
+      clearBtn.hidden = !input.value;
+    }
+
+    // Clears the field and, only if a search is actually showing (as opposed to the
+    // user having typed something but not searched yet), drops back to the inbox —
+    // there's nothing to "return" from otherwise, so no need to force a reload.
+    function clearSearch() {
+      const input = document.getElementById('mail-search-input');
+      if (input) input.value = '';
+      updateSearchClear();
+      if (searchActive) refreshInbox();
     }
 
     function runSearch() {
@@ -1846,7 +1889,7 @@
     const pullIndicatorEl = document.getElementById('mail-pull-indicator');
     if (pullListEl && pullIndicatorEl) attachPullToRefresh(pullListEl, pullIndicatorEl);
 
-    return { render, refreshInbox, runSearch, openMessage, openCompose, closeCompose, send };
+    return { render, refreshInbox, runSearch, updateSearchClear, clearSearch, openMessage, openCompose, closeCompose, send };
   })();
 
   /* ================= combined save / load ================= */
