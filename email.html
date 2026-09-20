@@ -567,6 +567,13 @@
     .mail-detail { display: none; }
     .mail-inline-detail { display: block; }
     .mail-toolbar { max-width: none; }
+    /* Below 16px, iOS Safari auto-zooms the page on focus (its heuristic for "this text
+       is too small to read/type into") — bumping these to 16px only on mobile avoids
+       that without changing their size on desktop. Same fix applies to the Compose
+       fields, which have the same problem. */
+    .mail-search input[type="search"],
+    .compose-field input,
+    .compose-body { font-size: 16px; }
   }
 </style>
 </head>
