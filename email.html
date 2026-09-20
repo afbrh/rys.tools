@@ -504,6 +504,28 @@
   .mail-detail-body a { color: var(--gold); text-decoration: underline; }
   .mail-detail-body a:hover { color: var(--ink); }
 
+  /* Multi-message threads render like a chat conversation instead of the single-message
+     view above — own messages on the right, the other side's on the left, with the
+     From/To header lines dropped since who's who is already shown by which side a
+     bubble sits on. */
+  .chat-thread { display: flex; flex-direction: column; gap: 14px; margin-top: 10px; }
+  .chat-row { display: flex; flex-direction: column; max-width: 82%; }
+  .chat-row-theirs { align-self: flex-start; align-items: flex-start; }
+  .chat-row-mine { align-self: flex-end; align-items: flex-end; }
+  .chat-meta { font-size: 11px; color: var(--ink-soft); margin: 0 6px 4px; }
+  .chat-bubble {
+    padding: 10px 14px;
+    border-radius: 15px;
+    font-size: 14px;
+    line-height: 1.5;
+    white-space: pre-wrap;
+    word-break: break-word;
+  }
+  .chat-row-theirs .chat-bubble { background: var(--paper-line); color: var(--ink); border-bottom-left-radius: 4px; }
+  .chat-row-mine .chat-bubble { background: var(--gold); color: var(--paper); border-bottom-right-radius: 4px; }
+  .chat-bubble a { color: inherit; }
+  .chat-row-theirs .chat-bubble a:hover, .chat-row-mine .chat-bubble a:hover { opacity: 0.8; }
+
   .compose-overlay {
     display: none;
     position: fixed;
@@ -1149,6 +1171,15 @@
       return resp.json();
     }
 
+    // Returns every message in the thread (Gmail orders them oldest-first, which is
+    // exactly the order a chat-style reading view wants) in one call, instead of one
+    // request per message.
+    async function gmailGetThread(threadId, format) {
+      const resp = await api('https://gmail.googleapis.com/gmail/v1/users/me/threads/' + threadId + '?format=' + (format || 'full'));
+      if (!resp.ok) throw new Error(await errorFromResponse(resp));
+      return resp.json();
+    }
+
     // No labelIds filter — unlike gmailListInbox, this searches the whole mailbox (Gmail's
     // own search syntax works here, e.g. "from:" / "subject:" / plain text), which by
     // Gmail's normal search behavior covers Inbox and archived mail alike while still
@@ -1194,7 +1225,7 @@
       return resp.json();
     }
 
-    return { isSignedIn, signIn, load, save, getUserEmail, restoreSession, hasGmailScope, gmailListInbox, gmailGetMessage, gmailSend, gmailArchive, gmailUnarchive, gmailSearch };
+    return { isSignedIn, signIn, load, save, getUserEmail, restoreSession, hasGmailScope, gmailListInbox, gmailGetMessage, gmailGetThread, gmailSend, gmailArchive, gmailUnarchive, gmailSearch };
   })();
 
   /* ================= Mail app (namespaced) ================= */
@@ -1230,6 +1261,33 @@
       const m = /^"?([^"<]*)"?\s*<[^>]+>$/.exec(from || '');
       const name = m ? m[1].trim() : (from || '');
       return name || from || '(unknown sender)';
+    }
+
+    // First word of the display name ("Alex Rivera" -> "Alex") — enough to tell chat
+    // bubbles apart in a thread without the full name taking up space.
+    function shortSenderName(from) {
+      const name = displayName(from);
+      return name.split(/\s+/)[0] || name;
+    }
+
+    // "Display Name" <addr> -> addr, lowercased, for comparing against the signed-in
+    // account's own address to tell "my" messages from "theirs" in a thread.
+    function extractEmailAddress(headerValue) {
+      const m = /<([^>]+)>/.exec(headerValue || '');
+      return (m ? m[1] : (headerValue || '')).trim().toLowerCase();
+    }
+
+    // Fetched once per session and cached — every thread render needs it, but it never
+    // changes for the life of the sign-in.
+    let myEmailCache = null;
+    async function getMyEmail() {
+      if (myEmailCache !== null) return myEmailCache;
+      try {
+        myEmailCache = (await GoogleDriveSync.getUserEmail()).toLowerCase();
+      } catch (e) {
+        myEmailCache = '';
+      }
+      return myEmailCache;
     }
 
     function formatDate(internalDate) {
@@ -1613,6 +1671,7 @@
       const row = document.createElement('div');
       row.className = 'mail-swipe-row';
       row.dataset.id = msg.id;
+      row.dataset.threadId = msg.threadId || '';
 
       const action = document.createElement('div');
       action.className = 'mail-swipe-action';
@@ -1842,10 +1901,20 @@
       row.insertAdjacentElement('afterend', detailContainer);
 
       try {
-        const msg = await GoogleDriveSync.gmailGetMessage(id, 'full');
+        const threadId = row.dataset.threadId;
+        // Fetching the whole thread (not just this one message) both covers the single-
+        // message case (a thread of one) and tells us whether this is actually a back-
+        // and-forth conversation that should render as chat bubbles instead.
+        const thread = threadId ? await GoogleDriveSync.gmailGetThread(threadId, 'full') : null;
         if (openMessageId !== id) return; // collapsed, or a different row opened, while this was in flight
         detailContainer.innerHTML = '';
-        detailContainer.appendChild(buildDetailContent(msg));
+        const messages = thread && thread.messages && thread.messages.length ? thread.messages : null;
+        if (messages && messages.length > 1) {
+          detailContainer.appendChild(await buildThreadContent(messages));
+        } else {
+          const msg = (messages && messages[0]) || await GoogleDriveSync.gmailGetMessage(id, 'full');
+          detailContainer.appendChild(buildDetailContent(msg));
+        }
       } catch (e) {
         if (openMessageId !== id) return;
         detailContainer.innerHTML = '';
@@ -1909,6 +1978,76 @@
       bodyEl.className = 'mail-detail-body';
       renderEmailBody(bodyEl, msg.payload);
       wrap.appendChild(bodyEl);
+
+      return wrap;
+    }
+
+    // A back-and-forth thread renders like a chat conversation — own messages on the
+    // right, the other side's on the left — instead of the single-message view's
+    // From/To header block repeated per message, which is exactly the "metadata that
+    // gets in the way" for reading a conversation back and forth.
+    async function buildThreadContent(messages) {
+      const myEmail = await getMyEmail();
+
+      const wrap = document.createElement('div');
+
+      const firstHeaders = messages[0].payload ? messages[0].payload.headers : [];
+      const subject = header(firstHeaders, 'Subject') || '(no subject)';
+      const subjectEl = document.createElement('h2');
+      subjectEl.className = 'mail-detail-subject';
+      subjectEl.textContent = subject;
+      wrap.appendChild(subjectEl);
+
+      const thread = document.createElement('div');
+      thread.className = 'chat-thread';
+
+      messages.forEach(m => {
+        const headers = m.payload ? m.payload.headers : [];
+        const from = header(headers, 'From');
+        const mine = !!myEmail && extractEmailAddress(from) === myEmail;
+
+        const row = document.createElement('div');
+        row.className = 'chat-row ' + (mine ? 'chat-row-mine' : 'chat-row-theirs');
+
+        const meta = document.createElement('div');
+        meta.className = 'chat-meta';
+        meta.textContent = mine ? formatDate(m.internalDate) : (shortSenderName(from) + ', ' + formatDate(m.internalDate));
+        row.appendChild(meta);
+
+        const bubble = document.createElement('div');
+        bubble.className = 'chat-bubble';
+        renderEmailBody(bubble, m.payload);
+        row.appendChild(bubble);
+
+        thread.appendChild(row);
+      });
+      wrap.appendChild(thread);
+
+      // Reply to whoever sent the most recent message *from the other side* — if I sent
+      // the last message myself (e.g. I was the one who spoke last), replying should
+      // still go back to them, not to my own address.
+      let replyTarget = messages[messages.length - 1];
+      for (let i = messages.length - 1; i >= 0; i--) {
+        const h = messages[i].payload ? messages[i].payload.headers : [];
+        if (extractEmailAddress(header(h, 'From')) !== myEmail) { replyTarget = messages[i]; break; }
+      }
+      const lastHeaders = replyTarget.payload ? replyTarget.payload.headers : [];
+      const lastFrom = header(lastHeaders, 'From');
+      const actions = document.createElement('div');
+      actions.className = 'mail-detail-actions';
+      const replyBtn = document.createElement('button');
+      replyBtn.className = 'save-btn export-btn';
+      replyBtn.textContent = 'Reply';
+      replyBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        openCompose({
+          to: lastFrom,
+          subject: /^re:/i.test(subject) ? subject : ('Re: ' + subject),
+          threadId: replyTarget.threadId
+        });
+      });
+      actions.appendChild(replyBtn);
+      wrap.appendChild(actions);
 
       return wrap;
     }
