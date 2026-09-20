@@ -1358,6 +1358,30 @@
       return /display\s*:\s*none/.test(style) || /visibility\s*:\s*hidden/.test(style) || /mso-hide\s*:\s*all/.test(style);
     }
 
+    // Every reply in an email thread carries the *entire* prior conversation quoted
+    // below the new text (that's what makes "On Mon, Alex wrote: > their old message"
+    // possible) — shown as-is, a chat view would repeat the whole history in every
+    // bubble. This is Gmail's own wrapper for that quoted block; other clients mostly
+    // just use a plain <blockquote>, which the caller skips separately.
+    function isQuoteWrapper(el) {
+      const cls = (el.getAttribute('class') || '');
+      return /\bgmail_quote\b/.test(cls) || /\bgmail_extra\b/.test(cls);
+    }
+
+    // Plain-text equivalent of isQuoteWrapper — cuts everything from the first quote
+    // header onward ("On <date>, <name> wrote:", Outlook's "-----Original Message-----",
+    // or a block of "> " quoted lines), leaving just what this person actually typed.
+    function stripQuotedReply(text) {
+      const lines = text.split('\n');
+      for (let i = 0; i < lines.length; i++) {
+        const line = lines[i].trim();
+        if (/^>*\s*On\s.{0,150}\swrote:\s*$/.test(line)) return lines.slice(0, i).join('\n').replace(/\n+$/, '');
+        if (/^-{2,}\s*Original Message\s*-{2,}$/i.test(line)) return lines.slice(0, i).join('\n').replace(/\n+$/, '');
+        if (i > 0 && /^>/.test(line)) return lines.slice(0, i).join('\n').replace(/\n+$/, '');
+      }
+      return text;
+    }
+
     // Block-level elements get a line break around them so content that was visually on
     // its own line (a heading, a paragraph, a table row) doesn't get smashed together
     // with its neighbor the way plain .textContent would ("You're ready to returnHi
@@ -1370,8 +1394,10 @@
     // Walks the parsed HTML collecting {type:'text'} and {type:'link', href} parts —
     // link hrefs are captured here (from the actual <a> tag) rather than lost the way
     // plain .textContent would lose them, so "View details" / "unsubscribe" stay
-    // clickable instead of turning into dead text.
-    function walkEmailBody(node, parts) {
+    // clickable instead of turning into dead text. stripQuotes (chat/thread rendering
+    // only) drops <blockquote> and Gmail's quote wrapper entirely instead of walking
+    // into them, so a reply's bubble shows only its own new text.
+    function walkEmailBody(node, parts, stripQuotes) {
       if (node.nodeType === 3) { // Node.TEXT_NODE
         parts.push({ type: 'text', value: node.nodeValue });
         return;
@@ -1380,6 +1406,7 @@
       const tag = node.tagName;
       if (tag === 'STYLE' || tag === 'SCRIPT' || tag === 'HEAD' || tag === 'TITLE') return;
       if (isHiddenElement(node)) return;
+      if (stripQuotes && (tag === 'BLOCKQUOTE' || isQuoteWrapper(node))) return;
       if (tag === 'BR') { parts.push({ type: 'text', value: '\n' }); return; }
 
       if (tag === 'A') {
@@ -1397,20 +1424,26 @@
       const space = SPACE_TAGS.has(tag);
       if (newline) parts.push({ type: 'text', value: '\n' });
       else if (space) parts.push({ type: 'text', value: ' ' });
-      node.childNodes.forEach(child => walkEmailBody(child, parts));
+      node.childNodes.forEach(child => walkEmailBody(child, parts, stripQuotes));
       if (newline) parts.push({ type: 'text', value: '\n' });
     }
 
     // Returns { kind: 'plain', text } or { kind: 'rich', parts: [{type:'text'|'link', ...}] }.
-    function buildEmailBody(payload) {
+    // stripQuotes cuts the quoted prior-message text a reply carries along with it —
+    // pass true for chat/thread bubbles, leave false for the single-message view where
+    // that history is still the point of what's being read.
+    function buildEmailBody(payload, stripQuotes) {
       const found = findBodyText(payload);
       if (!found.text) return null;
-      if (!found.isHtml) return { kind: 'plain', text: cleanupWhitespace(found.text) };
+      if (!found.isHtml) {
+        const text = stripQuotes ? stripQuotedReply(found.text) : found.text;
+        return { kind: 'plain', text: cleanupWhitespace(text) };
+      }
 
       const doc = new DOMParser().parseFromString(found.text, 'text/html');
       const root = doc.body || doc.documentElement;
       const parts = [];
-      walkEmailBody(root, parts);
+      walkEmailBody(root, parts, stripQuotes);
 
       // Whitespace cleanup needs to run across the whole joined string (so e.g. three
       // separate blank-line text parts in a row still collapse), but must not reach
@@ -1442,8 +1475,8 @@
       return { kind: 'rich', parts: resultParts };
     }
 
-    function renderEmailBody(container, payload) {
-      const built = buildEmailBody(payload);
+    function renderEmailBody(container, payload, stripQuotes) {
+      const built = buildEmailBody(payload, stripQuotes);
       container.textContent = '';
       if (!built) { container.textContent = '(No readable body)'; return; }
       if (built.kind === 'plain') {
@@ -2016,7 +2049,7 @@
 
         const bubble = document.createElement('div');
         bubble.className = 'chat-bubble';
-        renderEmailBody(bubble, m.payload);
+        renderEmailBody(bubble, m.payload, true);
         row.appendChild(bubble);
 
         thread.appendChild(row);
