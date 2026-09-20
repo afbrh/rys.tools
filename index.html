@@ -124,7 +124,11 @@
     flex: 1 1 auto;
     min-width: 0;
   }
-  .tabs-fixed { display: flex; align-items: flex-end; gap: 5px; flex-shrink: 0; }
+  /* Income/Budget grow too (weight 1 each), matching one middle tab's share, while the
+     6 middle tabs (in .tabs-scroll, weight 6) split their combined share evenly — so
+     every tab across the whole row ends up filling a roughly equal width. */
+  .tabs-fixed { display: flex; align-items: flex-end; gap: 5px; flex: 1 1 0%; min-width: 0; }
+  .tabs-fixed .tab-btn { flex: 1 1 0%; min-width: 0; text-align: center; }
   .tabs-scroll {
     display: flex;
     align-items: flex-end;
@@ -132,7 +136,7 @@
     overflow-x: auto;
     overflow-y: hidden;
     scrollbar-width: thin;
-    flex: 1 1 auto;
+    flex: 6 1 0%;
     min-width: 0;
     touch-action: pan-x;
     /* Gives the active tab's -2px "poke past the line" trick room to render without
