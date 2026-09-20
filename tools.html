@@ -439,6 +439,24 @@
   #tab-budget .row.locked input[type="text"]:hover { border-bottom: 1px solid var(--gold); }
   #tab-budget .row.locked input[type="number"] { color: var(--gold); cursor: pointer; border-radius: 3px; }
   #tab-budget .row.locked input[type="number"]:hover { border-bottom: 1px solid var(--gold); }
+  /* The lone income row stands in for the section header (no separate "Income" label above
+     it), so it's styled like one instead of like a locked expense chip. */
+  #tab-budget .section.income .row.locked {
+    background: none;
+    border-radius: 0;
+    padding: 0 0 8px;
+    margin: 0 0 4px;
+    border-bottom: 2px solid var(--ink);
+  }
+  #tab-budget .section.income .row.locked input[type="text"] {
+    font-family: var(--font-header);
+    font-size: 16px;
+    color: var(--income);
+  }
+  #tab-budget .section.income .row.locked input[type="number"] { font-size: 15px; font-weight: 500; color: var(--income); }
+  #tab-budget .section.income .row.locked .amount-wrap span { color: var(--income); }
+  #tab-budget .section.income .row.locked input[type="text"]:hover,
+  #tab-budget .section.income .row.locked input[type="number"]:hover { border-bottom-color: transparent; }
   #tab-budget .amount-wrap { display: flex; align-items: center; justify-content: flex-end; font-family: var(--font-mono); font-size: 15px; }
   #tab-budget .amount-wrap span { color: var(--ink-soft); margin-right: 1px; }
   #tab-budget .row input[type="number"] {
@@ -1299,10 +1317,6 @@
       <h1>Monthly Budget Plan</h1>
 
       <div class="section income" id="income-section">
-        <div class="section-head">
-          <h2>Income</h2>
-          <span class="section-total" id="income-total">$10,374.00</span>
-        </div>
         <div id="income-rows"></div>
       </div>
 
@@ -1578,7 +1592,6 @@
       const expenseTotal = sumSection('expense');
       const net = incomeTotal - expenseTotal;
 
-      document.getElementById('income-total').textContent = currency(incomeTotal);
       document.getElementById('expense-total').textContent = currency(expenseTotal);
       document.getElementById('summary-income').textContent = currency(incomeTotal);
       document.getElementById('summary-expense').textContent = currency(expenseTotal);
