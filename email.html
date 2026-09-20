@@ -888,9 +888,9 @@
     if (!banner) return;
     try {
       const email = await GoogleDriveSync.getUserEmail();
-      banner.textContent = email ? 'Signed Into Google Drive as ' + email : 'Signed Into Google Drive';
+      banner.textContent = email || 'Signed in to Google Drive';
     } catch (e) {
-      banner.textContent = 'Signed Into Google Drive'; // email lookup failed — still confirm sign-in
+      banner.textContent = 'Signed in to Google Drive'; // email lookup failed — still confirm sign-in
     }
   }
 
