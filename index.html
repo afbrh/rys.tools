@@ -647,6 +647,8 @@
   #tab-subscriptions .value-cell { width: 118px; flex: 0 0 118px; }
   #tab-subscriptions .col-head-row { padding-bottom: 12px; margin-bottom: 6px; border-bottom: 2px solid var(--ink); }
   #tab-subscriptions .col-head-cell { position: relative; text-align: right; }
+  #tab-subscriptions .col-head-cell .name-row { display: flex; align-items: center; justify-content: flex-end; gap: 6px; }
+  #tab-subscriptions .col-head-cell .name-row input[type="radio"] { margin: 0; cursor: pointer; accent-color: var(--gold); flex-shrink: 0; }
   #tab-subscriptions .col-head-cell input.name {
     font-family: var(--font-header);
     font-weight: 600;
@@ -655,7 +657,8 @@
     background: transparent;
     color: var(--ink);
     text-align: right;
-    width: 100%;
+    flex: 1 1 auto;
+    min-width: 0;
     padding: 2px 0;
   }
   #tab-subscriptions .col-head-cell input.name:focus { outline: none; border-bottom: 1px solid var(--ink-soft); }
@@ -664,12 +667,6 @@
     color: var(--ink-soft); font-size: 12px; cursor: pointer; padding: 0;
   }
   #tab-subscriptions .col-head-cell .remove-btn:hover { color: var(--expense); }
-  #tab-subscriptions .col-head-cell .primary-toggle {
-    display: flex; align-items: center; justify-content: flex-end; gap: 4px;
-    margin-top: 6px; font-size: 11px; color: var(--ink-soft); cursor: pointer;
-  }
-  #tab-subscriptions .col-head-cell .primary-toggle input { margin: 0; cursor: pointer; accent-color: var(--gold); }
-  #tab-subscriptions .col-head-cell .primary-toggle.is-primary { color: var(--gold); font-weight: 600; }
   #tab-subscriptions .col-head-cell.is-primary { background: var(--gold-bg); border-radius: 6px; padding: 4px 6px; margin: -4px -6px; }
   #tab-subscriptions .section { margin-bottom: 26px; }
   #tab-subscriptions .section-head { border-bottom: 2px solid var(--ink); padding-bottom: 6px; margin-bottom: 2px; }
@@ -746,6 +743,8 @@
   #tab-mortgage .value-cell { width: 118px; flex: 0 0 118px; }
   #tab-mortgage .col-head-row { padding-bottom: 12px; margin-bottom: 6px; border-bottom: 2px solid var(--ink); }
   #tab-mortgage .col-head-cell { position: relative; text-align: right; }
+  #tab-mortgage .col-head-cell .name-row { display: flex; align-items: center; justify-content: flex-end; gap: 6px; }
+  #tab-mortgage .col-head-cell .name-row input[type="radio"] { margin: 0; cursor: pointer; accent-color: var(--gold); flex-shrink: 0; }
   #tab-mortgage .col-head-cell input.name {
     font-family: var(--font-header);
     font-weight: 600;
@@ -754,7 +753,8 @@
     background: transparent;
     color: var(--ink);
     text-align: right;
-    width: 100%;
+    flex: 1 1 auto;
+    min-width: 0;
     padding: 2px 0;
   }
   #tab-mortgage .col-head-cell input.name:focus { outline: none; border-bottom: 1px solid var(--ink-soft); }
@@ -763,12 +763,6 @@
     color: var(--ink-soft); font-size: 12px; cursor: pointer; padding: 0;
   }
   #tab-mortgage .col-head-cell .remove-btn:hover { color: var(--expense); }
-  #tab-mortgage .col-head-cell .primary-toggle {
-    display: flex; align-items: center; justify-content: flex-end; gap: 4px;
-    margin-top: 6px; font-size: 11px; color: var(--ink-soft); cursor: pointer;
-  }
-  #tab-mortgage .col-head-cell .primary-toggle input { margin: 0; cursor: pointer; accent-color: var(--gold); }
-  #tab-mortgage .col-head-cell .primary-toggle.is-primary { color: var(--gold); font-weight: 600; }
   #tab-mortgage .col-head-cell.is-primary { background: var(--gold-bg); border-radius: 6px; padding: 4px 6px; margin: -4px -6px; }
   #tab-mortgage .section { margin-bottom: 26px; }
   #tab-mortgage .section-head { border-bottom: 2px solid var(--ink); padding-bottom: 6px; margin-bottom: 2px; }
@@ -848,6 +842,8 @@
   #tab-food .value-cell { width: 118px; flex: 0 0 118px; }
   #tab-food .col-head-row { padding-bottom: 12px; margin-bottom: 6px; border-bottom: 2px solid var(--ink); }
   #tab-food .col-head-cell { position: relative; text-align: right; }
+  #tab-food .col-head-cell .name-row { display: flex; align-items: center; justify-content: flex-end; gap: 6px; }
+  #tab-food .col-head-cell .name-row input[type="radio"] { margin: 0; cursor: pointer; accent-color: var(--gold); flex-shrink: 0; }
   #tab-food .col-head-cell input.name {
     font-family: var(--font-header);
     font-weight: 600;
@@ -856,7 +852,8 @@
     background: transparent;
     color: var(--ink);
     text-align: right;
-    width: 100%;
+    flex: 1 1 auto;
+    min-width: 0;
     padding: 2px 0;
   }
   #tab-food .col-head-cell input.name:focus { outline: none; border-bottom: 1px solid var(--ink-soft); }
@@ -865,12 +862,6 @@
     color: var(--ink-soft); font-size: 12px; cursor: pointer; padding: 0;
   }
   #tab-food .col-head-cell .remove-btn:hover { color: var(--expense); }
-  #tab-food .col-head-cell .primary-toggle {
-    display: flex; align-items: center; justify-content: flex-end; gap: 4px;
-    margin-top: 6px; font-size: 11px; color: var(--ink-soft); cursor: pointer;
-  }
-  #tab-food .col-head-cell .primary-toggle input { margin: 0; cursor: pointer; accent-color: var(--gold); }
-  #tab-food .col-head-cell .primary-toggle.is-primary { color: var(--gold); font-weight: 600; }
   #tab-food .col-head-cell.is-primary { background: var(--gold-bg); border-radius: 6px; padding: 4px 6px; margin: -4px -6px; }
   #tab-food .section { margin-bottom: 26px; }
   #tab-food .section-head { border-bottom: 2px solid var(--ink); padding-bottom: 6px; margin-bottom: 2px; }
@@ -935,6 +926,8 @@
   #tab-car .value-cell { width: 118px; flex: 0 0 118px; }
   #tab-car .col-head-row { padding-bottom: 12px; margin-bottom: 6px; border-bottom: 2px solid var(--ink); }
   #tab-car .col-head-cell { position: relative; text-align: right; }
+  #tab-car .col-head-cell .name-row { display: flex; align-items: center; justify-content: flex-end; gap: 6px; }
+  #tab-car .col-head-cell .name-row input[type="radio"] { margin: 0; cursor: pointer; accent-color: var(--gold); flex-shrink: 0; }
   #tab-car .col-head-cell input.name {
     font-family: var(--font-header);
     font-weight: 600;
@@ -943,7 +936,8 @@
     background: transparent;
     color: var(--ink);
     text-align: right;
-    width: 100%;
+    flex: 1 1 auto;
+    min-width: 0;
     padding: 2px 0;
   }
   #tab-car .col-head-cell input.name:focus { outline: none; border-bottom: 1px solid var(--ink-soft); }
@@ -952,12 +946,6 @@
     color: var(--ink-soft); font-size: 12px; cursor: pointer; padding: 0;
   }
   #tab-car .col-head-cell .remove-btn:hover { color: var(--expense); }
-  #tab-car .col-head-cell .primary-toggle {
-    display: flex; align-items: center; justify-content: flex-end; gap: 4px;
-    margin-top: 6px; font-size: 11px; color: var(--ink-soft); cursor: pointer;
-  }
-  #tab-car .col-head-cell .primary-toggle input { margin: 0; cursor: pointer; accent-color: var(--gold); }
-  #tab-car .col-head-cell .primary-toggle.is-primary { color: var(--gold); font-weight: 600; }
   #tab-car .col-head-cell.is-primary { background: var(--gold-bg); border-radius: 6px; padding: 4px 6px; margin: -4px -6px; }
   #tab-car .section { margin-bottom: 26px; }
   #tab-car .section-head { border-bottom: 2px solid var(--ink); padding-bottom: 6px; margin-bottom: 2px; }
@@ -1021,6 +1009,8 @@
   #tab-utilities .value-cell { width: 118px; flex: 0 0 118px; }
   #tab-utilities .col-head-row { padding-bottom: 12px; margin-bottom: 6px; border-bottom: 2px solid var(--ink); }
   #tab-utilities .col-head-cell { position: relative; text-align: right; }
+  #tab-utilities .col-head-cell .name-row { display: flex; align-items: center; justify-content: flex-end; gap: 6px; }
+  #tab-utilities .col-head-cell .name-row input[type="radio"] { margin: 0; cursor: pointer; accent-color: var(--gold); flex-shrink: 0; }
   #tab-utilities .col-head-cell input.name {
     font-family: var(--font-header);
     font-weight: 600;
@@ -1029,7 +1019,8 @@
     background: transparent;
     color: var(--ink);
     text-align: right;
-    width: 100%;
+    flex: 1 1 auto;
+    min-width: 0;
     padding: 2px 0;
   }
   #tab-utilities .col-head-cell input.name:focus { outline: none; border-bottom: 1px solid var(--ink-soft); }
@@ -1038,12 +1029,6 @@
     color: var(--ink-soft); font-size: 12px; cursor: pointer; padding: 0;
   }
   #tab-utilities .col-head-cell .remove-btn:hover { color: var(--expense); }
-  #tab-utilities .col-head-cell .primary-toggle {
-    display: flex; align-items: center; justify-content: flex-end; gap: 4px;
-    margin-top: 6px; font-size: 11px; color: var(--ink-soft); cursor: pointer;
-  }
-  #tab-utilities .col-head-cell .primary-toggle input { margin: 0; cursor: pointer; accent-color: var(--gold); }
-  #tab-utilities .col-head-cell .primary-toggle.is-primary { color: var(--gold); font-weight: 600; }
   #tab-utilities .col-head-cell.is-primary { background: var(--gold-bg); border-radius: 6px; padding: 4px 6px; margin: -4px -6px; }
   #tab-utilities .section { margin-bottom: 26px; }
   #tab-utilities .section-head { border-bottom: 2px solid var(--ink); padding-bottom: 6px; margin-bottom: 2px; }
@@ -1108,6 +1093,8 @@
   #tab-savings .value-cell { width: 118px; flex: 0 0 118px; }
   #tab-savings .col-head-row { padding-bottom: 12px; margin-bottom: 6px; border-bottom: 2px solid var(--ink); }
   #tab-savings .col-head-cell { position: relative; text-align: right; }
+  #tab-savings .col-head-cell .name-row { display: flex; align-items: center; justify-content: flex-end; gap: 6px; }
+  #tab-savings .col-head-cell .name-row input[type="radio"] { margin: 0; cursor: pointer; accent-color: var(--gold); flex-shrink: 0; }
   #tab-savings .col-head-cell input.name {
     font-family: var(--font-header);
     font-weight: 600;
@@ -1116,7 +1103,8 @@
     background: transparent;
     color: var(--ink);
     text-align: right;
-    width: 100%;
+    flex: 1 1 auto;
+    min-width: 0;
     padding: 2px 0;
   }
   #tab-savings .col-head-cell input.name:focus { outline: none; border-bottom: 1px solid var(--ink-soft); }
@@ -1125,12 +1113,6 @@
     color: var(--ink-soft); font-size: 12px; cursor: pointer; padding: 0;
   }
   #tab-savings .col-head-cell .remove-btn:hover { color: var(--expense); }
-  #tab-savings .col-head-cell .primary-toggle {
-    display: flex; align-items: center; justify-content: flex-end; gap: 4px;
-    margin-top: 6px; font-size: 11px; color: var(--ink-soft); cursor: pointer;
-  }
-  #tab-savings .col-head-cell .primary-toggle input { margin: 0; cursor: pointer; accent-color: var(--gold); }
-  #tab-savings .col-head-cell .primary-toggle.is-primary { color: var(--gold); font-weight: 600; }
   #tab-savings .col-head-cell.is-primary { background: var(--gold-bg); border-radius: 6px; padding: 4px 6px; margin: -4px -6px; }
   #tab-savings .section { margin-bottom: 26px; }
   #tab-savings .section-head { border-bottom: 2px solid var(--ink); padding-bottom: 6px; margin-bottom: 2px; }
@@ -1163,7 +1145,7 @@
   #tab-savings .footnote { margin-top: 30px; font-size: 12px; color: var(--ink-soft); text-align: center; }
 
   /* ================= Theme skins (decorative touches) ================= */
-  [data-skin="elder"] .primary-toggle input[type="checkbox"] {
+  [data-skin="elder"] .name-row input[type="radio"] {
     appearance: none;
     -webkit-appearance: none;
     width: 13px;
@@ -1172,26 +1154,25 @@
     margin: 0;
     padding: 0;
     border: 1.5px solid var(--ink-soft);
-    border-radius: 2px;
+    border-radius: 50%;
     background: var(--paper);
     position: relative;
     cursor: pointer;
   }
-  [data-skin="elder"] .primary-toggle input[type="checkbox"]:hover { border-color: var(--ink); }
-  [data-skin="elder"] .primary-toggle input[type="checkbox"]:checked {
+  [data-skin="elder"] .name-row input[type="radio"]:hover { border-color: var(--ink); }
+  [data-skin="elder"] .name-row input[type="radio"]:checked {
     background: var(--gold);
     border-color: var(--gold);
   }
-  [data-skin="elder"] .primary-toggle input[type="checkbox"]:checked::after {
+  [data-skin="elder"] .name-row input[type="radio"]:checked::after {
     content: "";
     position: absolute;
     left: 3px;
-    top: -1px;
-    width: 4px;
-    height: 8px;
-    border: solid var(--paper);
-    border-width: 0 2px 2px 0;
-    transform: rotate(45deg);
+    top: 3px;
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    background: var(--paper);
   }
   [data-skin="machina"] h1,
   [data-skin="machina"] .net-line .value {
@@ -1202,12 +1183,13 @@
   }
   [data-skin="machina"] .tab-btn.active { box-shadow: 0 0 10px rgba(82,255,198,0.35); }
   [data-skin="machina"] .tab-btn { padding: 9px 13px 9px; font-size: 13px; letter-spacing: -0.02em; }
-  [data-skin="machina"] .primary-toggle input[type="checkbox"] {
+  [data-skin="machina"] .name-row input[type="radio"] {
     appearance: none;
     -webkit-appearance: none;
     width: 13px;
     height: 13px;
     min-width: 13px;
+    margin: 0;
     border-radius: 50%;
     border: 1.5px solid #7A2233;
     background: #1A0508;
@@ -1215,8 +1197,8 @@
     cursor: pointer;
     transition: background .15s ease, box-shadow .15s ease, border-color .15s ease;
   }
-  [data-skin="machina"] .primary-toggle input[type="checkbox"]:hover { border-color: #FF4470; }
-  [data-skin="machina"] .primary-toggle input[type="checkbox"]:checked {
+  [data-skin="machina"] .name-row input[type="radio"]:hover { border-color: #FF4470; }
+  [data-skin="machina"] .name-row input[type="radio"]:checked {
     background: #FF4470;
     border-color: #FF4470;
     box-shadow: 0 0 4px 1px #FF4470, 0 0 10px 3px rgba(255,68,112,0.7), inset 0 0 2px rgba(255,255,255,0.5);
@@ -1915,25 +1897,21 @@
       scenarios.forEach(scenario => {
         const isPrimary = primaryId === scenario.id;
         const cell = el('div', 'value-cell col-head-cell' + (isPrimary ? ' is-primary' : ''));
-        const input = document.createElement('input');
-        input.className = 'name';
-        input.value = scenario.name;
-        input.addEventListener('input', e => { scenario.name = e.target.value; });
-        cell.appendChild(input);
-
-        const toggle = document.createElement('label');
-        toggle.className = 'primary-toggle' + (isPrimary ? ' is-primary' : '');
-        toggle.title = 'Use this scenario\'s monthly payment for the Monthly Budget "Housing" amount';
+        const nameRow = el('div', 'name-row');
         const checkbox = document.createElement('input');
         checkbox.type = 'radio';
         checkbox.name = 'mortgage-primary-scenario';
         checkbox.checked = isPrimary;
+        checkbox.title = 'Use this scenario\'s monthly payment for the Monthly Budget "Housing" amount';
+        checkbox.setAttribute('aria-label', 'Use this scenario\'s monthly payment for the Monthly Budget "Housing" amount');
         checkbox.addEventListener('change', () => selectPrimary(scenario.id));
-        const toggleText = document.createElement('span');
-        toggleText.textContent = isPrimary ? 'Used in budget' : 'Use in budget';
-        toggle.appendChild(checkbox);
-        toggle.appendChild(toggleText);
-        cell.appendChild(toggle);
+        nameRow.appendChild(checkbox);
+        const input = document.createElement('input');
+        input.className = 'name';
+        input.value = scenario.name;
+        input.addEventListener('input', e => { scenario.name = e.target.value; });
+        nameRow.appendChild(input);
+        cell.appendChild(nameRow);
 
         if (scenarios.length > 1) {
           const removeBtn = document.createElement('button');
@@ -2226,25 +2204,21 @@
       scenarios.forEach(scenario => {
         const isPrimary = primaryId === scenario.id;
         const cell = el('div', 'value-cell col-head-cell' + (isPrimary ? ' is-primary' : ''));
-        const input = document.createElement('input');
-        input.className = 'name';
-        input.value = scenario.name;
-        input.addEventListener('input', e => { scenario.name = e.target.value; });
-        cell.appendChild(input);
-
-        const toggle = document.createElement('label');
-        toggle.className = 'primary-toggle' + (isPrimary ? ' is-primary' : '');
-        toggle.title = 'Use this scenario\'s total for the Monthly Budget "Food" amount';
+        const nameRow = el('div', 'name-row');
         const checkbox = document.createElement('input');
         checkbox.type = 'radio';
         checkbox.name = 'food-primary-scenario';
         checkbox.checked = isPrimary;
+        checkbox.title = 'Use this scenario\'s total for the Monthly Budget "Food" amount';
+        checkbox.setAttribute('aria-label', 'Use this scenario\'s total for the Monthly Budget "Food" amount');
         checkbox.addEventListener('change', () => selectPrimary(scenario.id));
-        const toggleText = document.createElement('span');
-        toggleText.textContent = isPrimary ? 'Used in budget' : 'Use in budget';
-        toggle.appendChild(checkbox);
-        toggle.appendChild(toggleText);
-        cell.appendChild(toggle);
+        nameRow.appendChild(checkbox);
+        const input = document.createElement('input');
+        input.className = 'name';
+        input.value = scenario.name;
+        input.addEventListener('input', e => { scenario.name = e.target.value; });
+        nameRow.appendChild(input);
+        cell.appendChild(nameRow);
 
         if (scenarios.length > 1) {
           const removeBtn = document.createElement('button');
@@ -2439,25 +2413,21 @@
       scenarios.forEach(scenario => {
         const isPrimary = primaryId === scenario.id;
         const cell = el('div', 'value-cell col-head-cell' + (isPrimary ? ' is-primary' : ''));
-        const input = document.createElement('input');
-        input.className = 'name';
-        input.value = scenario.name;
-        input.addEventListener('input', e => { scenario.name = e.target.value; });
-        cell.appendChild(input);
-
-        const toggle = document.createElement('label');
-        toggle.className = 'primary-toggle' + (isPrimary ? ' is-primary' : '');
-        toggle.title = 'Use this scenario\'s total for the Monthly Budget "Car" amount';
+        const nameRow = el('div', 'name-row');
         const checkbox = document.createElement('input');
         checkbox.type = 'radio';
         checkbox.name = 'car-primary-scenario';
         checkbox.checked = isPrimary;
+        checkbox.title = 'Use this scenario\'s total for the Monthly Budget "Car" amount';
+        checkbox.setAttribute('aria-label', 'Use this scenario\'s total for the Monthly Budget "Car" amount');
         checkbox.addEventListener('change', () => selectPrimary(scenario.id));
-        const toggleText = document.createElement('span');
-        toggleText.textContent = isPrimary ? 'Used in budget' : 'Use in budget';
-        toggle.appendChild(checkbox);
-        toggle.appendChild(toggleText);
-        cell.appendChild(toggle);
+        nameRow.appendChild(checkbox);
+        const input = document.createElement('input');
+        input.className = 'name';
+        input.value = scenario.name;
+        input.addEventListener('input', e => { scenario.name = e.target.value; });
+        nameRow.appendChild(input);
+        cell.appendChild(nameRow);
 
         if (scenarios.length > 1) {
           const removeBtn = document.createElement('button');
@@ -2649,25 +2619,21 @@
       scenarios.forEach(scenario => {
         const isPrimary = primaryId === scenario.id;
         const cell = el('div', 'value-cell col-head-cell' + (isPrimary ? ' is-primary' : ''));
-        const input = document.createElement('input');
-        input.className = 'name';
-        input.value = scenario.name;
-        input.addEventListener('input', e => { scenario.name = e.target.value; });
-        cell.appendChild(input);
-
-        const toggle = document.createElement('label');
-        toggle.className = 'primary-toggle' + (isPrimary ? ' is-primary' : '');
-        toggle.title = 'Use this scenario\'s total for the Monthly Budget "Utilities" amount';
+        const nameRow = el('div', 'name-row');
         const checkbox = document.createElement('input');
         checkbox.type = 'radio';
         checkbox.name = 'utilities-primary-scenario';
         checkbox.checked = isPrimary;
+        checkbox.title = 'Use this scenario\'s total for the Monthly Budget "Utilities" amount';
+        checkbox.setAttribute('aria-label', 'Use this scenario\'s total for the Monthly Budget "Utilities" amount');
         checkbox.addEventListener('change', () => selectPrimary(scenario.id));
-        const toggleText = document.createElement('span');
-        toggleText.textContent = isPrimary ? 'Used in budget' : 'Use in budget';
-        toggle.appendChild(checkbox);
-        toggle.appendChild(toggleText);
-        cell.appendChild(toggle);
+        nameRow.appendChild(checkbox);
+        const input = document.createElement('input');
+        input.className = 'name';
+        input.value = scenario.name;
+        input.addEventListener('input', e => { scenario.name = e.target.value; });
+        nameRow.appendChild(input);
+        cell.appendChild(nameRow);
 
         if (scenarios.length > 1) {
           const removeBtn = document.createElement('button');
@@ -2854,25 +2820,21 @@
       scenarios.forEach(scenario => {
         const isPrimary = primaryId === scenario.id;
         const cell = el('div', 'value-cell col-head-cell' + (isPrimary ? ' is-primary' : ''));
-        const input = document.createElement('input');
-        input.className = 'name';
-        input.value = scenario.name;
-        input.addEventListener('input', e => { scenario.name = e.target.value; });
-        cell.appendChild(input);
-
-        const toggle = document.createElement('label');
-        toggle.className = 'primary-toggle' + (isPrimary ? ' is-primary' : '');
-        toggle.title = 'Use this scenario\'s total for the Monthly Budget "Savings" amount';
+        const nameRow = el('div', 'name-row');
         const checkbox = document.createElement('input');
         checkbox.type = 'radio';
         checkbox.name = 'savings-primary-scenario';
         checkbox.checked = isPrimary;
+        checkbox.title = 'Use this scenario\'s total for the Monthly Budget "Savings" amount';
+        checkbox.setAttribute('aria-label', 'Use this scenario\'s total for the Monthly Budget "Savings" amount');
         checkbox.addEventListener('change', () => selectPrimary(scenario.id));
-        const toggleText = document.createElement('span');
-        toggleText.textContent = isPrimary ? 'Used in budget' : 'Use in budget';
-        toggle.appendChild(checkbox);
-        toggle.appendChild(toggleText);
-        cell.appendChild(toggle);
+        nameRow.appendChild(checkbox);
+        const input = document.createElement('input');
+        input.className = 'name';
+        input.value = scenario.name;
+        input.addEventListener('input', e => { scenario.name = e.target.value; });
+        nameRow.appendChild(input);
+        cell.appendChild(nameRow);
 
         if (scenarios.length > 1) {
           const removeBtn = document.createElement('button');
@@ -3091,25 +3053,21 @@
       scenarios.forEach(scenario => {
         const isPrimary = primaryId === scenario.id;
         const cell = el('div', 'value-cell col-head-cell' + (isPrimary ? ' is-primary' : ''));
-        const input = document.createElement('input');
-        input.className = 'name';
-        input.value = scenario.name;
-        input.addEventListener('input', e => { scenario.name = e.target.value; });
-        cell.appendChild(input);
-
-        const toggle = document.createElement('label');
-        toggle.className = 'primary-toggle' + (isPrimary ? ' is-primary' : '');
-        toggle.title = 'Use this scenario\'s total for the Monthly Budget "Subscriptions" amount';
+        const nameRow = el('div', 'name-row');
         const checkbox = document.createElement('input');
         checkbox.type = 'radio';
         checkbox.name = 'subscriptions-primary-scenario';
         checkbox.checked = isPrimary;
+        checkbox.title = 'Use this scenario\'s total for the Monthly Budget "Subscriptions" amount';
+        checkbox.setAttribute('aria-label', 'Use this scenario\'s total for the Monthly Budget "Subscriptions" amount');
         checkbox.addEventListener('change', () => selectPrimary(scenario.id));
-        const toggleText = document.createElement('span');
-        toggleText.textContent = isPrimary ? 'Used in budget' : 'Use in budget';
-        toggle.appendChild(checkbox);
-        toggle.appendChild(toggleText);
-        cell.appendChild(toggle);
+        nameRow.appendChild(checkbox);
+        const input = document.createElement('input');
+        input.className = 'name';
+        input.value = scenario.name;
+        input.addEventListener('input', e => { scenario.name = e.target.value; });
+        nameRow.appendChild(input);
+        cell.appendChild(nameRow);
 
         if (scenarios.length > 1) {
           const removeBtn = document.createElement('button');
