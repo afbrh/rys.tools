@@ -141,6 +141,9 @@
     padding-bottom: 8px;
     margin-bottom: -8px;
   }
+  .tab-label-short { display: none; }
+  .tabs-scroll.labels-short .tab-label-full { display: none; }
+  .tabs-scroll.labels-short .tab-label-short { display: inline; }
   .tab-btn {
     font-family: var(--font-body);
     font-weight: 600;
@@ -1268,12 +1271,12 @@
         <span class="tab-separator" aria-hidden="true">&minus;</span>
       </div>
       <div class="tabs-scroll">
-        <button class="tab-btn" data-tab="mortgage" onclick="switchTab('mortgage')">Housing</button>
-        <button class="tab-btn" data-tab="food" onclick="switchTab('food')">Food</button>
-        <button class="tab-btn" data-tab="car" onclick="switchTab('car')">Car</button>
-        <button class="tab-btn" data-tab="utilities" onclick="switchTab('utilities')">Utilities</button>
-        <button class="tab-btn" data-tab="savings" onclick="switchTab('savings')">Savings</button>
-        <button class="tab-btn" data-tab="subscriptions" onclick="switchTab('subscriptions')">Subs</button>
+        <button class="tab-btn" data-tab="mortgage" onclick="switchTab('mortgage')"><span class="tab-label-full">Housing</span><span class="tab-label-short" aria-hidden="true">H</span></button>
+        <button class="tab-btn" data-tab="food" onclick="switchTab('food')"><span class="tab-label-full">Food</span><span class="tab-label-short" aria-hidden="true">F</span></button>
+        <button class="tab-btn" data-tab="car" onclick="switchTab('car')"><span class="tab-label-full">Car</span><span class="tab-label-short" aria-hidden="true">C</span></button>
+        <button class="tab-btn" data-tab="utilities" onclick="switchTab('utilities')"><span class="tab-label-full">Utilities</span><span class="tab-label-short" aria-hidden="true">U</span></button>
+        <button class="tab-btn" data-tab="savings" onclick="switchTab('savings')"><span class="tab-label-full">Savings</span><span class="tab-label-short" aria-hidden="true">Sa</span></button>
+        <button class="tab-btn" data-tab="subscriptions" onclick="switchTab('subscriptions')"><span class="tab-label-full">Subs</span><span class="tab-label-short" aria-hidden="true">Su</span></button>
       </div>
       <div class="tabs-fixed">
         <span class="tab-separator" aria-hidden="true">=</span>
@@ -3623,6 +3626,25 @@
     dropdownLabelFitResizeTimer = setTimeout(updateDropdownLabelFit, 100);
   });
 
+  // Shrinks the middle tab labels (Housing, Food, Car, ...) down to short initials only
+  // when they'd otherwise need horizontal scrolling to all fit — content-aware, not a
+  // fixed viewport breakpoint. Horizontal scroll stays as a fallback for anything still
+  // too narrow even with the shrunk labels.
+  function updateTabLabelFit() {
+    const scrollEl = document.querySelector('.tabs-scroll');
+    if (!scrollEl) return;
+    scrollEl.classList.remove('labels-short');
+    if (scrollEl.scrollWidth > scrollEl.clientWidth + 1) {
+      scrollEl.classList.add('labels-short');
+    }
+  }
+
+  let tabLabelFitResizeTimer = null;
+  window.addEventListener('resize', function () {
+    clearTimeout(tabLabelFitResizeTimer);
+    tabLabelFitResizeTimer = setTimeout(updateTabLabelFit, 100);
+  });
+
   // save-status text length varies a lot (sign-in progress, errors, "Saved to Google
   // Drive", etc.) and can itself push tool-controls onto a new line, so watch it
   // directly instead of re-checking fit at every call site that sets its text.
@@ -3712,6 +3734,7 @@
     if (headerTabs) headerTabs.hidden = !show;
     if (content) content.hidden = !show;
     updateDropdownLabelFit();
+    updateTabLabelFit();
   }
 
   function currentActiveTool() {
