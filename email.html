@@ -80,24 +80,6 @@
     --letter-spacing-header: 0.04em;
     --bg-texture: repeating-linear-gradient(0deg, rgba(82,255,198,0.025) 0px, rgba(82,255,198,0.025) 1px, transparent 1px, transparent 3px);
   }
-  /* Everything below the sticky header borrows its typeface from another theme —
-     Machina's in Dark, Elder's in Light — while the header itself keeps the plain
-     sans-serif look. Scoped to #app-content only, and only for Light/Dark, since
-     Elder/Machina already use their own font everywhere (header included). */
-  :root:not([data-theme]):not([data-skin]) #app-content {
-    --font-header: 'MedievalSharp', cursive;
-    --font-body: 'IM Fell English', serif;
-  }
-  :root[data-theme="dark"] #app-content {
-    --font-header: 'Orbitron', sans-serif;
-    --font-body: 'IBM Plex Mono', monospace;
-  }
-  /* Re-resolves font-family from the (possibly just-overridden) --font-body here so
-     plain inherited text picks it up — body's own font-family already resolved to
-     the header's font by the time it reaches this subtree, so without this, only
-     elements with an explicit var(--font-header)/var(--font-body) rule (h1s, etc.)
-     would actually change. */
-  #app-content { font-family: var(--font-body); }
   * { box-sizing: border-box; }
   body {
     margin: 0;
