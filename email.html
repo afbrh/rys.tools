@@ -387,8 +387,11 @@
      properly instead of sitting oddly narrow inside a wider column. */
   .mail-app { max-width: 860px; margin: 20px auto 0; }
   /* Lives in the sticky header now (see #mail-header-toolbar in the markup) so it stays
-     put while the list scrolls, instead of scrolling away with the rest of the page. */
-  .mail-toolbar { display: flex; align-items: center; flex-wrap: wrap; gap: 10px; margin: 10px 0 14px; }
+     put while the list scrolls, instead of scrolling away with the rest of the page.
+     The extra bottom margin is deliberate — without it, scrolled list content reaches
+     the header's bottom edge with no buffer and looks like it's disappearing right
+     underneath Compose/search instead of sliding behind the header. */
+  .mail-toolbar { display: flex; align-items: center; flex-wrap: wrap; gap: 10px; margin: 10px 0 28px; }
   .mail-toolbar[hidden] { display: none; }
   .mail-toolbar .mail-status { font-size: 13px; color: var(--ink-soft); margin-left: 4px; }
   .mail-search { display: flex; flex: 1 1 200px; max-width: 320px; min-width: 140px; position: relative; }
