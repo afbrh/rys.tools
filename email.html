@@ -439,11 +439,11 @@
   .mail-list-item:hover { background: var(--paper-line); }
   .mail-list-item.active { background: var(--gold-bg); }
   .mail-list-item .mail-row-top { display: flex; justify-content: space-between; gap: 8px; font-size: 13px; margin-bottom: 3px; }
-  .mail-list-item .mail-from { font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .mail-list-item .mail-from { font-weight: 600; overflow: hidden; text-overflow: clip; white-space: nowrap; }
   .mail-list-item.unread .mail-from, .mail-list-item.unread .mail-subject { font-weight: 700; color: var(--ink); }
   .mail-list-item .mail-date { flex-shrink: 0; color: var(--ink-soft); font-family: var(--font-mono); font-size: 11px; }
-  .mail-list-item .mail-subject { font-size: 13.5px; margin-bottom: 2px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .mail-list-item .mail-snippet { font-size: 12.5px; color: var(--ink-soft); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .mail-list-item .mail-subject { font-size: 13.5px; margin-bottom: 2px; overflow: hidden; text-overflow: clip; white-space: nowrap; }
+  .mail-list-item .mail-snippet { font-size: 12.5px; color: var(--ink-soft); overflow: hidden; text-overflow: clip; white-space: nowrap; }
 
   .mail-detail {
     flex: 2 1 480px;
