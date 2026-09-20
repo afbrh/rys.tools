@@ -513,24 +513,25 @@
   .compose-status { font-size: 13px; color: var(--gold); }
   .compose-status.error { color: var(--expense); }
 
-  .mail-detail-back { display: none; }
+  /* Mobile: no side-by-side panes — the list is always visible, and tapping a row
+     expands its detail inline (right below that row) instead of switching to a
+     separate detail view. Desktop keeps the original two-pane layout untouched. */
+  .mail-inline-detail {
+    display: none;
+    padding: 14px 14px 18px;
+    border-bottom: 1px solid var(--paper-line);
+    background: var(--paper);
+  }
 
   @media (max-width: 720px) {
     .mail-layout { flex-direction: column; }
-    .mail-list, .mail-detail { max-width: none; width: 100%; max-height: none; }
-    .mail-list.has-open-detail { display: none; }
-    .mail-detail-back {
-      display: inline-flex;
-      align-items: center;
-      background: none;
-      border: none;
-      color: var(--ink-soft);
-      font-family: var(--font-body);
-      font-size: 13px;
-      cursor: pointer;
-      padding: 0 0 14px;
-    }
-    .mail-detail-back:hover { color: var(--ink); }
+    /* flex: none + height: auto — otherwise the column flex item keeps its desktop
+       flex-basis (320px) as a used height and clips/scrolls internally instead of
+       growing with an expanded row, since flex-basis maps to height on the main axis
+       once the layout switches to flex-direction: column. */
+    .mail-list { flex: none; max-width: none; width: 100%; height: auto; max-height: none; overflow-y: visible; }
+    .mail-detail { display: none; }
+    .mail-inline-detail { display: block; }
   }
 </style>
 </head>
@@ -1421,11 +1422,17 @@
       }
     }
 
+    // Below 720px there's no side-by-side detail pane — a tap expands the message
+    // inline within the list instead (see openMessage/toggleInlineDetail). Desktop
+    // keeps the original two-pane layout untouched.
+    function isMobileMailLayout() {
+      return window.matchMedia('(max-width: 720px)').matches;
+    }
+
     function closeDetail() {
       openMessageId = null;
-      document.querySelectorAll('.mail-list-item').forEach(el => el.classList.remove('active'));
-      const mailListEl = document.getElementById('mail-list');
-      if (mailListEl) mailListEl.classList.remove('has-open-detail');
+      document.querySelectorAll('.mail-list-item.active').forEach(el => el.classList.remove('active'));
+      document.querySelectorAll('.mail-inline-detail').forEach(el => el.remove());
       const detailEl = document.getElementById('mail-detail');
       if (detailEl) {
         detailEl.innerHTML = '';
@@ -1437,12 +1444,12 @@
     }
 
     async function openMessage(id) {
+      if (isMobileMailLayout()) return toggleInlineDetail(id);
+
       openMessageId = id;
       document.querySelectorAll('.mail-list-item').forEach(el => {
         el.classList.toggle('active', el.dataset.id === id);
       });
-      const mailListEl = document.getElementById('mail-list');
-      if (mailListEl) mailListEl.classList.add('has-open-detail');
 
       const detailEl = document.getElementById('mail-detail');
       if (!detailEl) return;
@@ -1454,7 +1461,9 @@
 
       try {
         const msg = await GoogleDriveSync.gmailGetMessage(id, 'full');
-        renderDetail(msg);
+        if (openMessageId !== id) return; // superseded while in flight
+        detailEl.innerHTML = '';
+        detailEl.appendChild(buildDetailContent(msg));
       } catch (e) {
         detailEl.innerHTML = '';
         const err = document.createElement('p');
@@ -1464,36 +1473,75 @@
       }
     }
 
-    function renderDetail(msg) {
-      const detailEl = document.getElementById('mail-detail');
-      if (!detailEl) return;
+    // Tapping a (mobile) row's header again collapses it — toggling the same id closes
+    // it, tapping a different row closes whatever else was open first (only one message
+    // expanded at a time), matching how the .mail-list-item click handler always calls
+    // this same function regardless of which row is currently expanded.
+    async function toggleInlineDetail(id) {
+      const listEl = document.getElementById('mail-list');
+      const row = listEl && listEl.querySelector('.mail-swipe-row[data-id="' + id + '"]');
+      if (!listEl || !row) return;
+      const btn = row.querySelector('.mail-list-item');
+      const existing = listEl.querySelector('.mail-inline-detail[data-detail-for="' + id + '"]');
+
+      if (existing) {
+        existing.remove();
+        if (btn) btn.classList.remove('active');
+        openMessageId = null;
+        return;
+      }
+
+      listEl.querySelectorAll('.mail-inline-detail').forEach(el => el.remove());
+      listEl.querySelectorAll('.mail-list-item.active').forEach(el => el.classList.remove('active'));
+      if (btn) btn.classList.add('active');
+      openMessageId = id;
+
+      const detailContainer = document.createElement('div');
+      detailContainer.className = 'mail-inline-detail';
+      detailContainer.dataset.detailFor = id;
+      const loading = document.createElement('p');
+      loading.className = 'mail-empty';
+      loading.textContent = 'Loading…';
+      detailContainer.appendChild(loading);
+      row.insertAdjacentElement('afterend', detailContainer);
+
+      try {
+        const msg = await GoogleDriveSync.gmailGetMessage(id, 'full');
+        if (openMessageId !== id) return; // collapsed, or a different row opened, while this was in flight
+        detailContainer.innerHTML = '';
+        detailContainer.appendChild(buildDetailContent(msg));
+      } catch (e) {
+        if (openMessageId !== id) return;
+        detailContainer.innerHTML = '';
+        const err = document.createElement('p');
+        err.className = 'mail-empty';
+        err.textContent = 'Couldn\'t load this message: ' + e.message;
+        detailContainer.appendChild(err);
+      }
+    }
+
+    // Shared by the desktop side pane and the mobile inline expansion — same subject/
+    // from/to/reply/body markup either way, just placed in a different container.
+    function buildDetailContent(msg) {
       const headers = msg.payload ? msg.payload.headers : [];
       const from = header(headers, 'From');
       const to = header(headers, 'To');
       const subject = header(headers, 'Subject') || '(no subject)';
 
-      detailEl.innerHTML = '';
-
-      const backBtn = document.createElement('button');
-      backBtn.type = 'button';
-      backBtn.className = 'mail-detail-back';
-      backBtn.textContent = '‹ Back to inbox';
-      backBtn.addEventListener('click', closeDetail);
-      detailEl.appendChild(backBtn);
+      const wrap = document.createElement('div');
 
       const subjectEl = document.createElement('h2');
       subjectEl.className = 'mail-detail-subject';
       subjectEl.textContent = subject;
-      detailEl.appendChild(subjectEl);
+      wrap.appendChild(subjectEl);
 
       const fromEl = document.createElement('div');
       fromEl.className = 'mail-detail-meta';
-      fromEl.innerHTML = '';
       const fromLabel = document.createElement('strong');
       fromLabel.textContent = 'From: ';
       fromEl.appendChild(fromLabel);
       fromEl.appendChild(document.createTextNode(from));
-      detailEl.appendChild(fromEl);
+      wrap.appendChild(fromEl);
 
       if (to) {
         const toEl = document.createElement('div');
@@ -1502,7 +1550,7 @@
         toLabel.textContent = 'To: ';
         toEl.appendChild(toLabel);
         toEl.appendChild(document.createTextNode(to));
-        detailEl.appendChild(toEl);
+        wrap.appendChild(toEl);
       }
 
       const actions = document.createElement('div');
@@ -1510,13 +1558,16 @@
       const replyBtn = document.createElement('button');
       replyBtn.className = 'save-btn export-btn';
       replyBtn.textContent = 'Reply';
-      replyBtn.addEventListener('click', () => openCompose({
-        to: from,
-        subject: /^re:/i.test(subject) ? subject : ('Re: ' + subject),
-        threadId: msg.threadId
-      }));
+      replyBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        openCompose({
+          to: from,
+          subject: /^re:/i.test(subject) ? subject : ('Re: ' + subject),
+          threadId: msg.threadId
+        });
+      });
       actions.appendChild(replyBtn);
-      detailEl.appendChild(actions);
+      wrap.appendChild(actions);
 
       const bodyEl = document.createElement('div');
       bodyEl.className = 'mail-detail-body';
@@ -1526,7 +1577,9 @@
       } else {
         bodyEl.textContent = '(No readable body)';
       }
-      detailEl.appendChild(bodyEl);
+      wrap.appendChild(bodyEl);
+
+      return wrap;
     }
 
     let replyThreadId = null;
