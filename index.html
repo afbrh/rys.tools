@@ -1,13 +1,13 @@
 <!DOCTYPE html>
 <html lang="en"><head>
-<script>(function(){try{var a=localStorage.getItem('munny_appearance');if(a!=='light'&&a!=='dark'&&a!=='elder'&&a!=='machina'){var s=localStorage.getItem('munny_skin');if(s==='elder'||s==='machina'){a=s;}else{a=(localStorage.getItem('munny_theme')==='light')?'light':'dark';}}if(a==='elder'||a==='machina'){document.documentElement.setAttribute('data-skin',a);}else if(a==='dark'){document.documentElement.setAttribute('data-theme','dark');}}catch(e){}})();</script>
+<script>(function(){try{var a=localStorage.getItem('munny_appearance');if(a!=='light'&&a!=='dark'&&a!=='elder'&&a!=='machina'&&a!=='console'){var s=localStorage.getItem('munny_skin');if(s==='elder'||s==='machina'){a=s;}else{a=(localStorage.getItem('munny_theme')==='light')?'light':'dark';}}if(a==='elder'||a==='machina'||a==='console'){document.documentElement.setAttribute('data-skin',a);}else if(a==='dark'){document.documentElement.setAttribute('data-theme','dark');}}catch(e){}})();</script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Ry's Tools</title>
 <link rel="icon" type="image/png" href="logo.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
-<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&amp;family=Source+Sans+Pro:wght@400;600&amp;family=MedievalSharp&amp;family=IM+Fell+English&amp;family=Orbitron:wght@500;700&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&amp;family=Source+Sans+Pro:wght@400;600&amp;family=MedievalSharp&amp;family=IM+Fell+English&amp;family=Orbitron:wght@500;700&amp;family=VT323&amp;display=swap" rel="stylesheet">
 <script src="https://accounts.google.com/gsi/client" async="" defer=""></script>
 <style>
   :root {
@@ -79,6 +79,24 @@
     --font-mono: 'IBM Plex Mono', monospace;
     --letter-spacing-header: 0.04em;
     --bg-texture: repeating-linear-gradient(0deg, rgba(82,255,198,0.025) 0px, rgba(82,255,198,0.025) 1px, transparent 1px, transparent 3px);
+  }
+  :root[data-skin="console"] {
+    --paper: #000000;
+    --paper-line: #262626;
+    --ink: #FFFFFF;
+    --ink-soft: #AAAAAA;
+    --income: #FFFFFF;
+    --income-bg: #141414;
+    --expense: #FFFFFF;
+    --expense-bg: #141414;
+    --gold: #FFFFFF;
+    --gold-bg: #1A1A1A;
+    --danger: #FFFFFF;
+    --font-header: 'VT323', monospace;
+    --font-body: 'VT323', monospace;
+    --font-mono: 'VT323', monospace;
+    --letter-spacing-header: 0.03em;
+    --bg-texture: repeating-linear-gradient(0deg, rgba(255,255,255,0.03) 0px, rgba(255,255,255,0.03) 1px, transparent 1px, transparent 3px);
   }
   * { box-sizing: border-box; }
   body {
@@ -1225,6 +1243,14 @@
   }
   [data-skin="machina"] .tab-btn.active { box-shadow: 0 0 10px rgba(82,255,198,0.35); }
   [data-skin="machina"] .tab-btn { padding: 9px 13px 9px; font-size: 13px; letter-spacing: -0.02em; }
+  [data-skin="console"] h1,
+  [data-skin="console"] .net-line .value {
+    text-shadow: 0 0 6px rgba(255,255,255,0.55);
+  }
+  [data-skin="console"] .row.locked input {
+    text-shadow: 0 0 2px rgba(255,255,255,0.45);
+  }
+  [data-skin="console"] .tab-btn.active { box-shadow: 0 0 8px rgba(255,255,255,0.3); }
   [data-skin="machina"] .name-row input[type="radio"] {
     appearance: none;
     -webkit-appearance: none;
@@ -1277,6 +1303,7 @@
         <button type="button" class="theme-dropdown-item" data-value="dark" role="menuitemradio" onclick="setAppearance('dark')">Dark</button>
         <button type="button" class="theme-dropdown-item" data-value="elder" role="menuitemradio" onclick="setAppearance('elder')">Elder</button>
         <button type="button" class="theme-dropdown-item" data-value="machina" role="menuitemradio" onclick="setAppearance('machina')">Machina</button>
+        <button type="button" class="theme-dropdown-item" data-value="console" role="menuitemradio" onclick="setAppearance('console')">Console</button>
       </div>
     </div>
     <div class="tool-controls" id="tool-controls">
@@ -3562,7 +3589,7 @@
   }
 
   function setAppearance(appearance) {
-    if (appearance === 'elder' || appearance === 'machina') {
+    if (appearance === 'elder' || appearance === 'machina' || appearance === 'console') {
       document.documentElement.setAttribute('data-skin', appearance);
       document.documentElement.removeAttribute('data-theme');
     } else if (appearance === 'dark') {
@@ -3657,7 +3684,7 @@
   }
 
   function syncAppearanceRadios(appearance) {
-    const label = { light: 'Light', dark: 'Dark', elder: 'Elder', machina: 'Machina' }[appearance] || 'Dark';
+    const label = { light: 'Light', dark: 'Dark', elder: 'Elder', machina: 'Machina', console: 'Console' }[appearance] || 'Dark';
     const toggleLabel = document.getElementById('theme-dropdown-label');
     if (toggleLabel) toggleLabel.textContent = label;
     const toggleLabelShort = document.getElementById('theme-dropdown-label-short');
@@ -3749,7 +3776,7 @@
   function currentAppearance() {
     let appearance;
     try { appearance = localStorage.getItem('munny_appearance'); } catch (e) {}
-    if (appearance === 'light' || appearance === 'dark' || appearance === 'elder' || appearance === 'machina') {
+    if (appearance === 'light' || appearance === 'dark' || appearance === 'elder' || appearance === 'machina' || appearance === 'console') {
       return appearance;
     }
     // Migrate from the older separate dark-mode / skin toggles, if present.
