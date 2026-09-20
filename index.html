@@ -1847,65 +1847,14 @@
       render();
     }
 
-    // "Fill" pulls this week's Freddie Mac Primary Mortgage Market Survey average
-    // (30yr and 15yr fixed) via FRED, the standard authoritative free source for US
-    // mortgage rates — proxied because FRED doesn't allow direct browser requests
-    // (no CORS headers). 20yr/10yr aren't part of that survey, so they're estimated
-    // by linear interpolation/extrapolation along the 15yr-to-30yr line.
-    // Several independent public CORS proxies in front of FRED, tried in order — none of
-    // these free services are individually reliable (they rate-limit, go down, or get
-    // blocked by browser privacy features), so spreading attempts across providers/
-    // endpoints gives the best real-world odds without running our own server.
+    // "Fill" reads mortgage-rates.json, a same-origin file that a scheduled GitHub Actions
+    // workflow (.github/workflows/update-mortgage-rates.yml) regenerates daily by fetching
+    // Freddie Mac's Primary Mortgage Market Survey average (30yr/15yr fixed) from FRED
+    // server-side. Same-origin means no CORS and nothing for a browser/extension to block.
+    // 20yr/10yr aren't part of that survey, so they're estimated by linear interpolation/
+    // extrapolation along the 15yr-to-30yr line.
     const FILL_BTN_DEFAULT_TITLE = 'Fill every scenario\'s interest rate with this week\'s average rate for its loan term, from Freddie Mac\'s national survey';
-    const FRED_PROXIES = [
-      {
-        label: 'allorigins',
-        build: url => 'https://api.allorigins.win/raw?url=' + encodeURIComponent(url),
-        parse: res => res.text()
-      },
-      {
-        label: 'codetabs',
-        build: url => 'https://api.codetabs.com/v1/proxy?quest=' + encodeURIComponent(url),
-        parse: res => res.text()
-      },
-      {
-        label: 'allorigins-get',
-        build: url => 'https://api.allorigins.win/get?url=' + encodeURIComponent(url),
-        parse: async res => {
-          const json = await res.json();
-          const contents = String(json.contents || '');
-          const commaIdx = contents.indexOf(',');
-          return commaIdx !== -1 ? atob(contents.slice(commaIdx + 1)) : contents;
-        }
-      }
-    ];
-
-    function fetchWithTimeout(url, ms) {
-      const ctrl = new AbortController();
-      const timer = setTimeout(() => ctrl.abort(), ms);
-      return fetch(url, { signal: ctrl.signal }).finally(() => clearTimeout(timer));
-    }
-
-    async function fetchFredLatest(seriesId) {
-      const target = 'https://fred.stlouisfed.org/graph/fredgraph.csv?id=' + seriesId;
-      const errors = [];
-      for (const proxy of FRED_PROXIES) {
-        try {
-          const res = await fetchWithTimeout(proxy.build(target), 10000);
-          if (!res.ok) throw new Error('HTTP ' + res.status);
-          const text = await proxy.parse(res);
-          const lines = text.trim().split('\n');
-          for (let i = lines.length - 1; i >= 1; i--) {
-            const val = parseFloat(lines[i].split(',')[1]);
-            if (!isNaN(val)) return val;
-          }
-          throw new Error('no numeric rate in response');
-        } catch (e) {
-          errors.push(proxy.label + ': ' + (e.name === 'AbortError' ? 'timed out' : e.message));
-        }
-      }
-      throw new Error(errors.join(' — '));
-    }
+    const STALE_RATE_DATA_DAYS = 12; // survey publishes weekly; this gives a couple of missed-update cycles of slack
 
     async function fillMarketRates() {
       const btn = document.getElementById('mortgage-fill-rates-btn');
@@ -1916,10 +1865,13 @@
       btn.title = FILL_BTN_DEFAULT_TITLE;
       if (status) status.textContent = '';
       try {
-        const [rate30, rate15] = await Promise.all([
-          fetchFredLatest('MORTGAGE30US'),
-          fetchFredLatest('MORTGAGE15US')
-        ]);
+        const res = await fetch('/mortgage-rates.json', { cache: 'no-store' });
+        if (!res.ok) throw new Error('HTTP ' + res.status + ' loading mortgage-rates.json');
+        const data = await res.json();
+        const rate30 = parseFloat(data.rate30);
+        const rate15 = parseFloat(data.rate15);
+        if (isNaN(rate30) || isNaN(rate15)) throw new Error('mortgage-rates.json is missing rate data');
+
         const slopePerFiveYears = (rate30 - rate15) / 3; // (30 - 15) years = three 5-year steps
         const ratesByTerm = {
           '30': rate30,
@@ -1932,10 +1884,18 @@
           if (rate !== undefined) scenario.values.rate = Math.round(rate * 100) / 100;
         });
         render();
+
+        const ageDays = data.asOf ? (Date.now() - new Date(data.asOf + 'T00:00:00Z').getTime()) / 86400000 : null;
+        const stale = ageDays !== null && ageDays > STALE_RATE_DATA_DAYS;
+
         const freshBtn = document.getElementById('mortgage-fill-rates-btn');
         if (freshBtn) {
-          freshBtn.textContent = 'Filled ✓';
-          setTimeout(() => { freshBtn.textContent = 'Fill'; }, 2500);
+          freshBtn.textContent = stale ? ('Filled (stale, as of ' + data.asOf + ')') : 'Filled ✓';
+          setTimeout(() => { const b = document.getElementById('mortgage-fill-rates-btn'); if (b) b.textContent = 'Fill'; }, stale ? 5000 : 2500);
+        }
+        const freshStatus = document.getElementById('mortgage-fill-rates-status');
+        if (freshStatus && stale) {
+          freshStatus.textContent = 'Rates are from ' + data.asOf + ' — the daily updater may be stuck; check the GitHub Actions tab.';
         }
       } catch (e) {
         console.error('fillMarketRates failed:', e.message);
