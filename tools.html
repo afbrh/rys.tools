@@ -147,10 +147,11 @@
   /* Single letters don't need the same horizontal breathing room full words do — tighten
      each tab's padding and the gaps between them so the shrunk row has the best chance
      of fitting without horizontal scroll on narrow/mobile widths. */
-  .tabs.labels-short .tab-btn { padding-left: 9px; padding-right: 9px; }
+  .tabs.labels-short .tab-btn { padding-left: 6px; padding-right: 6px; }
+  .tabs.labels-short .tab-separator { padding: 0 1px; }
   .tabs.labels-short .tabs-fixed,
-  .tabs.labels-short .tabs-scroll { gap: 3px; }
-  .tabs.labels-short { gap: 3px; }
+  .tabs.labels-short .tabs-scroll { gap: 2px; }
+  .tabs.labels-short { gap: 2px; }
   .tab-btn {
     font-family: var(--font-body);
     font-weight: 600;
