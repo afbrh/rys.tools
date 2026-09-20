@@ -393,19 +393,35 @@
     overflow-y: auto;
   }
   .mail-list-empty { padding: 20px; font-size: 14px; color: var(--ink-soft); text-align: center; }
+  .mail-swipe-row { position: relative; overflow: hidden; border-bottom: 1px solid var(--paper-line); }
+  .mail-swipe-row:last-child { border-bottom: none; }
+  .mail-swipe-action {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    padding-right: 22px;
+    background: var(--gold);
+    color: var(--paper);
+    font-family: var(--font-body);
+    font-weight: 600;
+    font-size: 13px;
+  }
   .mail-list-item {
+    position: relative;
     display: block;
     width: 100%;
     text-align: left;
-    background: none;
+    background: var(--paper);
     border: none;
-    border-bottom: 1px solid var(--paper-line);
     padding: 12px 14px;
     cursor: pointer;
     font-family: var(--font-body);
     color: var(--ink);
+    touch-action: pan-y;
+    user-select: none;
   }
-  .mail-list-item:last-child { border-bottom: none; }
   .mail-list-item:hover { background: var(--paper-line); }
   .mail-list-item.active { background: var(--gold-bg); }
   .mail-list-item .mail-row-top { display: flex; justify-content: space-between; gap: 8px; font-size: 13px; margin-bottom: 3px; }
@@ -851,7 +867,7 @@
     // tool's sign-in). A token saved by another tool's Drive-only sign-in still works for
     // isSignedIn()/Drive calls here, but Gmail calls need hasGmailScope() to be true —
     // see handleGoogleSignIn()/MailApp below for the reconnect prompt when it isn't.
-    const SCOPE = 'https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/userinfo.email https://www.googleapis.com/auth/gmail.readonly https://www.googleapis.com/auth/gmail.send';
+    const SCOPE = 'https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/userinfo.email https://www.googleapis.com/auth/gmail.readonly https://www.googleapis.com/auth/gmail.send https://www.googleapis.com/auth/gmail.modify';
     const FILE_NAME = 'munny-data.json';
     const FILE_ID_KEY = 'munny_drive_file_id';
     const TOKEN_KEY = 'munny_google_token';
@@ -897,14 +913,17 @@
       return !!accessToken;
     }
 
-    // A token saved by a Drive-only sign-in (from another tool page) is still valid for
-    // isSignedIn(), but Gmail calls with it will fail — this checks whether the scope
-    // actually granted at sign-in time included Gmail, so the UI can ask to reconnect
-    // instead of just failing.
+    // A token saved by a Drive-only sign-in (from another tool page), or by an earlier
+    // version of this page that requested fewer Gmail scopes, is still valid for
+    // isSignedIn() but will 403 on some/all Gmail calls — this checks the scope actually
+    // granted at sign-in time against everything this page currently needs, so the UI
+    // can ask to reconnect instead of just failing partway through an action.
+    const REQUIRED_GMAIL_SCOPES = ['gmail.readonly', 'gmail.send', 'gmail.modify'];
     function hasGmailScope() {
       let stored;
       try { stored = JSON.parse(localStorage.getItem(TOKEN_KEY) || 'null'); } catch (e) { stored = null; }
-      return !!(stored && typeof stored.scope === 'string' && stored.scope.indexOf('gmail') !== -1);
+      if (!stored || typeof stored.scope !== 'string') return false;
+      return REQUIRED_GMAIL_SCOPES.every(s => stored.scope.indexOf(s) !== -1);
     }
 
     function signIn() {
@@ -1078,7 +1097,19 @@
       return resp.json();
     }
 
-    return { isSignedIn, signIn, load, save, getUserEmail, restoreSession, hasGmailScope, gmailListInbox, gmailGetMessage, gmailSend };
+    // Archiving is just removing the INBOX label — the message isn't deleted or even
+    // moved, it just stops showing up in the inbox view/query.
+    async function gmailArchive(id) {
+      const resp = await api('https://gmail.googleapis.com/gmail/v1/users/me/messages/' + id + '/modify', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ removeLabelIds: ['INBOX'] })
+      });
+      if (!resp.ok) throw new Error(await errorFromResponse(resp));
+      return resp.json();
+    }
+
+    return { isSignedIn, signIn, load, save, getUserEmail, restoreSession, hasGmailScope, gmailListInbox, gmailGetMessage, gmailSend, gmailArchive };
   })();
 
   /* ================= Mail app (namespaced) ================= */
@@ -1265,6 +1296,19 @@
       const subject = header(headers, 'Subject') || '(no subject)';
       const isUnread = (msg.labelIds || []).indexOf('UNREAD') !== -1;
 
+      // Swiping left slides .mail-list-item (the visible foreground row) to reveal the
+      // "Archive" action sitting behind it in .mail-swipe-row — the row itself never
+      // moves, only its contents do, which is what makes the action feel like it slides
+      // in from behind rather than the row just sliding off unexplained.
+      const row = document.createElement('div');
+      row.className = 'mail-swipe-row';
+      row.dataset.id = msg.id;
+
+      const action = document.createElement('div');
+      action.className = 'mail-swipe-action';
+      action.textContent = 'Archive';
+      row.appendChild(action);
+
       const btn = document.createElement('button');
       btn.type = 'button';
       btn.className = 'mail-list-item' + (isUnread ? ' unread' : '') + (msg.id === openMessageId ? ' active' : '');
@@ -1292,8 +1336,89 @@
       btn.appendChild(top);
       btn.appendChild(subjectEl);
       btn.appendChild(snippetEl);
-      btn.addEventListener('click', () => openMessage(msg.id));
-      return btn;
+      row.appendChild(btn);
+
+      attachSwipeToArchive(btn, msg.id);
+      return row;
+    }
+
+    // Pointer Events cover touch, mouse, and pen with one code path — a real swipe on a
+    // phone and a click-drag with a mouse both work the same way here. Only a swipe that
+    // moves further horizontally than vertically counts (otherwise a normal vertical
+    // scroll through the list would keep getting hijacked), and only leftward swipes
+    // do anything, per what was actually asked for.
+    function attachSwipeToArchive(el, id) {
+      const THRESHOLD = 70;
+      const MAX = 96;
+      let dragging = false, decided = false, horizontal = false;
+      let startX = 0, startY = 0, dx = 0;
+      let suppressClick = false;
+
+      function onDown(e) {
+        if (e.pointerType === 'mouse' && e.button !== 0) return;
+        dragging = true; decided = false; horizontal = false; dx = 0;
+        startX = e.clientX; startY = e.clientY;
+        el.style.transition = 'none';
+      }
+      function onMove(e) {
+        if (!dragging) return;
+        const curDx = e.clientX - startX;
+        const curDy = e.clientY - startY;
+        if (!decided) {
+          if (Math.abs(curDx) < 8 && Math.abs(curDy) < 8) return;
+          decided = true;
+          horizontal = Math.abs(curDx) > Math.abs(curDy);
+          if (horizontal && el.setPointerCapture) { try { el.setPointerCapture(e.pointerId); } catch (err) {} }
+        }
+        if (!horizontal) return; // let the list scroll vertically as normal
+        e.preventDefault();
+        dx = Math.max(-MAX, Math.min(0, curDx));
+        el.style.transform = 'translateX(' + dx + 'px)';
+      }
+      function onUp() {
+        if (!dragging) return;
+        dragging = false;
+        el.style.transition = 'transform .18s ease';
+        if (horizontal && dx <= -THRESHOLD) {
+          suppressClick = true;
+          el.style.transform = 'translateX(-100%)';
+          archiveMessage(id, el.closest('.mail-swipe-row'));
+        } else {
+          if (horizontal && Math.abs(dx) > 4) suppressClick = true;
+          el.style.transform = 'translateX(0)';
+        }
+        decided = false; horizontal = false; dx = 0;
+      }
+      el.addEventListener('pointerdown', onDown);
+      el.addEventListener('pointermove', onMove);
+      el.addEventListener('pointerup', onUp);
+      el.addEventListener('pointercancel', onUp);
+      el.addEventListener('click', function (e) {
+        if (suppressClick) { suppressClick = false; e.preventDefault(); e.stopPropagation(); return; }
+        openMessage(id);
+      });
+    }
+
+    async function archiveMessage(id, rowEl) {
+      try {
+        await GoogleDriveSync.gmailArchive(id);
+        setMailStatus('Archived.');
+        setTimeout(() => {
+          if (rowEl) rowEl.remove();
+          if (openMessageId === id) closeDetail();
+          const listEl = document.getElementById('mail-list');
+          if (listEl && !listEl.querySelector('.mail-swipe-row')) {
+            const empty = document.createElement('div');
+            empty.className = 'mail-list-empty';
+            empty.textContent = 'Your inbox is empty.';
+            listEl.appendChild(empty);
+          }
+        }, 180);
+      } catch (e) {
+        setMailStatus('Couldn\'t archive: ' + e.message, true);
+        const btn = rowEl && rowEl.querySelector('.mail-list-item');
+        if (btn) { btn.style.transition = 'transform .18s ease'; btn.style.transform = 'translateX(0)'; }
+      }
     }
 
     function closeDetail() {
