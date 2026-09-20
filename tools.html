@@ -142,8 +142,8 @@
     margin-bottom: -8px;
   }
   .tab-label-short { display: none; }
-  .tabs-scroll.labels-short .tab-label-full { display: none; }
-  .tabs-scroll.labels-short .tab-label-short { display: inline; }
+  .tabs.labels-short .tab-label-full { display: none; }
+  .tabs.labels-short .tab-label-short { display: inline; }
   .tab-btn {
     font-family: var(--font-body);
     font-weight: 600;
@@ -1248,7 +1248,7 @@
   <div class="tab-bar">
     <div class="tabs">
       <div class="tabs-fixed">
-        <button class="tab-btn tab-btn-income" data-tab="income" onclick="switchTab('income')">Income</button>
+        <button class="tab-btn tab-btn-income" data-tab="income" onclick="switchTab('income')"><span class="tab-label-full">Income</span><span class="tab-label-short" aria-hidden="true">I</span></button>
         <span class="tab-separator" aria-hidden="true">&minus;</span>
       </div>
       <div class="tabs-scroll">
@@ -1261,7 +1261,7 @@
       </div>
       <div class="tabs-fixed">
         <span class="tab-separator" aria-hidden="true">=</span>
-        <button class="tab-btn tab-btn-summary active" data-tab="budget" onclick="switchTab('budget')">Budget</button>
+        <button class="tab-btn tab-btn-summary active" data-tab="budget" onclick="switchTab('budget')"><span class="tab-label-full">Budget</span><span class="tab-label-short" aria-hidden="true">B</span></button>
       </div>
     </div>
   </div>
@@ -3587,11 +3587,12 @@
   // fixed viewport breakpoint. Horizontal scroll stays as a fallback for anything still
   // too narrow even with the shrunk labels.
   function updateTabLabelFit() {
+    const tabsEl = document.querySelector('.tabs');
     const scrollEl = document.querySelector('.tabs-scroll');
-    if (!scrollEl) return;
-    scrollEl.classList.remove('labels-short');
+    if (!tabsEl || !scrollEl) return;
+    tabsEl.classList.remove('labels-short');
     if (scrollEl.scrollWidth > scrollEl.clientWidth + 1) {
-      scrollEl.classList.add('labels-short');
+      tabsEl.classList.add('labels-short');
     }
   }
 
