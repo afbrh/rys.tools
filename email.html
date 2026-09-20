@@ -392,23 +392,10 @@
     color: var(--ink);
     background: var(--paper-line);
     border: 1.5px solid var(--ink);
-    border-right: none;
-    border-radius: 17px 0 0 17px;
-    padding: 0 12px;
+    border-radius: 17px;
+    padding: 0 14px;
   }
   .mail-search input[type="search"]:focus { outline: none; }
-  .mail-search-btn {
-    flex-shrink: 0;
-    height: 34px;
-    padding: 0 14px;
-    border: 1.5px solid var(--ink);
-    border-radius: 0 17px 17px 0;
-    background: none;
-    color: var(--ink);
-    font-size: 13px;
-    cursor: pointer;
-  }
-  .mail-search-btn:hover { background: var(--paper-line); }
   .mail-layout { display: flex; gap: 20px; align-items: flex-start; }
   .mail-list {
     flex: 1 1 320px;
@@ -625,7 +612,6 @@
       <button class="save-btn export-btn" onclick="MailApp.refreshInbox()">Refresh</button>
       <div class="mail-search">
         <input type="search" id="mail-search-input" placeholder="Search mail" onkeydown="if (event.key === 'Enter') { event.preventDefault(); MailApp.runSearch(); }">
-        <button type="button" class="mail-search-btn" onclick="MailApp.runSearch()" aria-label="Search">&#128269;</button>
       </div>
       <span class="mail-status" id="mail-status"></span>
     </div>
