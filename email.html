@@ -1038,17 +1038,29 @@
       return json.email || '';
     }
 
+    // Google's error responses carry a real explanation (e.g. "Gmail API has not been
+    // used in project ... before or it is disabled", or an insufficient-scope message) —
+    // surfacing that instead of just the status code is the difference between a useful
+    // error and a guessing game.
+    async function errorFromResponse(resp) {
+      try {
+        const json = await resp.json();
+        if (json && json.error && json.error.message) return json.error.message;
+      } catch (e) {}
+      return 'HTTP ' + resp.status;
+    }
+
     // ---- Gmail (this page's addition — the other tool pages don't need these) ----
     async function gmailListInbox(maxResults) {
       const resp = await api('https://gmail.googleapis.com/gmail/v1/users/me/messages?maxResults=' + (maxResults || 20) + '&labelIds=INBOX');
-      if (!resp.ok) throw new Error('HTTP ' + resp.status);
+      if (!resp.ok) throw new Error(await errorFromResponse(resp));
       const json = await resp.json();
       return json.messages || [];
     }
 
     async function gmailGetMessage(id, format) {
       const resp = await api('https://gmail.googleapis.com/gmail/v1/users/me/messages/' + id + '?format=' + (format || 'full'));
-      if (!resp.ok) throw new Error('HTTP ' + resp.status);
+      if (!resp.ok) throw new Error(await errorFromResponse(resp));
       return resp.json();
     }
 
@@ -1060,7 +1072,7 @@
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(body)
       });
-      if (!resp.ok) throw new Error('HTTP ' + resp.status);
+      if (!resp.ok) throw new Error(await errorFromResponse(resp));
       return resp.json();
     }
 
