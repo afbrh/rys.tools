@@ -90,6 +90,9 @@
     transition: background-color .15s ease, color .15s ease;
     padding: 0 20px 80px;
     overflow-x: hidden;
+    /* The mail list has its own pull-to-refresh — this stops the browser's native
+       pull-to-refresh (mobile Chrome etc.) from also firing and reloading the page. */
+    overscroll-behavior-y: contain;
   }
 
   /* ---------- app shell / header (shared chrome — keep in sync with tools.html) ---------- */
@@ -397,14 +400,25 @@
   }
   .mail-search input[type="search"]:focus { outline: none; }
   .mail-layout { display: flex; gap: 20px; align-items: flex-start; }
+  /* The toolbar (Compose + search) lives in here too, alongside the list, so it's
+     naturally exactly as wide as the list rather than spanning the detail pane too. */
+  .mail-list-col { flex: 1 1 320px; max-width: 380px; min-width: 0; display: flex; flex-direction: column; }
   .mail-list {
-    flex: 1 1 320px;
-    max-width: 380px;
     border: 1.5px solid var(--ink);
     border-radius: 10px;
     overflow: hidden;
     max-height: 70vh;
     overflow-y: auto;
+  }
+  .mail-pull-indicator {
+    height: 0;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    color: var(--ink-soft);
+    transition: height .18s ease;
   }
   .mail-list-empty { padding: 20px; font-size: 14px; color: var(--ink-soft); text-align: center; }
   .mail-swipe-row { position: relative; overflow: hidden; border-bottom: 1px solid var(--paper-line); }
@@ -539,11 +553,12 @@
 
   @media (max-width: 720px) {
     .mail-layout { flex-direction: column; }
-    /* flex: none + height: auto — otherwise the column flex item keeps its desktop
+    /* flex: none + height: auto on the column — otherwise it keeps its desktop
        flex-basis (320px) as a used height and clips/scrolls internally instead of
        growing with an expanded row, since flex-basis maps to height on the main axis
        once the layout switches to flex-direction: column. */
-    .mail-list { flex: none; max-width: none; width: 100%; height: auto; max-height: none; overflow-y: visible; }
+    .mail-list-col { flex: none; max-width: none; width: 100%; }
+    .mail-list { height: auto; max-height: none; overflow-y: visible; }
     .mail-detail { display: none; }
     .mail-inline-detail { display: block; }
   }
@@ -607,17 +622,19 @@
   </div>
 
   <div class="mail-app" id="mail-app" hidden="">
-    <div class="mail-toolbar">
-      <button class="save-btn" onclick="MailApp.openCompose()">Compose</button>
-      <button class="save-btn export-btn" onclick="MailApp.refreshInbox()">Refresh</button>
-      <div class="mail-search">
-        <input type="search" id="mail-search-input" placeholder="Search mail" onkeydown="if (event.key === 'Enter') { event.preventDefault(); MailApp.runSearch(); }">
-      </div>
-      <span class="mail-status" id="mail-status"></span>
-    </div>
     <div class="mail-layout">
-      <div class="mail-list" id="mail-list">
-        <div class="mail-list-empty">Loading…</div>
+      <div class="mail-list-col">
+        <div class="mail-toolbar">
+          <button class="save-btn" onclick="MailApp.openCompose()">Compose</button>
+          <div class="mail-search">
+            <input type="search" id="mail-search-input" placeholder="Search mail" onkeydown="if (event.key === 'Enter') { event.preventDefault(); MailApp.runSearch(); }">
+          </div>
+          <span class="mail-status" id="mail-status"></span>
+        </div>
+        <div class="mail-pull-indicator" id="mail-pull-indicator">Pull to refresh</div>
+        <div class="mail-list" id="mail-list">
+          <div class="mail-list-empty">Loading…</div>
+        </div>
       </div>
       <div class="mail-detail" id="mail-detail">
         <p class="mail-empty">Select a message to read it.</p>
@@ -1506,6 +1523,65 @@
       }
     }
 
+    // Pulling down while already scrolled to the top refreshes the inbox — there's no
+    // separate Refresh button. Same Pointer Events approach as the swipe-to-archive
+    // gesture, just on the vertical axis, and it lives on .mail-list itself (not the
+    // whole column) so it doesn't fight with interactions in the toolbar/search field.
+    // Desktop scrolls .mail-list internally; mobile scrolls the whole page instead
+    // (see the .mail-list-col media-query override), so "at the top" means different
+    // things on each — atTop() checks whichever one actually applies.
+    function attachPullToRefresh(listEl, indicatorEl) {
+      const THRESHOLD = 60;
+      const MAX = 90;
+      let dragging = false, decided = false, vertical = false;
+      let startX = 0, startY = 0, dy = 0;
+
+      function atTop() {
+        if (listEl.scrollHeight > listEl.clientHeight + 1) return listEl.scrollTop <= 0;
+        return (window.scrollY || document.documentElement.scrollTop || 0) <= 0;
+      }
+
+      function onDown(e) {
+        if (e.pointerType === 'mouse' && e.button !== 0) return;
+        if (!atTop()) return;
+        dragging = true; decided = false; vertical = false; dy = 0;
+        startX = e.clientX; startY = e.clientY;
+      }
+      function onMove(e) {
+        if (!dragging) return;
+        const curDx = e.clientX - startX;
+        const curDy = e.clientY - startY;
+        if (!decided) {
+          if (Math.abs(curDx) < 8 && Math.abs(curDy) < 8) return;
+          decided = true;
+          vertical = curDy > 0 && Math.abs(curDy) > Math.abs(curDx);
+          if (!vertical) { dragging = false; return; }
+        }
+        if (!vertical) return;
+        e.preventDefault();
+        dy = Math.max(0, Math.min(MAX, curDy));
+        indicatorEl.style.height = dy + 'px';
+        indicatorEl.textContent = dy >= THRESHOLD ? 'Release to refresh' : 'Pull to refresh';
+      }
+      function onUp() {
+        if (!dragging) return;
+        dragging = false;
+        if (vertical && dy >= THRESHOLD) {
+          indicatorEl.textContent = 'Refreshing…';
+          indicatorEl.style.height = '40px';
+          refreshInbox().then(() => { indicatorEl.style.height = '0px'; });
+        } else {
+          indicatorEl.style.height = '0px';
+        }
+        decided = false; vertical = false; dy = 0;
+      }
+
+      listEl.addEventListener('pointerdown', onDown);
+      listEl.addEventListener('pointermove', onMove);
+      listEl.addEventListener('pointerup', onUp);
+      listEl.addEventListener('pointercancel', onUp);
+    }
+
     // Below 720px there's no side-by-side detail pane — a tap expands the message
     // inline within the list instead (see openMessage/toggleInlineDetail). Desktop
     // keeps the original two-pane layout untouched.
@@ -1717,6 +1793,10 @@
         sendBtn.disabled = false;
       }
     }
+
+    const pullListEl = document.getElementById('mail-list');
+    const pullIndicatorEl = document.getElementById('mail-pull-indicator');
+    if (pullListEl && pullIndicatorEl) attachPullToRefresh(pullListEl, pullIndicatorEl);
 
     return { render, refreshInbox, runSearch, openMessage, openCompose, closeCompose, send };
   })();
