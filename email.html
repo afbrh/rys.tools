@@ -380,8 +380,35 @@
   .mail-connect-status.error { color: var(--expense); }
 
   .mail-app { max-width: 1000px; margin: 20px auto 0; }
-  .mail-toolbar { display: flex; align-items: center; gap: 10px; margin-bottom: 16px; }
+  .mail-toolbar { display: flex; align-items: center; flex-wrap: wrap; gap: 10px; margin-bottom: 16px; }
   .mail-toolbar .mail-status { font-size: 13px; color: var(--ink-soft); margin-left: 4px; }
+  .mail-search { display: flex; flex: 1 1 200px; max-width: 320px; min-width: 140px; }
+  .mail-search input[type="search"] {
+    flex: 1;
+    min-width: 0;
+    height: 34px;
+    font-family: var(--font-body);
+    font-size: 13px;
+    color: var(--ink);
+    background: var(--paper-line);
+    border: 1.5px solid var(--ink);
+    border-right: none;
+    border-radius: 17px 0 0 17px;
+    padding: 0 12px;
+  }
+  .mail-search input[type="search"]:focus { outline: none; }
+  .mail-search-btn {
+    flex-shrink: 0;
+    height: 34px;
+    padding: 0 14px;
+    border: 1.5px solid var(--ink);
+    border-radius: 0 17px 17px 0;
+    background: none;
+    color: var(--ink);
+    font-size: 13px;
+    cursor: pointer;
+  }
+  .mail-search-btn:hover { background: var(--paper-line); }
   .mail-layout { display: flex; gap: 20px; align-items: flex-start; }
   .mail-list {
     flex: 1 1 320px;
@@ -596,6 +623,10 @@
     <div class="mail-toolbar">
       <button class="save-btn" onclick="MailApp.openCompose()">Compose</button>
       <button class="save-btn export-btn" onclick="MailApp.refreshInbox()">Refresh</button>
+      <div class="mail-search">
+        <input type="search" id="mail-search-input" placeholder="Search mail" onkeydown="if (event.key === 'Enter') { event.preventDefault(); MailApp.runSearch(); }">
+        <button type="button" class="mail-search-btn" onclick="MailApp.runSearch()" aria-label="Search">&#128269;</button>
+      </div>
       <span class="mail-status" id="mail-status"></span>
     </div>
     <div class="mail-layout">
@@ -1086,6 +1117,17 @@
       return resp.json();
     }
 
+    // No labelIds filter — unlike gmailListInbox, this searches the whole mailbox (Gmail's
+    // own search syntax works here, e.g. "from:" / "subject:" / plain text), which by
+    // Gmail's normal search behavior covers Inbox and archived mail alike while still
+    // leaving out Spam/Trash unless the query itself asks for those with in:spam/in:trash.
+    async function gmailSearch(query, maxResults) {
+      const resp = await api('https://gmail.googleapis.com/gmail/v1/users/me/messages?maxResults=' + (maxResults || 25) + '&q=' + encodeURIComponent(query));
+      if (!resp.ok) throw new Error(await errorFromResponse(resp));
+      const json = await resp.json();
+      return json.messages || [];
+    }
+
     async function gmailSend(rawBase64Url, threadId) {
       const body = { raw: rawBase64Url };
       if (threadId) body.threadId = threadId;
@@ -1110,12 +1152,13 @@
       return resp.json();
     }
 
-    return { isSignedIn, signIn, load, save, getUserEmail, restoreSession, hasGmailScope, gmailListInbox, gmailGetMessage, gmailSend, gmailArchive };
+    return { isSignedIn, signIn, load, save, getUserEmail, restoreSession, hasGmailScope, gmailListInbox, gmailGetMessage, gmailSend, gmailArchive, gmailSearch };
   })();
 
   /* ================= Mail app (namespaced) ================= */
   const MailApp = (function () {
     let inboxLoaded = false;
+    let searchActive = false;
     let openMessageId = null;
 
     function base64UrlDecode(data) {
@@ -1257,6 +1300,10 @@
       const listEl = document.getElementById('mail-list');
       if (!listEl) return;
       inboxLoaded = true;
+      searchActive = false;
+      openMessageId = null;
+      const searchInput = document.getElementById('mail-search-input');
+      if (searchInput) searchInput.value = '';
       listEl.innerHTML = '';
       const loading = document.createElement('div');
       loading.className = 'mail-list-empty';
@@ -1287,6 +1334,57 @@
         const err = document.createElement('div');
         err.className = 'mail-list-empty';
         err.textContent = 'Couldn\'t load inbox: ' + e.message;
+        listEl.appendChild(err);
+      }
+    }
+
+    function runSearch() {
+      const input = document.getElementById('mail-search-input');
+      const query = input ? input.value.trim() : '';
+      if (!query) {
+        if (searchActive) refreshInbox();
+        return;
+      }
+      performSearch(query);
+    }
+
+    async function performSearch(query) {
+      const listEl = document.getElementById('mail-list');
+      if (!listEl) return;
+      searchActive = true;
+      inboxLoaded = true;
+      openMessageId = null;
+      listEl.innerHTML = '';
+      const loading = document.createElement('div');
+      loading.className = 'mail-list-empty';
+      loading.textContent = 'Searching…';
+      listEl.appendChild(loading);
+      setMailStatus('');
+
+      try {
+        const refs = await GoogleDriveSync.gmailSearch(query, 25);
+        if (!refs.length) {
+          listEl.innerHTML = '';
+          const empty = document.createElement('div');
+          empty.className = 'mail-list-empty';
+          empty.textContent = 'No messages found for “' + query + '”.';
+          listEl.appendChild(empty);
+          return;
+        }
+        const messages = await Promise.all(refs.map(ref =>
+          GoogleDriveSync.gmailGetMessage(ref.id, 'metadata').catch(() => null)
+        ));
+        listEl.innerHTML = '';
+        messages.forEach(msg => {
+          if (!msg) return;
+          listEl.appendChild(buildListItem(msg));
+        });
+        setMailStatus(refs.length + ' result' + (refs.length === 1 ? '' : 's') + ' for “' + query + '”');
+      } catch (e) {
+        listEl.innerHTML = '';
+        const err = document.createElement('div');
+        err.className = 'mail-list-empty';
+        err.textContent = 'Search failed: ' + e.message;
         listEl.appendChild(err);
       }
     }
@@ -1634,7 +1732,7 @@
       }
     }
 
-    return { render, refreshInbox, openMessage, openCompose, closeCompose, send };
+    return { render, refreshInbox, runSearch, openMessage, openCompose, closeCompose, send };
   })();
 
   /* ================= combined save / load ================= */
