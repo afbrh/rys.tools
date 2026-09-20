@@ -8,6 +8,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&amp;family=Source+Sans+Pro:wght@400;600&amp;family=MedievalSharp&amp;family=IM+Fell+English&amp;family=Orbitron:wght@500;700&amp;display=swap" rel="stylesheet">
+<script src="https://accounts.google.com/gsi/client" async="" defer=""></script>
 <style>
   :root {
     --paper: #F6F4EC;
@@ -414,9 +415,15 @@
           <button type="button" class="theme-dropdown-item" data-value="machina" role="menuitemradio" onclick="setAppearance('machina')">Machina</button>
         </div>
       </div>
+      <div class="tool-controls" id="tool-controls">
+        <button class="save-btn" id="save-btn" onclick="saveApp()" hidden="">Save</button>
+        <button class="save-btn export-btn" id="google-signin-btn" onclick="handleGoogleSignIn()">Google Sign-In</button>
+        <span class="save-status" id="save-status"></span>
+      </div>
     </div>
   </div>
   <div class="mobile-menu-backdrop" id="mobile-menu-backdrop" onclick="closeMobileMenu()"></div>
+  <div class="signed-in-banner" id="signed-in-banner"></div>
   </div>
   </div>
 
@@ -648,9 +655,312 @@
     return theme === 'light' ? 'light' : 'dark';
   }
 
-  setAppearance(currentAppearance());
-  syncToolMenu(currentActiveTool());
-  applyToolVisibility(currentActiveTool());
+  /* ================= Google Drive sync (shared across every tool page — kept in
+     sync with the same module in tools.html) ================= */
+  const GoogleDriveSync = (function () {
+    // Client IDs are meant to be public (unlike API tokens) — the real gate is the
+    // Google sign-in + consent screen each user goes through, not a hidden secret.
+    const CLIENT_ID = '575902569700-4l05lkmf0kbrgq5kdr58canigcvafv3j.apps.googleusercontent.com';
+    const SCOPE = 'https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/userinfo.email';
+    const FILE_NAME = 'munny-data.json';
+    const FILE_ID_KEY = 'munny_drive_file_id';
+    const TOKEN_KEY = 'munny_google_token';
+
+    let tokenClient = null;
+    let accessToken = null;
+
+    function getCachedFileId() {
+      try { return localStorage.getItem(FILE_ID_KEY) || ''; } catch (e) { return ''; }
+    }
+    function setCachedFileId(id) {
+      try {
+        if (id) localStorage.setItem(FILE_ID_KEY, id);
+        else localStorage.removeItem(FILE_ID_KEY);
+      } catch (e) {}
+    }
+
+    function persistToken(token, expiresInSeconds) {
+      try {
+        localStorage.setItem(TOKEN_KEY, JSON.stringify({
+          access_token: token,
+          expires_at: Date.now() + (expiresInSeconds || 3600) * 1000
+        }));
+      } catch (e) {}
+    }
+    function clearPersistedToken() {
+      try { localStorage.removeItem(TOKEN_KEY); } catch (e) {}
+    }
+    // Google's token client never restores a session on its own after a reload — a
+    // still-valid access token has to be saved and re-hydrated by hand. Once the real
+    // expiry passes (usually ~1hr), the next Drive request 401s and clears it.
+    function restoreSession() {
+      let stored;
+      try { stored = JSON.parse(localStorage.getItem(TOKEN_KEY) || 'null'); } catch (e) { stored = null; }
+      if (!stored || !stored.access_token || !stored.expires_at) return false;
+      if (Date.now() > stored.expires_at - 60000) { clearPersistedToken(); return false; }
+      accessToken = stored.access_token;
+      return true;
+    }
+
+    function isSignedIn() {
+      return !!accessToken;
+    }
+
+    function signIn() {
+      return new Promise((resolve, reject) => {
+        if (!window.google || !google.accounts || !google.accounts.oauth2) {
+          reject(new Error('Google sign-in script hasn\'t loaded yet — try again in a moment.'));
+          return;
+        }
+        if (!tokenClient) {
+          tokenClient = google.accounts.oauth2.initTokenClient({
+            client_id: CLIENT_ID,
+            scope: SCOPE,
+            callback: () => {} // replaced per-request below
+          });
+        }
+        let settled = false;
+        // If the popup gets closed/dismissed without Google ever calling back
+        // (e.g. blocked, or the user closes it), don't hang forever.
+        const timer = setTimeout(() => {
+          if (settled) return;
+          settled = true;
+          reject(new Error('Sign-in timed out — the popup may have been closed or blocked. Try again.'));
+        }, 60000);
+        tokenClient.callback = (resp) => {
+          if (settled) return;
+          settled = true;
+          clearTimeout(timer);
+          if (resp.error) { reject(new Error(resp.error)); return; }
+          accessToken = resp.access_token;
+          persistToken(accessToken, resp.expires_in);
+          resolve(accessToken);
+        };
+        // prompt:'' asks Google to try a silent, invisible sign-in first — in Safari this
+        // seems to open the popup, fail to complete quietly, and close itself before you
+        // can interact with it. Forcing consent every time is a little more friction but
+        // actually shows the real interactive screen instead of a flash-and-close window.
+        tokenClient.requestAccessToken({ prompt: 'consent' });
+      });
+    }
+
+    async function api(url, options) {
+      if (!accessToken) throw new Error('not signed in');
+      const headers = Object.assign({ 'Authorization': 'Bearer ' + accessToken }, (options && options.headers) || {});
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), 15000);
+      let resp;
+      try {
+        resp = await fetch(url, Object.assign({ cache: 'no-store' }, options, { headers, signal: controller.signal }));
+      } catch (e) {
+        if (e.name === 'AbortError') throw new Error('Google Drive request timed out — check your connection and try again.');
+        throw new Error('Network error talking to Google Drive: ' + e.message);
+      } finally {
+        clearTimeout(timer);
+      }
+      if (resp.status === 401) { accessToken = null; clearPersistedToken(); } // expired/revoked — isSignedIn() will now correctly report false
+      return resp;
+    }
+
+    async function findFileId() {
+      const cached = getCachedFileId();
+      if (cached) return cached;
+      const q = encodeURIComponent("name='" + FILE_NAME + "' and trashed=false");
+      const resp = await api('https://www.googleapis.com/drive/v3/files?q=' + q + '&fields=files(id,name)&spaces=drive');
+      if (!resp.ok) throw new Error('HTTP ' + resp.status);
+      const json = await resp.json();
+      if (json.files && json.files.length) {
+        setCachedFileId(json.files[0].id);
+        return json.files[0].id;
+      }
+      return null;
+    }
+
+    async function createFile(dataObj) {
+      const metadata = { name: FILE_NAME, mimeType: 'application/json' };
+      const boundary = 'munnyboundary' + Date.now();
+      const body =
+        '--' + boundary + '\r\n' +
+        'Content-Type: application/json; charset=UTF-8\r\n\r\n' +
+        JSON.stringify(metadata) + '\r\n' +
+        '--' + boundary + '\r\n' +
+        'Content-Type: application/json\r\n\r\n' +
+        JSON.stringify(dataObj, null, 2) + '\r\n' +
+        '--' + boundary + '--';
+      const resp = await api('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id', {
+        method: 'POST',
+        headers: { 'Content-Type': 'multipart/related; boundary=' + boundary },
+        body
+      });
+      if (!resp.ok) throw new Error('HTTP ' + resp.status);
+      const json = await resp.json();
+      setCachedFileId(json.id);
+      return json.id;
+    }
+
+    async function load() {
+      if (!accessToken) return null;
+      const fileId = await findFileId();
+      if (!fileId) return null;
+      const resp = await api('https://www.googleapis.com/drive/v3/files/' + fileId + '?alt=media');
+      if (resp.status === 404) {
+        setCachedFileId('');
+        return null;
+      }
+      if (!resp.ok) throw new Error('HTTP ' + resp.status);
+      return resp.json();
+    }
+
+    async function save(dataObj) {
+      if (!accessToken) throw new Error('not signed in');
+      let fileId = getCachedFileId() || await findFileId();
+      if (!fileId) {
+        await createFile(dataObj);
+        return true;
+      }
+      const resp = await api('https://www.googleapis.com/upload/drive/v3/files/' + fileId + '?uploadType=media', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(dataObj, null, 2)
+      });
+      if (resp.status === 404) {
+        setCachedFileId('');
+        await createFile(dataObj);
+        return true;
+      }
+      if (!resp.ok) throw new Error('HTTP ' + resp.status);
+      return true;
+    }
+
+    async function getUserEmail() {
+      const resp = await api('https://www.googleapis.com/oauth2/v3/userinfo');
+      if (!resp.ok) throw new Error('HTTP ' + resp.status);
+      const json = await resp.json();
+      return json.email || '';
+    }
+
+    return { isSignedIn, signIn, load, save, getUserEmail, restoreSession };
+  })();
+
+  /* ================= combined save / load ================= */
+  // No data model yet for this tool — an empty object is a harmless placeholder that
+  // won't disturb other tools' slices in the shared Drive file (see mergeAndSave).
+  function collectAllData() {
+    return {};
+  }
+
+  function applyLoadedData(saved) {
+    // Nothing to populate yet.
+  }
+
+  // All tools share one Drive file (one sign-in, one Google account), each keeping its
+  // own slice under `tools[CURRENT_TOOL]` so saving from one tool's page never touches
+  // another tool's data. Pre-multi-tool saves have no `tools` wrapper at all — Budget
+  // Planner was the only tool back then, so an unwrapped file is treated as its data.
+  // Kept in sync with the same helpers in every other tool page.
+  function withToolsWrapper(remote) {
+    if (!remote) return {};
+    if (remote.tools) return Object.assign({}, remote.tools);
+    return { budget: remote };
+  }
+
+  function extractOwnToolData(remote) {
+    return withToolsWrapper(remote)[CURRENT_TOOL] || null;
+  }
+
+  async function mergeAndSave(toolData) {
+    const remote = await GoogleDriveSync.load();
+    const tools = withToolsWrapper(remote);
+    tools[CURRENT_TOOL] = toolData;
+    await GoogleDriveSync.save({ tools: tools });
+  }
+
+  function setGoogleSignedInUi(signedIn) {
+    const signinBtn = document.getElementById('google-signin-btn');
+    const saveBtn = document.getElementById('save-btn');
+    if (signinBtn) signinBtn.hidden = signedIn;
+    if (saveBtn) saveBtn.hidden = !signedIn;
+    updateDropdownLabelFit();
+  }
+
+  async function showSignedInBanner() {
+    const banner = document.getElementById('signed-in-banner');
+    if (!banner) return;
+    try {
+      const email = await GoogleDriveSync.getUserEmail();
+      banner.textContent = email ? 'Signed Into Google Drive as ' + email : 'Signed Into Google Drive';
+    } catch (e) {
+      banner.textContent = 'Signed Into Google Drive'; // email lookup failed — still confirm sign-in
+    }
+  }
+
+  async function handleGoogleSignIn() {
+    const status = document.getElementById('save-status');
+    status.style.color = 'var(--gold)';
+    status.textContent = 'Signing in to Google…';
+    try {
+      await GoogleDriveSync.signIn();
+      setGoogleSignedInUi(true);
+      status.textContent = 'Loading your data from Drive…';
+      const remote = await GoogleDriveSync.load();
+      applyLoadedData(extractOwnToolData(remote));
+      status.textContent = '';
+      await showSignedInBanner();
+    } catch (e) {
+      status.style.color = 'var(--expense)';
+      status.textContent = 'Google sign-in failed: ' + e.message;
+    }
+  }
+
+  async function saveApp() {
+    const status = document.getElementById('save-status');
+    status.style.color = 'var(--gold)';
+    status.textContent = 'Saving to Google Drive…';
+    try {
+      if (!GoogleDriveSync.isSignedIn()) {
+        await GoogleDriveSync.signIn();
+        setGoogleSignedInUi(true);
+        await showSignedInBanner();
+      }
+      await mergeAndSave(collectAllData());
+      status.style.color = 'var(--income)';
+      status.textContent = 'Saved to Google Drive';
+      setTimeout(() => { status.textContent = ''; }, 3000);
+    } catch (e) {
+      status.style.color = 'var(--expense)';
+      status.textContent = 'Google Drive save failed: ' + e.message;
+    }
+  }
+
+  async function loadApp() {
+    // Google's sign-in popup needs a real click, so a brand-new sign-in can't happen
+    // automatically on page load. But a still-valid access token from an earlier sign-in
+    // (saved in localStorage) can be restored without any popup — so a refresh doesn't
+    // force signing in again until that token actually expires (usually ~1hr).
+    setGoogleSignedInUi(false);
+    setAppearance(currentAppearance());
+    syncToolMenu(currentActiveTool());
+    applyToolVisibility(currentActiveTool());
+
+    if (GoogleDriveSync.restoreSession()) {
+      setGoogleSignedInUi(true);
+      const status = document.getElementById('save-status');
+      status.style.color = 'var(--gold)';
+      status.textContent = 'Loading your data from Drive…';
+      try {
+        const remote = await GoogleDriveSync.load();
+        applyLoadedData(extractOwnToolData(remote));
+        status.textContent = '';
+        await showSignedInBanner();
+      } catch (e) {
+        status.style.color = 'var(--expense)';
+        status.textContent = 'Google Drive load failed: ' + e.message;
+        setGoogleSignedInUi(false);
+      }
+    }
+  }
+
+  loadApp();
 </script>
 
 </body></html>
