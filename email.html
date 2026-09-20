@@ -95,7 +95,7 @@
     overscroll-behavior-y: contain;
   }
 
-  /* ---------- app shell / header (shared chrome — keep in sync with tools.html) ---------- */
+  /* ---------- app shell / header (shared chrome — keep in sync with budget.html) ---------- */
   .app-shell { max-width: 820px; margin: 0 auto; }
   .app-header-sticky {
     position: sticky;
@@ -725,7 +725,7 @@
   // Shrinks the tool/theme dropdown toggle labels to a single initial only when the
   // current label text would otherwise force something onto a new line. Re-checked
   // whenever a label's text changes or the window resizes, never a fixed viewport
-  // breakpoint. Kept in sync with the same function in tools.html.
+  // breakpoint. Kept in sync with the same function in budget.html.
   function updateDropdownLabelFit() {
     const saveBar = document.querySelector('.save-bar');
     const toolDropdown = document.querySelector('.tool-dropdown');
@@ -866,9 +866,9 @@
 
   // Each tool lives on its own page — CURRENT_TOOL says which one this page is, so
   // selecting a different tool from the dropdown navigates instead of toggling in place.
-  // Kept in sync with the matching block in tools.html.
+  // Kept in sync with the matching block in budget.html.
   const CURRENT_TOOL = 'email';
-  const TOOL_PAGES = { budget: 'tools.html', email: 'email.html' };
+  const TOOL_PAGES = { budget: 'budget.html', email: 'email.html' };
   const TOOL_LABELS = { none: 'None', budget: 'Budget Planner', email: 'E-Mail' };
 
   function setActiveTool(tool) {
@@ -944,7 +944,7 @@
   }
 
   /* ================= Google Drive sync (shared across every tool page — kept in
-     sync with the same module in tools.html) ================= */
+     sync with the same module in budget.html) ================= */
   const GoogleDriveSync = (function () {
     // Client IDs are meant to be public (unlike API tokens) — the real gate is the
     // Google sign-in + consent screen each user goes through, not a hidden secret.
