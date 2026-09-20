@@ -365,9 +365,9 @@
     }
   }
 
-  /* ---------- E-Mail tool (placeholder) ---------- */
-  .placeholder-sheet { max-width: 640px; margin: 60px auto 0; }
-  .placeholder-sheet h1 {
+  /* ---------- E-Mail tool ---------- */
+  .mail-connect { max-width: 640px; margin: 60px auto 0; text-align: center; }
+  .mail-connect h1 {
     font-family: var(--font-header);
     font-weight: 600;
     font-size: 32px;
@@ -375,7 +375,145 @@
     letter-spacing: var(--letter-spacing-header);
     color: var(--ink);
   }
-  .placeholder-sheet p { color: var(--ink-soft); font-size: 15px; line-height: 1.5; margin: 0; }
+  .mail-connect p { color: var(--ink-soft); font-size: 15px; line-height: 1.5; margin: 0 0 20px; }
+  .mail-connect-status { font-size: 13px; color: var(--gold); min-height: 16px; margin: 14px 0 0 !important; }
+  .mail-connect-status.error { color: var(--expense); }
+
+  .mail-app { max-width: 1000px; margin: 20px auto 0; }
+  .mail-toolbar { display: flex; align-items: center; gap: 10px; margin-bottom: 16px; }
+  .mail-toolbar .mail-status { font-size: 13px; color: var(--ink-soft); margin-left: 4px; }
+  .mail-layout { display: flex; gap: 20px; align-items: flex-start; }
+  .mail-list {
+    flex: 1 1 320px;
+    max-width: 380px;
+    border: 1.5px solid var(--ink);
+    border-radius: 10px;
+    overflow: hidden;
+    max-height: 70vh;
+    overflow-y: auto;
+  }
+  .mail-list-empty { padding: 20px; font-size: 14px; color: var(--ink-soft); text-align: center; }
+  .mail-list-item {
+    display: block;
+    width: 100%;
+    text-align: left;
+    background: none;
+    border: none;
+    border-bottom: 1px solid var(--paper-line);
+    padding: 12px 14px;
+    cursor: pointer;
+    font-family: var(--font-body);
+    color: var(--ink);
+  }
+  .mail-list-item:last-child { border-bottom: none; }
+  .mail-list-item:hover { background: var(--paper-line); }
+  .mail-list-item.active { background: var(--gold-bg); }
+  .mail-list-item .mail-row-top { display: flex; justify-content: space-between; gap: 8px; font-size: 13px; margin-bottom: 3px; }
+  .mail-list-item .mail-from { font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .mail-list-item.unread .mail-from, .mail-list-item.unread .mail-subject { font-weight: 700; color: var(--ink); }
+  .mail-list-item .mail-date { flex-shrink: 0; color: var(--ink-soft); font-family: var(--font-mono); font-size: 11px; }
+  .mail-list-item .mail-subject { font-size: 13.5px; margin-bottom: 2px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .mail-list-item .mail-snippet { font-size: 12.5px; color: var(--ink-soft); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+  .mail-detail {
+    flex: 2 1 480px;
+    min-width: 0;
+    border: 1.5px solid var(--ink);
+    border-radius: 10px;
+    padding: 20px;
+    max-height: 70vh;
+    overflow-y: auto;
+  }
+  .mail-empty { color: var(--ink-soft); font-size: 14px; text-align: center; margin: 40px 0; }
+  .mail-detail-subject { font-family: var(--font-header); font-size: 20px; font-weight: 600; margin: 0 0 10px; letter-spacing: var(--letter-spacing-header); }
+  .mail-detail-meta { font-size: 13px; color: var(--ink-soft); margin-bottom: 4px; }
+  .mail-detail-meta strong { color: var(--ink); font-weight: 600; }
+  .mail-detail-actions { margin: 14px 0; display: flex; gap: 10px; }
+  .mail-detail-body {
+    white-space: pre-wrap;
+    word-break: break-word;
+    font-size: 14.5px;
+    line-height: 1.55;
+    color: var(--ink);
+    border-top: 1px solid var(--paper-line);
+    padding-top: 16px;
+  }
+
+  .compose-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.45);
+    z-index: 1200;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+  }
+  .compose-overlay.open { display: flex; }
+  .compose-panel {
+    background: var(--paper);
+    border: 1.5px solid var(--ink);
+    border-radius: 12px;
+    width: 100%;
+    max-width: 560px;
+    max-height: 88vh;
+    overflow-y: auto;
+    padding: 24px;
+    box-sizing: border-box;
+    box-shadow: 0 20px 50px rgba(0,0,0,0.3);
+  }
+  .compose-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+  .compose-head h2 { font-family: var(--font-header); font-size: 20px; font-weight: 600; margin: 0; }
+  .compose-close { position: static; }
+  .compose-field { display: flex; flex-direction: column; gap: 4px; font-size: 12px; color: var(--ink-soft); margin-bottom: 12px; }
+  .compose-field input {
+    font-family: var(--font-body);
+    font-size: 14px;
+    color: var(--ink);
+    background: var(--paper-line);
+    border: 1px solid transparent;
+    border-radius: 6px;
+    padding: 8px 10px;
+  }
+  .compose-field input:focus { outline: none; border-color: var(--ink); }
+  .compose-body {
+    width: 100%;
+    min-height: 200px;
+    resize: vertical;
+    font-family: var(--font-body);
+    font-size: 14px;
+    color: var(--ink);
+    background: var(--paper-line);
+    border: 1px solid transparent;
+    border-radius: 6px;
+    padding: 10px;
+    box-sizing: border-box;
+    margin-bottom: 14px;
+  }
+  .compose-body:focus { outline: none; border-color: var(--ink); }
+  .compose-actions { display: flex; align-items: center; justify-content: flex-end; gap: 12px; }
+  .compose-status { font-size: 13px; color: var(--gold); }
+  .compose-status.error { color: var(--expense); }
+
+  .mail-detail-back { display: none; }
+
+  @media (max-width: 720px) {
+    .mail-layout { flex-direction: column; }
+    .mail-list, .mail-detail { max-width: none; width: 100%; max-height: none; }
+    .mail-list.has-open-detail { display: none; }
+    .mail-detail-back {
+      display: inline-flex;
+      align-items: center;
+      background: none;
+      border: none;
+      color: var(--ink-soft);
+      font-family: var(--font-body);
+      font-size: 13px;
+      cursor: pointer;
+      padding: 0 0 14px;
+    }
+    .mail-detail-back:hover { color: var(--ink); }
+  }
 </style>
 </head>
 <body>
@@ -428,10 +566,50 @@
   </div>
 
   <div id="app-content">
-  <div class="placeholder-sheet">
+  <div class="mail-connect" id="mail-connect">
     <h1>E-Mail</h1>
-    <p>This tool isn't built yet — check back soon.</p>
+    <p>Connect your Google account to read and send mail from your Gmail inbox.</p>
+    <button class="save-btn" onclick="handleGoogleSignIn()">Connect Gmail</button>
+    <p class="mail-connect-status" id="mail-connect-status"></p>
   </div>
+
+  <div class="mail-app" id="mail-app" hidden="">
+    <div class="mail-toolbar">
+      <button class="save-btn" onclick="MailApp.openCompose()">Compose</button>
+      <button class="save-btn export-btn" onclick="MailApp.refreshInbox()">Refresh</button>
+      <span class="mail-status" id="mail-status"></span>
+    </div>
+    <div class="mail-layout">
+      <div class="mail-list" id="mail-list">
+        <div class="mail-list-empty">Loading…</div>
+      </div>
+      <div class="mail-detail" id="mail-detail">
+        <p class="mail-empty">Select a message to read it.</p>
+      </div>
+    </div>
+  </div>
+  </div>
+
+  <div class="compose-overlay" id="compose-overlay" onclick="if (event.target === this) MailApp.closeCompose()">
+    <div class="compose-panel">
+      <div class="compose-head">
+        <h2>New message</h2>
+        <button class="mobile-menu-close compose-close" onclick="MailApp.closeCompose()" aria-label="Close">&times;</button>
+      </div>
+      <label class="compose-field">
+        <span>To</span>
+        <input type="email" id="compose-to">
+      </label>
+      <label class="compose-field">
+        <span>Subject</span>
+        <input type="text" id="compose-subject">
+      </label>
+      <textarea id="compose-body" class="compose-body" placeholder="Write your message…"></textarea>
+      <div class="compose-actions">
+        <span class="compose-status" id="compose-status"></span>
+        <button class="save-btn" id="compose-send-btn" onclick="MailApp.send()">Send</button>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -566,7 +744,11 @@
   }
 
   document.addEventListener('keydown', function (e) {
-    if (e.key === 'Escape') closeMobileMenu();
+    if (e.key === 'Escape') {
+      closeMobileMenu();
+      const composeOverlay = document.getElementById('compose-overlay');
+      if (composeOverlay && composeOverlay.classList.contains('open')) MailApp.closeCompose();
+    }
   });
 
   let mobileMenuResizeTimer = null;
@@ -661,7 +843,13 @@
     // Client IDs are meant to be public (unlike API tokens) — the real gate is the
     // Google sign-in + consent screen each user goes through, not a hidden secret.
     const CLIENT_ID = '575902569700-4l05lkmf0kbrgq5kdr58canigcvafv3j.apps.googleusercontent.com';
-    const SCOPE = 'https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/userinfo.email';
+    // This page's sign-in requests Gmail scopes on top of the base Drive/identity ones —
+    // the other tool pages don't need Gmail, so only this page's copy of the module asks
+    // for it (incremental, feature-scoped consent rather than bundling it into every
+    // tool's sign-in). A token saved by another tool's Drive-only sign-in still works for
+    // isSignedIn()/Drive calls here, but Gmail calls need hasGmailScope() to be true —
+    // see handleGoogleSignIn()/MailApp below for the reconnect prompt when it isn't.
+    const SCOPE = 'https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/userinfo.email https://www.googleapis.com/auth/gmail.readonly https://www.googleapis.com/auth/gmail.send';
     const FILE_NAME = 'munny-data.json';
     const FILE_ID_KEY = 'munny_drive_file_id';
     const TOKEN_KEY = 'munny_google_token';
@@ -679,11 +867,12 @@
       } catch (e) {}
     }
 
-    function persistToken(token, expiresInSeconds) {
+    function persistToken(token, expiresInSeconds, scope) {
       try {
         localStorage.setItem(TOKEN_KEY, JSON.stringify({
           access_token: token,
-          expires_at: Date.now() + (expiresInSeconds || 3600) * 1000
+          expires_at: Date.now() + (expiresInSeconds || 3600) * 1000,
+          scope: scope || ''
         }));
       } catch (e) {}
     }
@@ -704,6 +893,16 @@
 
     function isSignedIn() {
       return !!accessToken;
+    }
+
+    // A token saved by a Drive-only sign-in (from another tool page) is still valid for
+    // isSignedIn(), but Gmail calls with it will fail — this checks whether the scope
+    // actually granted at sign-in time included Gmail, so the UI can ask to reconnect
+    // instead of just failing.
+    function hasGmailScope() {
+      let stored;
+      try { stored = JSON.parse(localStorage.getItem(TOKEN_KEY) || 'null'); } catch (e) { stored = null; }
+      return !!(stored && typeof stored.scope === 'string' && stored.scope.indexOf('gmail') !== -1);
     }
 
     function signIn() {
@@ -733,7 +932,7 @@
           clearTimeout(timer);
           if (resp.error) { reject(new Error(resp.error)); return; }
           accessToken = resp.access_token;
-          persistToken(accessToken, resp.expires_in);
+          persistToken(accessToken, resp.expires_in, resp.scope);
           resolve(accessToken);
         };
         // prompt:'' asks Google to try a silent, invisible sign-in first — in Safari this
@@ -839,7 +1038,370 @@
       return json.email || '';
     }
 
-    return { isSignedIn, signIn, load, save, getUserEmail, restoreSession };
+    // ---- Gmail (this page's addition — the other tool pages don't need these) ----
+    async function gmailListInbox(maxResults) {
+      const resp = await api('https://gmail.googleapis.com/gmail/v1/users/me/messages?maxResults=' + (maxResults || 20) + '&labelIds=INBOX');
+      if (!resp.ok) throw new Error('HTTP ' + resp.status);
+      const json = await resp.json();
+      return json.messages || [];
+    }
+
+    async function gmailGetMessage(id, format) {
+      const resp = await api('https://gmail.googleapis.com/gmail/v1/users/me/messages/' + id + '?format=' + (format || 'full'));
+      if (!resp.ok) throw new Error('HTTP ' + resp.status);
+      return resp.json();
+    }
+
+    async function gmailSend(rawBase64Url, threadId) {
+      const body = { raw: rawBase64Url };
+      if (threadId) body.threadId = threadId;
+      const resp = await api('https://gmail.googleapis.com/gmail/v1/users/me/messages/send', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body)
+      });
+      if (!resp.ok) throw new Error('HTTP ' + resp.status);
+      return resp.json();
+    }
+
+    return { isSignedIn, signIn, load, save, getUserEmail, restoreSession, hasGmailScope, gmailListInbox, gmailGetMessage, gmailSend };
+  })();
+
+  /* ================= Mail app (namespaced) ================= */
+  const MailApp = (function () {
+    let inboxLoaded = false;
+    let openMessageId = null;
+
+    function base64UrlDecode(data) {
+      const b64 = data.replace(/-/g, '+').replace(/_/g, '/');
+      const padded = b64 + '==='.slice((b64.length + 3) % 4);
+      const binary = atob(padded);
+      const bytes = new Uint8Array(binary.length);
+      for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+      return new TextDecoder('utf-8').decode(bytes);
+    }
+
+    function base64UrlEncode(str) {
+      const bytes = new TextEncoder().encode(str);
+      let binary = '';
+      bytes.forEach(b => { binary += String.fromCharCode(b); });
+      return btoa(binary).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+    }
+
+    function header(headers, name) {
+      const h = (headers || []).find(x => x.name.toLowerCase() === name.toLowerCase());
+      return h ? h.value : '';
+    }
+
+    // "Display Name" <addr> -> "Display Name" (falls back to the raw value).
+    function displayName(from) {
+      const m = /^"?([^"<]*)"?\s*<[^>]+>$/.exec(from || '');
+      const name = m ? m[1].trim() : (from || '');
+      return name || from || '(unknown sender)';
+    }
+
+    function formatDate(internalDate) {
+      const ms = parseInt(internalDate, 10);
+      if (!ms) return '';
+      const d = new Date(ms);
+      const now = new Date();
+      const sameDay = d.toDateString() === now.toDateString();
+      return sameDay
+        ? d.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' })
+        : d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+    }
+
+    // Walks a Gmail message payload for a readable body. Prefers text/plain; falls back
+    // to text/html but only ever extracts its *text*, never inserts the HTML itself —
+    // rendering a stranger's raw HTML email would be an XSS risk.
+    function findBodyText(payload) {
+      if (!payload) return { text: '', isHtml: false };
+      if (payload.mimeType === 'text/plain' && payload.body && payload.body.data) {
+        return { text: base64UrlDecode(payload.body.data), isHtml: false };
+      }
+      if (payload.mimeType === 'text/html' && payload.body && payload.body.data) {
+        return { text: base64UrlDecode(payload.body.data), isHtml: true };
+      }
+      if (payload.parts) {
+        let htmlFallback = null;
+        for (const part of payload.parts) {
+          const found = findBodyText(part);
+          if (found.text && !found.isHtml) return found;
+          if (found.text && found.isHtml && !htmlFallback) htmlFallback = found;
+        }
+        if (htmlFallback) return htmlFallback;
+      }
+      return { text: '', isHtml: false };
+    }
+
+    function plainTextFromPayload(payload) {
+      const found = findBodyText(payload);
+      if (!found.text) return '';
+      if (!found.isHtml) return found.text;
+      const doc = new DOMParser().parseFromString(found.text, 'text/html');
+      return doc.body ? doc.body.textContent : found.text;
+    }
+
+    function render() {
+      const connectEl = document.getElementById('mail-connect');
+      const appEl = document.getElementById('mail-app');
+      const statusEl = document.getElementById('mail-connect-status');
+      if (!connectEl || !appEl) return;
+
+      const signedIn = GoogleDriveSync.isSignedIn();
+      const ready = signedIn && GoogleDriveSync.hasGmailScope();
+
+      connectEl.hidden = ready;
+      appEl.hidden = !ready;
+
+      if (statusEl) {
+        statusEl.classList.remove('error');
+        statusEl.textContent = (signedIn && !ready)
+          ? 'Signed in, but Gmail access hasn\'t been granted yet — click Connect Gmail to allow it.'
+          : '';
+      }
+
+      if (ready && !inboxLoaded) refreshInbox();
+    }
+
+    function setMailStatus(text, isError) {
+      const el = document.getElementById('mail-status');
+      if (!el) return;
+      el.textContent = text || '';
+      el.style.color = isError ? 'var(--expense)' : 'var(--ink-soft)';
+    }
+
+    async function refreshInbox() {
+      const listEl = document.getElementById('mail-list');
+      if (!listEl) return;
+      inboxLoaded = true;
+      listEl.innerHTML = '';
+      const loading = document.createElement('div');
+      loading.className = 'mail-list-empty';
+      loading.textContent = 'Loading…';
+      listEl.appendChild(loading);
+      setMailStatus('');
+
+      try {
+        const refs = await GoogleDriveSync.gmailListInbox(20);
+        if (!refs.length) {
+          listEl.innerHTML = '';
+          const empty = document.createElement('div');
+          empty.className = 'mail-list-empty';
+          empty.textContent = 'Your inbox is empty.';
+          listEl.appendChild(empty);
+          return;
+        }
+        const messages = await Promise.all(refs.map(ref =>
+          GoogleDriveSync.gmailGetMessage(ref.id, 'metadata').catch(() => null)
+        ));
+        listEl.innerHTML = '';
+        messages.forEach(msg => {
+          if (!msg) return;
+          listEl.appendChild(buildListItem(msg));
+        });
+      } catch (e) {
+        listEl.innerHTML = '';
+        const err = document.createElement('div');
+        err.className = 'mail-list-empty';
+        err.textContent = 'Couldn\'t load inbox: ' + e.message;
+        listEl.appendChild(err);
+      }
+    }
+
+    function buildListItem(msg) {
+      const headers = msg.payload ? msg.payload.headers : [];
+      const from = header(headers, 'From');
+      const subject = header(headers, 'Subject') || '(no subject)';
+      const isUnread = (msg.labelIds || []).indexOf('UNREAD') !== -1;
+
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'mail-list-item' + (isUnread ? ' unread' : '') + (msg.id === openMessageId ? ' active' : '');
+      btn.dataset.id = msg.id;
+
+      const top = document.createElement('div');
+      top.className = 'mail-row-top';
+      const fromEl = document.createElement('span');
+      fromEl.className = 'mail-from';
+      fromEl.textContent = displayName(from);
+      const dateEl = document.createElement('span');
+      dateEl.className = 'mail-date';
+      dateEl.textContent = formatDate(msg.internalDate);
+      top.appendChild(fromEl);
+      top.appendChild(dateEl);
+
+      const subjectEl = document.createElement('div');
+      subjectEl.className = 'mail-subject';
+      subjectEl.textContent = subject;
+
+      const snippetEl = document.createElement('div');
+      snippetEl.className = 'mail-snippet';
+      snippetEl.textContent = msg.snippet || '';
+
+      btn.appendChild(top);
+      btn.appendChild(subjectEl);
+      btn.appendChild(snippetEl);
+      btn.addEventListener('click', () => openMessage(msg.id));
+      return btn;
+    }
+
+    function closeDetail() {
+      openMessageId = null;
+      document.querySelectorAll('.mail-list-item').forEach(el => el.classList.remove('active'));
+      const mailListEl = document.getElementById('mail-list');
+      if (mailListEl) mailListEl.classList.remove('has-open-detail');
+      const detailEl = document.getElementById('mail-detail');
+      if (detailEl) {
+        detailEl.innerHTML = '';
+        const empty = document.createElement('p');
+        empty.className = 'mail-empty';
+        empty.textContent = 'Select a message to read it.';
+        detailEl.appendChild(empty);
+      }
+    }
+
+    async function openMessage(id) {
+      openMessageId = id;
+      document.querySelectorAll('.mail-list-item').forEach(el => {
+        el.classList.toggle('active', el.dataset.id === id);
+      });
+      const mailListEl = document.getElementById('mail-list');
+      if (mailListEl) mailListEl.classList.add('has-open-detail');
+
+      const detailEl = document.getElementById('mail-detail');
+      if (!detailEl) return;
+      detailEl.innerHTML = '';
+      const loading = document.createElement('p');
+      loading.className = 'mail-empty';
+      loading.textContent = 'Loading…';
+      detailEl.appendChild(loading);
+
+      try {
+        const msg = await GoogleDriveSync.gmailGetMessage(id, 'full');
+        renderDetail(msg);
+      } catch (e) {
+        detailEl.innerHTML = '';
+        const err = document.createElement('p');
+        err.className = 'mail-empty';
+        err.textContent = 'Couldn\'t load this message: ' + e.message;
+        detailEl.appendChild(err);
+      }
+    }
+
+    function renderDetail(msg) {
+      const detailEl = document.getElementById('mail-detail');
+      if (!detailEl) return;
+      const headers = msg.payload ? msg.payload.headers : [];
+      const from = header(headers, 'From');
+      const to = header(headers, 'To');
+      const subject = header(headers, 'Subject') || '(no subject)';
+
+      detailEl.innerHTML = '';
+
+      const backBtn = document.createElement('button');
+      backBtn.type = 'button';
+      backBtn.className = 'mail-detail-back';
+      backBtn.textContent = '‹ Back to inbox';
+      backBtn.addEventListener('click', closeDetail);
+      detailEl.appendChild(backBtn);
+
+      const subjectEl = document.createElement('h2');
+      subjectEl.className = 'mail-detail-subject';
+      subjectEl.textContent = subject;
+      detailEl.appendChild(subjectEl);
+
+      const fromEl = document.createElement('div');
+      fromEl.className = 'mail-detail-meta';
+      fromEl.innerHTML = '';
+      const fromLabel = document.createElement('strong');
+      fromLabel.textContent = 'From: ';
+      fromEl.appendChild(fromLabel);
+      fromEl.appendChild(document.createTextNode(from));
+      detailEl.appendChild(fromEl);
+
+      if (to) {
+        const toEl = document.createElement('div');
+        toEl.className = 'mail-detail-meta';
+        const toLabel = document.createElement('strong');
+        toLabel.textContent = 'To: ';
+        toEl.appendChild(toLabel);
+        toEl.appendChild(document.createTextNode(to));
+        detailEl.appendChild(toEl);
+      }
+
+      const actions = document.createElement('div');
+      actions.className = 'mail-detail-actions';
+      const replyBtn = document.createElement('button');
+      replyBtn.className = 'save-btn export-btn';
+      replyBtn.textContent = 'Reply';
+      replyBtn.addEventListener('click', () => openCompose({
+        to: from,
+        subject: /^re:/i.test(subject) ? subject : ('Re: ' + subject),
+        threadId: msg.threadId
+      }));
+      actions.appendChild(replyBtn);
+      detailEl.appendChild(actions);
+
+      const bodyEl = document.createElement('div');
+      bodyEl.className = 'mail-detail-body';
+      bodyEl.textContent = plainTextFromPayload(msg.payload) || '(No readable body)';
+      detailEl.appendChild(bodyEl);
+    }
+
+    let replyThreadId = null;
+
+    function openCompose(prefill) {
+      replyThreadId = (prefill && prefill.threadId) || null;
+      document.getElementById('compose-to').value = (prefill && prefill.to) || '';
+      document.getElementById('compose-subject').value = (prefill && prefill.subject) || '';
+      document.getElementById('compose-body').value = '';
+      const statusEl = document.getElementById('compose-status');
+      if (statusEl) { statusEl.textContent = ''; statusEl.classList.remove('error'); }
+      document.getElementById('compose-overlay').classList.add('open');
+    }
+
+    function closeCompose() {
+      document.getElementById('compose-overlay').classList.remove('open');
+      replyThreadId = null;
+    }
+
+    async function send() {
+      const to = document.getElementById('compose-to').value.trim();
+      const subject = document.getElementById('compose-subject').value.trim();
+      const body = document.getElementById('compose-body').value;
+      const statusEl = document.getElementById('compose-status');
+      const sendBtn = document.getElementById('compose-send-btn');
+
+      if (!to) {
+        statusEl.classList.add('error');
+        statusEl.textContent = 'Enter a recipient first.';
+        return;
+      }
+
+      sendBtn.disabled = true;
+      statusEl.classList.remove('error');
+      statusEl.textContent = 'Sending…';
+
+      try {
+        const mime =
+          'To: ' + to + '\r\n' +
+          'Subject: ' + subject + '\r\n' +
+          'Content-Type: text/plain; charset="UTF-8"\r\n' +
+          'MIME-Version: 1.0\r\n\r\n' +
+          body;
+        await GoogleDriveSync.gmailSend(base64UrlEncode(mime), replyThreadId);
+        statusEl.textContent = 'Sent.';
+        setTimeout(closeCompose, 900);
+      } catch (e) {
+        statusEl.classList.add('error');
+        statusEl.textContent = 'Send failed: ' + e.message;
+      } finally {
+        sendBtn.disabled = false;
+      }
+    }
+
+    return { render, refreshInbox, openMessage, openCompose, closeCompose, send };
   })();
 
   /* ================= combined save / load ================= */
@@ -906,6 +1468,7 @@
       applyLoadedData(extractOwnToolData(remote));
       status.textContent = '';
       await showSignedInBanner();
+      MailApp.render();
     } catch (e) {
       status.style.color = 'var(--expense)';
       status.textContent = 'Google sign-in failed: ' + e.message;
@@ -958,6 +1521,7 @@
         setGoogleSignedInUi(false);
       }
     }
+    MailApp.render();
   }
 
   loadApp();
