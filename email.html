@@ -631,7 +631,6 @@
           <span class="tool-dropdown-caret">&#9662;</span>
         </button>
         <div class="tool-dropdown-menu" id="tool-menu" role="menu" aria-label="Tool">
-          <button type="button" class="tool-dropdown-item" data-value="none" role="menuitemradio" onclick="setActiveTool('none')">None</button>
           <button type="button" class="tool-dropdown-item" data-value="budget" role="menuitemradio" onclick="setActiveTool('budget')">Budget Planner</button>
           <button type="button" class="tool-dropdown-item" data-value="email" role="menuitemradio" onclick="setActiveTool('email')">E-Mail</button>
         </div>
@@ -762,8 +761,8 @@
     dropdownLabelFitResizeTimer = setTimeout(updateDropdownLabelFit, 100);
   });
 
-  // No tab bar on this page yet — kept as a harmless no-op so shared functions that
-  // call it (applyToolVisibility) don't need a page-specific fork.
+  // No tab bar on this page yet — kept as a harmless no-op so shared init code that
+  // calls it doesn't need a page-specific fork.
   function updateTabLabelFit() {
     const tabsEl = document.querySelector('.tabs');
     const scrollEl = document.querySelector('.tabs-scroll');
@@ -873,17 +872,15 @@
   // Kept in sync with the matching block in budget.html.
   const CURRENT_TOOL = 'email';
   const TOOL_PAGES = { budget: 'budget.html', email: 'email.html' };
-  const TOOL_LABELS = { none: 'None', budget: 'Budget Planner', email: 'E-Mail' };
+  const TOOL_LABELS = { budget: 'Budget Planner', email: 'E-Mail' };
 
   function setActiveTool(tool) {
-    if (tool !== 'none' && !TOOL_PAGES[tool]) tool = CURRENT_TOOL;
-    try { localStorage.setItem('munny_active_tool', tool); } catch (e) {}
-    if (tool !== 'none' && tool !== CURRENT_TOOL) {
+    if (!TOOL_PAGES[tool]) tool = CURRENT_TOOL;
+    if (tool !== CURRENT_TOOL) {
       window.location.href = TOOL_PAGES[tool];
       return;
     }
     syncToolMenu(tool);
-    applyToolVisibility(tool);
     closeToolMenu();
   }
 
@@ -901,37 +898,16 @@
     });
   }
 
-  function applyToolVisibility(tool) {
-    const controls = document.getElementById('tool-controls');
-    const headerTabs = document.getElementById('app-header-tabs');
-    const content = document.getElementById('app-content');
-    const show = tool === CURRENT_TOOL;
-    if (controls) controls.hidden = !show;
-    if (headerTabs) headerTabs.hidden = !show;
-    if (content) content.hidden = !show;
-    updateMailHeaderToolbarVisibility();
-    updateDropdownLabelFit();
-    updateTabLabelFit();
-  }
-
   // The Compose/search bar lives in the sticky header (so it stays put while the list
-  // scrolls) rather than inside #app-content, so it needs its own visibility check
-  // combining both: this page's tool must actually be selected (not "None", not a
-  // different tool navigated away from), AND Gmail must be connected (no point showing
-  // Compose/search over the "Connect Gmail" prompt). Called after either condition
-  // could have changed — from applyToolVisibility() and from MailApp.render().
+  // scrolls) rather than inside #app-content, so it needs its own visibility check —
+  // shown only once Gmail is connected (no point showing Compose/search over the
+  // "Connect Gmail" prompt). Called whenever that connection state could have changed
+  // — from MailApp.render() and after sign-in.
   function updateMailHeaderToolbarVisibility() {
     const el = document.getElementById('mail-header-toolbar');
     if (!el) return;
-    const toolActive = currentActiveTool() === CURRENT_TOOL;
     const mailReady = GoogleDriveSync.isSignedIn() && GoogleDriveSync.hasGmailScope();
-    el.hidden = !(toolActive && mailReady);
-  }
-
-  function currentActiveTool() {
-    let tool;
-    try { tool = localStorage.getItem('munny_active_tool'); } catch (e) {}
-    return tool === 'none' ? 'none' : CURRENT_TOOL;
+    el.hidden = !mailReady;
   }
 
   function currentAppearance() {
@@ -2286,8 +2262,9 @@
     // force signing in again until that token actually expires (usually ~1hr).
     setGoogleSignedInUi(false);
     setAppearance(currentAppearance());
-    syncToolMenu(currentActiveTool());
-    applyToolVisibility(currentActiveTool());
+    syncToolMenu(CURRENT_TOOL);
+    updateMailHeaderToolbarVisibility();
+    updateTabLabelFit();
 
     if (GoogleDriveSync.restoreSession()) {
       setGoogleSignedInUi(true);
