@@ -1963,6 +1963,34 @@
 
     // Shared by the desktop side pane and the mobile inline expansion — same subject/
     // from/to/reply/body markup either way, just placed in a different container.
+    // Flattens a message body to plain text for pasting into the Forward compose box —
+    // the compose textarea is plain text only, so a rich (HTML-derived) body's links get
+    // their URL appended in parens rather than silently dropped.
+    function plainTextForForward(payload) {
+      const built = buildEmailBody(payload);
+      if (!built) return '';
+      if (built.kind === 'plain') return built.text;
+      return built.parts.map(p => p.type === 'link' ? (p.value + ' (' + p.href + ')') : p.value).join('');
+    }
+
+    // Standard "---------- Forwarded message ---------" block Gmail itself uses, so a
+    // forward looks the same whether it started here or in Gmail proper.
+    function buildForwardBody(msg) {
+      const headers = msg.payload ? msg.payload.headers : [];
+      const from = header(headers, 'From');
+      const to = header(headers, 'To');
+      const subject = header(headers, 'Subject') || '(no subject)';
+      const ms = msg.internalDate ? parseInt(msg.internalDate, 10) : 0;
+      const dateLine = ms ? 'Date: ' + new Date(ms).toLocaleString() + '\n' : '';
+      return '---------- Forwarded message ---------\n' +
+        'From: ' + from + '\n' +
+        dateLine +
+        'Subject: ' + subject + '\n' +
+        'To: ' + to + '\n' +
+        '\n' +
+        plainTextForForward(msg.payload);
+    }
+
     function buildDetailContent(msg) {
       const headers = msg.payload ? msg.payload.headers : [];
       const from = header(headers, 'From');
@@ -2008,6 +2036,21 @@
         });
       });
       actions.appendChild(replyBtn);
+
+      const forwardBtn = document.createElement('button');
+      forwardBtn.className = 'save-btn export-btn';
+      forwardBtn.textContent = 'Forward';
+      forwardBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        openCompose({
+          to: '',
+          subject: /^fwd:/i.test(subject) ? subject : ('Fwd: ' + subject),
+          body: buildForwardBody(msg)
+          // No threadId — a forward goes to someone new and starts its own thread
+          // rather than replying into this one.
+        });
+      });
+      actions.appendChild(forwardBtn);
       wrap.appendChild(actions);
 
       const bodyEl = document.createElement('div');
@@ -2083,6 +2126,23 @@
         });
       });
       actions.appendChild(replyBtn);
+
+      // Forwards the most recent message in the conversation (whoever sent it) — same
+      // "no threadId" reasoning as the single-message Forward: it's headed to someone
+      // new, so it starts a fresh thread rather than joining this one.
+      const lastMsg = messages[messages.length - 1];
+      const forwardBtn = document.createElement('button');
+      forwardBtn.className = 'save-btn export-btn';
+      forwardBtn.textContent = 'Forward';
+      forwardBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        openCompose({
+          to: '',
+          subject: /^fwd:/i.test(subject) ? subject : ('Fwd: ' + subject),
+          body: buildForwardBody(lastMsg)
+        });
+      });
+      actions.appendChild(forwardBtn);
       wrap.appendChild(actions);
 
       return wrap;
@@ -2094,7 +2154,7 @@
       replyThreadId = (prefill && prefill.threadId) || null;
       document.getElementById('compose-to').value = (prefill && prefill.to) || '';
       document.getElementById('compose-subject').value = (prefill && prefill.subject) || '';
-      document.getElementById('compose-body').value = '';
+      document.getElementById('compose-body').value = (prefill && prefill.body) || '';
       const statusEl = document.getElementById('compose-status');
       if (statusEl) { statusEl.textContent = ''; statusEl.classList.remove('error'); }
       document.getElementById('compose-overlay').classList.add('open');
