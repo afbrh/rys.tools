@@ -645,7 +645,6 @@
         </div>
       </div>
       <div class="tool-controls" id="tool-controls">
-        <button class="save-btn" id="save-btn" onclick="saveApp()" hidden="">Save</button>
         <button class="save-btn export-btn" id="google-signin-btn" onclick="handleGoogleSignIn()">Google Sign-In</button>
         <span class="save-status" id="save-status"></span>
       </div>
@@ -2242,9 +2241,7 @@
 
   function setGoogleSignedInUi(signedIn) {
     const signinBtn = document.getElementById('google-signin-btn');
-    const saveBtn = document.getElementById('save-btn');
     if (signinBtn) signinBtn.hidden = signedIn;
-    if (saveBtn) saveBtn.hidden = !signedIn;
     updateDropdownLabelFit();
   }
 
@@ -2275,26 +2272,6 @@
     } catch (e) {
       status.style.color = 'var(--expense)';
       status.textContent = 'Google sign-in failed: ' + e.message;
-    }
-  }
-
-  async function saveApp() {
-    const status = document.getElementById('save-status');
-    status.style.color = 'var(--gold)';
-    status.textContent = 'Saving to Google Drive…';
-    try {
-      if (!GoogleDriveSync.isSignedIn()) {
-        await GoogleDriveSync.signIn();
-        setGoogleSignedInUi(true);
-        await showSignedInBanner();
-      }
-      await mergeAndSave(collectAllData());
-      status.style.color = 'var(--income)';
-      status.textContent = 'Saved to Google Drive';
-      setTimeout(() => { status.textContent = ''; }, 3000);
-    } catch (e) {
-      status.style.color = 'var(--expense)';
-      status.textContent = 'Google Drive save failed: ' + e.message;
     }
   }
 
