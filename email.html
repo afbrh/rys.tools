@@ -650,7 +650,7 @@
   <div class="mail-toolbar" id="mail-header-toolbar" hidden="">
     <button class="save-btn" onclick="MailApp.openCompose()">Compose</button>
     <div class="mail-search">
-      <input type="search" id="mail-search-input" placeholder="Search mail" oninput="MailApp.updateSearchClear()" onkeydown="if (event.key === 'Enter') { event.preventDefault(); MailApp.runSearch(); }">
+      <input type="search" id="mail-search-input" placeholder="Search mail" oninput="MailApp.onSearchInput()" onkeydown="if (event.key === 'Enter') { event.preventDefault(); MailApp.runSearch(); }">
       <button type="button" class="mail-search-clear" id="mail-search-clear" onclick="MailApp.clearSearch()" aria-label="Clear search" hidden="">&times;</button>
     </div>
     <span class="mail-status" id="mail-status"></span>
@@ -1226,6 +1226,7 @@
     let inboxLoaded = false;
     let searchActive = false;
     let openMessageId = null;
+    let searchDebounceTimer = null;
 
     function base64UrlDecode(data) {
       const b64 = data.replace(/-/g, '+').replace(/_/g, '/');
@@ -1366,6 +1367,7 @@
     async function refreshInbox() {
       const listEl = document.getElementById('mail-list');
       if (!listEl) return;
+      clearTimeout(searchDebounceTimer);
       inboxLoaded = true;
       searchActive = false;
       openMessageId = null;
@@ -1413,10 +1415,19 @@
       clearBtn.hidden = !input.value;
     }
 
+    // Typing pauses for 2s -> search automatically, same as hitting Enter. Each
+    // keystroke pushes the timer back out, so it only fires once typing actually stops.
+    function onSearchInput() {
+      updateSearchClear();
+      clearTimeout(searchDebounceTimer);
+      searchDebounceTimer = setTimeout(runSearch, 2000);
+    }
+
     // Clears the field and, only if a search is actually showing (as opposed to the
     // user having typed something but not searched yet), drops back to the inbox —
     // there's nothing to "return" from otherwise, so no need to force a reload.
     function clearSearch() {
+      clearTimeout(searchDebounceTimer);
       const input = document.getElementById('mail-search-input');
       if (input) input.value = '';
       updateSearchClear();
@@ -1424,6 +1435,7 @@
     }
 
     function runSearch() {
+      clearTimeout(searchDebounceTimer);
       const input = document.getElementById('mail-search-input');
       const query = input ? input.value.trim() : '';
       if (!query) {
@@ -1889,7 +1901,7 @@
     const pullIndicatorEl = document.getElementById('mail-pull-indicator');
     if (pullListEl && pullIndicatorEl) attachPullToRefresh(pullListEl, pullIndicatorEl);
 
-    return { render, refreshInbox, runSearch, updateSearchClear, clearSearch, openMessage, openCompose, closeCompose, send };
+    return { render, refreshInbox, runSearch, updateSearchClear, onSearchInput, clearSearch, openMessage, openCompose, closeCompose, send };
   })();
 
   /* ================= combined save / load ================= */
