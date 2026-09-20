@@ -144,6 +144,13 @@
   .tab-label-short { display: none; }
   .tabs.labels-short .tab-label-full { display: none; }
   .tabs.labels-short .tab-label-short { display: inline; }
+  /* Single letters don't need the same horizontal breathing room full words do — tighten
+     each tab's padding and the gaps between them so the shrunk row has the best chance
+     of fitting without horizontal scroll on narrow/mobile widths. */
+  .tabs.labels-short .tab-btn { padding-left: 9px; padding-right: 9px; }
+  .tabs.labels-short .tabs-fixed,
+  .tabs.labels-short .tabs-scroll { gap: 3px; }
+  .tabs.labels-short { gap: 3px; }
   .tab-btn {
     font-family: var(--font-body);
     font-weight: 600;
