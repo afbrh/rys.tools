@@ -1,0 +1,1218 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<script>(function(){try{var a=localStorage.getItem('munny_appearance');if(a!=='light'&&a!=='dark'&&a!=='elder'&&a!=='machina'){var s=localStorage.getItem('munny_skin');if(s==='elder'||s==='machina'){a=s;}else{a=(localStorage.getItem('munny_theme')==='light')?'light':'dark';}}if(a==='elder'||a==='machina'){document.documentElement.setAttribute('data-skin',a);}else if(a==='dark'){document.documentElement.setAttribute('data-theme','dark');}}catch(e){}})();</script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ry's Tools</title>
+<link rel="icon" type="image/png" href="logo.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&amp;family=Source+Sans+Pro:wght@400;600&amp;family=MedievalSharp&amp;family=IM+Fell+English&amp;family=Orbitron:wght@500;700&amp;display=swap" rel="stylesheet">
+<script src="https://accounts.google.com/gsi/client" async="" defer=""></script>
+<style>
+  :root {
+    --paper: #F3E9CE;
+    --paper-line: #D9C79C;
+    --ink: #3B2A16;
+    --ink-soft: #7A6142;
+    --income: #3F6B33;
+    --income-bg: #E4EDD7;
+    --expense: #93402A;
+    --expense-bg: #F1DCC9;
+    --gold: #8A6423;
+    --gold-bg: #EBDBAF;
+    --danger: #93402A;
+    --font-header: 'Source Sans Pro', sans-serif;
+    --font-body: 'Source Sans Pro', sans-serif;
+    --font-mono: 'IBM Plex Mono', monospace;
+    --bg-texture: none;
+    --letter-spacing-header: -0.01em;
+  }
+  :root[data-theme="dark"] {
+    --paper: #000000;
+    --paper-line: #1C1C1C;
+    --ink: #F0F0EA;
+    --ink-soft: #8C8C84;
+    --income: #6FCF7A;
+    --income-bg: #101F13;
+    --expense: #E2685A;
+    --expense-bg: #241211;
+    --gold: #D9B25E;
+    --gold-bg: #1F1A0E;
+    --danger: #EF5350;
+  }
+  :root[data-skin="elder"] {
+    --paper: #F3E9CE;
+    --paper-line: #D9C79C;
+    --ink: #3B2A16;
+    --ink-soft: #7A6142;
+    --income: #3F6B33;
+    --income-bg: #E4EDD7;
+    --expense: #93402A;
+    --expense-bg: #F1DCC9;
+    --gold: #8A6423;
+    --gold-bg: #EBDBAF;
+    --danger: #93402A;
+    --font-header: 'MedievalSharp', cursive;
+    --font-body: 'IM Fell English', serif;
+    --font-mono: 'IBM Plex Mono', monospace;
+    --letter-spacing-header: 0.01em;
+    --bg-texture:
+      radial-gradient(ellipse at 20% 15%, rgba(154,111,53,0.08), transparent 60%),
+      radial-gradient(ellipse at 85% 80%, rgba(140,58,43,0.06), transparent 55%),
+      repeating-radial-gradient(circle at 50% 50%, rgba(59,42,22,0.03) 0, rgba(59,42,22,0.03) 1px, transparent 2px, transparent 4px);
+  }
+  :root[data-skin="machina"] {
+    --paper: #050807;
+    --paper-line: #10221C;
+    --ink: #52FFC6;
+    --ink-soft: #3C8A78;
+    --income: #52FFC6;
+    --income-bg: #06160F;
+    --expense: #FF4470;
+    --expense-bg: #180208;
+    --gold: #FFC857;
+    --gold-bg: #17130a;
+    --danger: #FF4470;
+    --font-header: 'Orbitron', sans-serif;
+    --font-body: 'IBM Plex Mono', monospace;
+    --font-mono: 'IBM Plex Mono', monospace;
+    --letter-spacing-header: 0.04em;
+    --bg-texture: repeating-linear-gradient(0deg, rgba(82,255,198,0.025) 0px, rgba(82,255,198,0.025) 1px, transparent 1px, transparent 3px);
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg-texture), var(--paper);
+    background-attachment: fixed;
+    color: var(--ink);
+    font-family: var(--font-body);
+    transition: background-color .15s ease, color .15s ease;
+    padding: 0 20px 80px;
+    overflow-x: hidden;
+  }
+
+  /* ---------- app shell / header (shared chrome — keep in sync with budget.html/email.html) ---------- */
+  .app-shell { max-width: 820px; margin: 0 auto; }
+  .app-header-sticky {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    background: var(--paper);
+    padding-top: 10px;
+    padding-bottom: 1px;
+    width: 100vw;
+    margin-left: 50%;
+    transform: translateX(-50%);
+    border-bottom: 1px solid var(--paper-line);
+  }
+  .app-header-inner { max-width: 860px; margin: 0 auto; padding: 0 20px; }
+  .save-bar { display: flex; align-items: flex-start; justify-content: flex-start; flex-wrap: wrap; gap: 12px; margin-bottom: 12px; }
+  .mobile-menu-toggle { display: none; }
+  .mobile-menu-close { display: none; }
+  .mobile-menu-backdrop { display: none; }
+  .header-controls { display: contents; }
+  .brand-block { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; }
+  .brand-mark {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    height: 34px;
+    font-family: var(--font-header);
+    font-weight: 600;
+    font-size: 23px;
+    color: var(--ink);
+  }
+  .tool-controls { display: flex; align-items: center; flex-wrap: wrap; gap: 12px; margin-left: auto; }
+  .tool-controls[hidden] { display: none; }
+  .tool-dropdown { position: relative; }
+  .tool-dropdown-toggle {
+    height: 34px;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 0 14px;
+    border-radius: 17px;
+    background: none;
+    border: 1.5px solid var(--ink);
+    color: var(--ink);
+    font-family: var(--font-body);
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+  .tool-dropdown-toggle:hover, .tool-dropdown-toggle.is-open { background: var(--paper-line); }
+  .tool-dropdown-caret {
+    font-size: 9px;
+    color: var(--ink-soft);
+    transition: transform .15s ease;
+  }
+  .tool-dropdown-toggle.is-open .tool-dropdown-caret { transform: rotate(180deg); }
+  .tool-dropdown-menu {
+    position: absolute;
+    top: calc(100% + 8px);
+    left: 0;
+    min-width: 160px;
+    background: var(--paper);
+    border: 1.5px solid var(--ink);
+    border-radius: 12px;
+    padding: 6px;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    box-shadow: 0 10px 28px rgba(0,0,0,0.2);
+    opacity: 0;
+    transform: translateY(-6px);
+    pointer-events: none;
+    transition: opacity .15s ease, transform .15s ease;
+    z-index: 50;
+  }
+  .tool-dropdown-menu.expanded {
+    opacity: 1;
+    transform: translateY(0);
+    pointer-events: auto;
+  }
+  .tool-dropdown-item {
+    display: block;
+    width: 100%;
+    text-align: left;
+    background: none;
+    border: none;
+    border-radius: 7px;
+    padding: 9px 12px;
+    font-family: var(--font-body);
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--ink-soft);
+    cursor: pointer;
+  }
+  .tool-dropdown-item:hover { background: var(--paper-line); color: var(--ink); }
+  .tool-dropdown-item.active { color: var(--ink); background: var(--gold-bg); }
+  .dropdown-label-short { display: none; }
+  .save-bar.labels-short .dropdown-label-full { display: none; }
+  .save-bar.labels-short .dropdown-label-short { display: inline; }
+  .theme-dropdown { position: relative; }
+  .theme-dropdown-toggle {
+    height: 34px;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 0 14px;
+    border-radius: 17px;
+    background: none;
+    border: 1.5px solid var(--ink);
+    color: var(--ink);
+    font-family: var(--font-body);
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+  .theme-dropdown-toggle:hover, .theme-dropdown-toggle.is-open { background: var(--paper-line); }
+  .theme-dropdown-caret {
+    font-size: 9px;
+    color: var(--ink-soft);
+    transition: transform .15s ease;
+  }
+  .theme-dropdown-toggle.is-open .theme-dropdown-caret { transform: rotate(180deg); }
+  .theme-dropdown-menu {
+    position: absolute;
+    top: calc(100% + 8px);
+    left: 0;
+    min-width: 150px;
+    background: var(--paper);
+    border: 1.5px solid var(--ink);
+    border-radius: 12px;
+    padding: 6px;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    box-shadow: 0 10px 28px rgba(0,0,0,0.2);
+    opacity: 0;
+    transform: translateY(-6px);
+    pointer-events: none;
+    transition: opacity .15s ease, transform .15s ease;
+    z-index: 50;
+  }
+  .theme-dropdown-menu.expanded {
+    opacity: 1;
+    transform: translateY(0);
+    pointer-events: auto;
+  }
+  .theme-dropdown-item {
+    display: block;
+    width: 100%;
+    text-align: left;
+    background: none;
+    border: none;
+    border-radius: 7px;
+    padding: 9px 12px;
+    font-family: var(--font-body);
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--ink-soft);
+    cursor: pointer;
+  }
+  .theme-dropdown-item:hover { background: var(--paper-line); color: var(--ink); }
+  .theme-dropdown-item.active { color: var(--ink); background: var(--gold-bg); }
+  .save-btn {
+    height: 34px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--ink);
+    color: var(--paper);
+    border: none;
+    font-family: var(--font-body);
+    font-size: 14px;
+    font-weight: 600;
+    padding: 0 20px;
+    border-radius: 6px;
+    cursor: pointer;
+  }
+  .save-btn:hover { opacity: 0.88; }
+  .save-btn[hidden] { display: none; }
+  .save-btn.export-btn {
+    background: none;
+    color: var(--ink);
+    border: 1.5px solid var(--ink);
+  }
+  .save-btn.export-btn:hover { opacity: 1; background: var(--paper-line); }
+  .save-status { font-size: 13px; color: var(--income); min-height: 16px; }
+  .signed-in-banner {
+    font-size: 12px;
+    color: var(--ink-soft);
+    text-align: left;
+    min-height: 16px;
+  }
+  .app-footnote {
+    max-width: 820px;
+    margin: 30px auto 0;
+    font-size: 12px;
+    color: var(--ink-soft);
+    text-align: center;
+  }
+
+  /* Below this width, the tool/theme dropdowns and Save/Sign-in row collapse behind a
+     hamburger icon and slide out as a left-hand drawer instead of sitting inline in the
+     header — desktop keeps the plain inline row above untouched. */
+  @media (max-width: 680px) {
+    .mobile-menu-toggle {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 38px;
+      height: 34px;
+      flex-shrink: 0;
+      background: none;
+      border: 1.5px solid var(--ink);
+      border-radius: 8px;
+      color: var(--ink);
+      font-size: 18px;
+      line-height: 1;
+      cursor: pointer;
+    }
+    .mobile-menu-toggle:hover { background: var(--paper-line); }
+    .header-controls {
+      display: flex;
+      flex-direction: column;
+      align-items: stretch;
+      gap: 18px;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 80vw;
+      max-width: 300px;
+      height: 100vh;
+      margin: 0;
+      background: var(--paper);
+      border-right: 1.5px solid var(--ink);
+      padding: 64px 18px 24px;
+      box-sizing: border-box;
+      overflow-y: auto;
+      z-index: 1001;
+      transform: translateX(-100%);
+      transition: transform .2s ease;
+    }
+    .header-controls.open { transform: translateX(0); }
+    .header-controls .tool-dropdown,
+    .header-controls .theme-dropdown { width: 100%; }
+    .header-controls .tool-dropdown-toggle,
+    .header-controls .theme-dropdown-toggle { width: 100%; justify-content: space-between; }
+    .header-controls .tool-dropdown-menu,
+    .header-controls .theme-dropdown-menu { min-width: 0; width: 100%; }
+    .header-controls .tool-controls { margin-left: 0; flex-direction: column; align-items: stretch; gap: 10px; }
+    .header-controls .save-btn { width: 100%; }
+    .mobile-menu-close {
+      display: block;
+      position: absolute;
+      top: 14px;
+      right: 14px;
+      background: none;
+      border: none;
+      color: var(--ink);
+      font-size: 26px;
+      line-height: 1;
+      padding: 4px 8px;
+      cursor: pointer;
+    }
+    .mobile-menu-backdrop.open {
+      display: block;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background: rgba(0,0,0,0.45);
+      z-index: 1000;
+    }
+  }
+
+  /* ---------- Calendar tool ---------- */
+  .cal-connect { max-width: 640px; margin: 60px auto 0; text-align: center; }
+  .cal-connect h1 {
+    font-family: var(--font-header);
+    font-weight: 600;
+    font-size: 32px;
+    margin: 0 0 12px;
+    letter-spacing: var(--letter-spacing-header);
+  }
+  .cal-connect p { color: var(--ink-soft); font-size: 15px; line-height: 1.5; margin: 0 0 20px; }
+  .cal-connect-status { font-size: 13px; color: var(--gold); min-height: 16px; margin: 14px 0 0 !important; }
+  .cal-connect-status.error { color: var(--expense); }
+
+  .cal-app { max-width: 860px; margin: 12px auto 0; }
+  .cal-toolbar { display: flex; align-items: center; gap: 10px; margin-bottom: 6px; }
+  .cal-nav-btn {
+    width: 34px;
+    height: 34px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: none;
+    border: 1.5px solid var(--ink);
+    border-radius: 8px;
+    color: var(--ink);
+    font-size: 18px;
+    line-height: 1;
+    cursor: pointer;
+  }
+  .cal-nav-btn:hover { background: var(--paper-line); }
+  .cal-month-label {
+    font-family: var(--font-header);
+    font-weight: 600;
+    font-size: 20px;
+    color: var(--ink);
+    flex: 1;
+    text-align: center;
+    letter-spacing: var(--letter-spacing-header);
+  }
+  .cal-today-btn { margin-left: auto; }
+  .cal-status-row { min-height: 18px; margin-bottom: 8px; }
+  .cal-status { font-size: 13px; color: var(--gold); }
+  .cal-status.error { color: var(--expense); }
+  .cal-weekday-row { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; margin-bottom: 6px; }
+  .cal-weekday-row span {
+    text-align: center;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--ink-soft);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+  .cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; }
+  .cal-day {
+    min-height: 84px;
+    padding: 6px;
+    border: 1px solid var(--paper-line);
+    border-radius: 8px;
+    background: var(--paper);
+    cursor: pointer;
+    text-align: left;
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    font-family: var(--font-body);
+  }
+  .cal-day:hover { background: var(--paper-line); }
+  .cal-day.outside-month { opacity: 0.4; }
+  .cal-day.is-today { border-color: var(--gold); border-width: 2px; }
+  .cal-day.has-selected { background: var(--gold-bg); border-color: var(--gold); }
+  .cal-day-num { font-size: 13px; font-weight: 600; color: var(--ink); font-family: var(--font-mono); }
+  .cal-day-events { display: flex; flex-direction: column; gap: 2px; overflow: hidden; }
+  .cal-event-chip {
+    font-size: 10.5px;
+    padding: 1px 5px;
+    border-radius: 4px;
+    background: var(--gold-bg);
+    color: var(--gold);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-weight: 600;
+  }
+  .cal-event-chip.all-day { background: var(--income-bg); color: var(--income); }
+  .cal-day-more { font-size: 10px; color: var(--ink-soft); }
+
+  .cal-agenda { margin-top: 20px; border: 1.5px solid var(--ink); border-radius: 10px; padding: 16px; }
+  .cal-agenda-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+  .cal-agenda-head h2 {
+    font-family: var(--font-header);
+    font-weight: 600;
+    font-size: 18px;
+    margin: 0;
+    letter-spacing: var(--letter-spacing-header);
+  }
+  .cal-agenda-close { background: none; border: none; color: var(--ink); font-size: 22px; cursor: pointer; line-height: 1; padding: 2px 6px; }
+  .cal-agenda-list { display: flex; flex-direction: column; gap: 10px; }
+  .cal-agenda-empty { color: var(--ink-soft); font-size: 14px; }
+  .cal-agenda-item { display: flex; gap: 12px; align-items: baseline; }
+  .cal-agenda-time { flex-shrink: 0; width: 76px; font-family: var(--font-mono); font-size: 12px; color: var(--gold); }
+  .cal-agenda-body { flex: 1; }
+  .cal-agenda-title { font-weight: 600; font-size: 14px; color: var(--ink); }
+  .cal-agenda-location { font-size: 12.5px; color: var(--ink-soft); margin-top: 1px; }
+
+  @media (max-width: 680px) {
+    .cal-day { min-height: 62px; padding: 4px; gap: 2px; }
+    .cal-day-num { font-size: 12px; }
+    .cal-event-chip { font-size: 9px; padding: 1px 4px; }
+    .cal-agenda-time { width: 60px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="app-shell">
+  <div class="app-header-sticky">
+  <div class="app-header-inner">
+  <div class="save-bar">
+    <button class="mobile-menu-toggle" id="mobile-menu-toggle" onclick="toggleMobileMenu(event)" aria-haspopup="true" aria-expanded="false" aria-controls="header-controls" aria-label="Open menu">
+      <span aria-hidden="true">&#9776;</span>
+    </button>
+    <div class="brand-block">
+      <div class="brand-mark"><span>Ry's Tools</span></div>
+      <div class="signed-in-banner" id="signed-in-banner"></div>
+    </div>
+    <div class="header-controls" id="header-controls">
+      <button class="mobile-menu-close" id="mobile-menu-close" onclick="closeMobileMenu()" aria-label="Close menu">&times;</button>
+      <div class="tool-dropdown">
+        <button class="tool-dropdown-toggle" id="tool-dropdown-toggle" onclick="toggleToolMenu(event)" aria-haspopup="true" aria-expanded="false">
+          <span id="tool-dropdown-label" class="dropdown-label-full">Calendar</span>
+          <span id="tool-dropdown-label-short" class="dropdown-label-short" aria-hidden="true">C</span>
+          <span class="tool-dropdown-caret">&#9662;</span>
+        </button>
+        <div class="tool-dropdown-menu" id="tool-menu" role="menu" aria-label="Tool">
+          <button type="button" class="tool-dropdown-item" data-value="budget" role="menuitemradio" onclick="setActiveTool('budget')">Budget Planner</button>
+          <button type="button" class="tool-dropdown-item" data-value="email" role="menuitemradio" onclick="setActiveTool('email')">E-Mail</button>
+          <button type="button" class="tool-dropdown-item" data-value="calendar" role="menuitemradio" onclick="setActiveTool('calendar')">Calendar</button>
+        </div>
+      </div>
+      <div class="theme-dropdown">
+        <button class="theme-dropdown-toggle" id="theme-dropdown-toggle" onclick="toggleSettingsPanel(event)" aria-haspopup="true" aria-expanded="false">
+          <span id="theme-dropdown-label" class="dropdown-label-full">Dark</span>
+          <span id="theme-dropdown-label-short" class="dropdown-label-short" aria-hidden="true">D</span>
+          <span class="theme-dropdown-caret">&#9662;</span>
+        </button>
+        <div class="theme-dropdown-menu" id="appearance-group" role="menu" aria-label="Appearance">
+          <button type="button" class="theme-dropdown-item" data-value="light" role="menuitemradio" onclick="setAppearance('light')">Light</button>
+          <button type="button" class="theme-dropdown-item" data-value="dark" role="menuitemradio" onclick="setAppearance('dark')">Dark</button>
+          <button type="button" class="theme-dropdown-item" data-value="elder" role="menuitemradio" onclick="setAppearance('elder')">Elder</button>
+          <button type="button" class="theme-dropdown-item" data-value="machina" role="menuitemradio" onclick="setAppearance('machina')">Machina</button>
+        </div>
+      </div>
+      <div class="tool-controls" id="tool-controls">
+        <button class="save-btn export-btn" id="google-signin-btn" onclick="handleGoogleSignIn()">Google Sign-In</button>
+        <span class="save-status" id="save-status"></span>
+      </div>
+    </div>
+  </div>
+  <div class="mobile-menu-backdrop" id="mobile-menu-backdrop" onclick="closeMobileMenu()"></div>
+  </div>
+  </div>
+
+  <div id="app-content">
+  <div class="cal-connect" id="cal-connect">
+    <h1>Calendar</h1>
+    <p>Connect your Google account to show events from your Google Calendar.</p>
+    <button class="save-btn" onclick="handleGoogleSignIn()">Connect Calendar</button>
+    <p class="cal-connect-status" id="cal-connect-status"></p>
+  </div>
+
+  <div class="cal-app" id="cal-app" hidden="">
+    <div class="cal-toolbar">
+      <button type="button" class="cal-nav-btn" onclick="CalendarApp.prevMonth()" aria-label="Previous month">&#8249;</button>
+      <div class="cal-month-label" id="cal-month-label"></div>
+      <button type="button" class="cal-nav-btn" onclick="CalendarApp.nextMonth()" aria-label="Next month">&#8250;</button>
+      <button type="button" class="save-btn export-btn cal-today-btn" onclick="CalendarApp.goToday()">Today</button>
+    </div>
+    <div class="cal-status-row"><span class="cal-status" id="cal-status"></span></div>
+    <div class="cal-weekday-row">
+      <span>Sun</span><span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span>
+    </div>
+    <div class="cal-grid" id="cal-grid"></div>
+
+    <div class="cal-agenda" id="cal-agenda" hidden="">
+      <div class="cal-agenda-head">
+        <h2 id="cal-agenda-date"></h2>
+        <button type="button" class="cal-agenda-close" onclick="CalendarApp.closeAgenda()" aria-label="Close">&times;</button>
+      </div>
+      <div class="cal-agenda-list" id="cal-agenda-list"></div>
+    </div>
+  </div>
+  </div>
+</div>
+
+<script>
+  function setAppearance(appearance) {
+    if (appearance === 'elder' || appearance === 'machina') {
+      document.documentElement.setAttribute('data-skin', appearance);
+      document.documentElement.removeAttribute('data-theme');
+    } else if (appearance === 'dark') {
+      document.documentElement.removeAttribute('data-skin');
+      document.documentElement.setAttribute('data-theme', 'dark');
+    } else {
+      appearance = 'light';
+      document.documentElement.removeAttribute('data-skin');
+      document.documentElement.removeAttribute('data-theme');
+    }
+    try { localStorage.setItem('munny_appearance', appearance); } catch (e) {}
+    syncAppearanceRadios(appearance);
+    closeThemeDropdown();
+  }
+
+  // Shrinks the tool/theme dropdown toggle labels to a single initial only when the
+  // current label text would otherwise force something onto a new line. Re-checked
+  // whenever a label's text changes or the window resizes, never a fixed viewport
+  // breakpoint. Kept in sync with the same function in budget.html/email.html.
+  function updateDropdownLabelFit() {
+    const saveBar = document.querySelector('.save-bar');
+    const toolDropdown = document.querySelector('.tool-dropdown');
+    const themeDropdown = document.querySelector('.theme-dropdown');
+    const toolControls = document.getElementById('tool-controls');
+    if (!saveBar || !toolDropdown || !themeDropdown) return;
+
+    function rowTops() {
+      const els = [toolDropdown, themeDropdown];
+      if (toolControls && !toolControls.hidden) els.push(toolControls);
+      return els.map(function (el) { return Math.round(el.getBoundingClientRect().top); });
+    }
+
+    function sameRow(tops) {
+      return tops.every(function (t) { return t === tops[0]; });
+    }
+
+    saveBar.classList.remove('labels-short');
+    if (sameRow(rowTops())) return;
+
+    saveBar.classList.add('labels-short');
+    if (!sameRow(rowTops())) {
+      saveBar.classList.remove('labels-short');
+    }
+  }
+
+  let dropdownLabelFitResizeTimer = null;
+  window.addEventListener('resize', function () {
+    clearTimeout(dropdownLabelFitResizeTimer);
+    dropdownLabelFitResizeTimer = setTimeout(updateDropdownLabelFit, 100);
+  });
+
+  // No tab bar on this page — kept as a harmless no-op so shared init code that calls
+  // it doesn't need a page-specific fork.
+  function updateTabLabelFit() {
+    const tabsEl = document.querySelector('.tabs');
+    const scrollEl = document.querySelector('.tabs-scroll');
+    if (!tabsEl || !scrollEl) return;
+    function fits() { return scrollEl.scrollWidth <= scrollEl.clientWidth + 1; }
+
+    tabsEl.classList.remove('labels-medium', 'labels-short');
+    if (fits()) return;
+
+    tabsEl.classList.add('labels-medium');
+    if (fits()) return;
+
+    tabsEl.classList.remove('labels-medium');
+    tabsEl.classList.add('labels-short');
+  }
+
+  function syncAppearanceRadios(appearance) {
+    const label = { light: 'Light', dark: 'Dark', elder: 'Elder', machina: 'Machina' }[appearance] || 'Dark';
+    const toggleLabel = document.getElementById('theme-dropdown-label');
+    if (toggleLabel) toggleLabel.textContent = label;
+    const toggleLabelShort = document.getElementById('theme-dropdown-label-short');
+    if (toggleLabelShort) toggleLabelShort.textContent = label.charAt(0);
+    updateDropdownLabelFit();
+    document.querySelectorAll('.theme-dropdown-item').forEach(function (item) {
+      const isActive = item.dataset.value === appearance;
+      item.classList.toggle('active', isActive);
+      item.setAttribute('aria-checked', isActive ? 'true' : 'false');
+    });
+  }
+
+  function toggleDropdown(e, toggleId, menuId) {
+    if (e) e.stopPropagation();
+    const panel = document.getElementById(menuId);
+    const toggle = document.getElementById(toggleId);
+    if (!panel || !toggle) return;
+    const isOpen = panel.classList.toggle('expanded');
+    toggle.classList.toggle('is-open', isOpen);
+    toggle.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+  }
+
+  function closeDropdown(toggleId, menuId) {
+    const panel = document.getElementById(menuId);
+    const toggle = document.getElementById(toggleId);
+    if (panel) panel.classList.remove('expanded');
+    if (toggle) { toggle.classList.remove('is-open'); toggle.setAttribute('aria-expanded', 'false'); }
+  }
+
+  function toggleSettingsPanel(e) { toggleDropdown(e, 'theme-dropdown-toggle', 'appearance-group'); }
+  function closeThemeDropdown() { closeDropdown('theme-dropdown-toggle', 'appearance-group'); }
+  function toggleToolMenu(e) { toggleDropdown(e, 'tool-dropdown-toggle', 'tool-menu'); }
+  function closeToolMenu() { closeDropdown('tool-dropdown-toggle', 'tool-menu'); }
+
+  // Mobile-only left-hand drawer: holds the tool/theme dropdowns, which sit inline in
+  // the header on desktop (see the @media (max-width: 680px) block in CSS).
+  function toggleMobileMenu(e) {
+    if (e) e.stopPropagation();
+    const panel = document.getElementById('header-controls');
+    const toggle = document.getElementById('mobile-menu-toggle');
+    const backdrop = document.getElementById('mobile-menu-backdrop');
+    if (!panel || !toggle) return;
+    const isOpen = panel.classList.toggle('open');
+    toggle.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+    if (backdrop) backdrop.classList.toggle('open', isOpen);
+  }
+
+  function closeMobileMenu() {
+    const panel = document.getElementById('header-controls');
+    const toggle = document.getElementById('mobile-menu-toggle');
+    const backdrop = document.getElementById('mobile-menu-backdrop');
+    if (panel) panel.classList.remove('open');
+    if (toggle) toggle.setAttribute('aria-expanded', 'false');
+    if (backdrop) backdrop.classList.remove('open');
+  }
+
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape') closeMobileMenu();
+  });
+
+  let mobileMenuResizeTimer = null;
+  window.addEventListener('resize', function () {
+    clearTimeout(mobileMenuResizeTimer);
+    mobileMenuResizeTimer = setTimeout(function () {
+      if (window.matchMedia('(min-width: 681px)').matches) closeMobileMenu();
+    }, 100);
+  });
+
+  document.addEventListener('click', function (e) {
+    [
+      ['theme-dropdown-toggle', 'appearance-group', '.theme-dropdown'],
+      ['tool-dropdown-toggle', 'tool-menu', '.tool-dropdown']
+    ].forEach(function (entry) {
+      const toggleId = entry[0], menuId = entry[1], wrapSelector = entry[2];
+      const panel = document.getElementById(menuId);
+      const wrap = document.querySelector(wrapSelector);
+      if (!panel || !wrap || !panel.classList.contains('expanded')) return;
+      if (wrap.contains(e.target)) return;
+      closeDropdown(toggleId, menuId);
+    });
+  });
+
+  // Each tool lives on its own page — CURRENT_TOOL says which one this page is, so
+  // selecting a different tool from the dropdown navigates instead of toggling in place.
+  // Kept in sync with the matching block in budget.html/email.html.
+  const CURRENT_TOOL = 'calendar';
+  const TOOL_PAGES = { budget: 'budget.html', email: 'email.html', calendar: 'cal.html' };
+  const TOOL_LABELS = { budget: 'Budget Planner', email: 'E-Mail', calendar: 'Calendar' };
+
+  function setActiveTool(tool) {
+    if (!TOOL_PAGES[tool]) tool = CURRENT_TOOL;
+    if (tool !== CURRENT_TOOL) {
+      window.location.href = TOOL_PAGES[tool];
+      return;
+    }
+    syncToolMenu(tool);
+    closeToolMenu();
+  }
+
+  function syncToolMenu(tool) {
+    const label = TOOL_LABELS[tool] || TOOL_LABELS[CURRENT_TOOL];
+    const toggleLabel = document.getElementById('tool-dropdown-label');
+    if (toggleLabel) toggleLabel.textContent = label;
+    const toggleLabelShort = document.getElementById('tool-dropdown-label-short');
+    if (toggleLabelShort) toggleLabelShort.textContent = label.charAt(0);
+    updateDropdownLabelFit();
+    document.querySelectorAll('#tool-menu .tool-dropdown-item').forEach(function (item) {
+      const isActive = item.dataset.value === tool;
+      item.classList.toggle('active', isActive);
+      item.setAttribute('aria-checked', isActive ? 'true' : 'false');
+    });
+  }
+
+  function currentAppearance() {
+    let appearance;
+    try { appearance = localStorage.getItem('munny_appearance'); } catch (e) {}
+    if (appearance === 'light' || appearance === 'dark' || appearance === 'elder' || appearance === 'machina') {
+      return appearance;
+    }
+    let skin, theme;
+    try { skin = localStorage.getItem('munny_skin'); } catch (e) {}
+    if (skin === 'elder' || skin === 'machina') return skin;
+    try { theme = localStorage.getItem('munny_theme'); } catch (e) {}
+    return theme === 'light' ? 'light' : 'dark';
+  }
+
+  /* ================= Google sign-in (shared session with every tool page via the
+     same localStorage token — kept in sync with the same module in budget.html/
+     email.html, trimmed to what this page actually needs: no Drive file persistence,
+     just identity + Calendar). ================= */
+  const GoogleDriveSync = (function () {
+    // Client IDs are meant to be public (unlike API tokens) — the real gate is the
+    // Google sign-in + consent screen each user goes through, not a hidden secret.
+    const CLIENT_ID = '575902569700-4l05lkmf0kbrgq5kdr58canigcvafv3j.apps.googleusercontent.com';
+    // This page's sign-in requests Calendar scope on top of the base identity one —
+    // the other tool pages don't need Calendar, so only this page's copy of the module
+    // asks for it (incremental, feature-scoped consent rather than bundling it into
+    // every tool's sign-in). A token saved by another tool's sign-in still works for
+    // isSignedIn() here, but Calendar calls need hasCalendarScope() to be true — see
+    // handleGoogleSignIn()/CalendarApp below for the reconnect prompt when it isn't.
+    const SCOPE = 'https://www.googleapis.com/auth/userinfo.email https://www.googleapis.com/auth/calendar.events.readonly';
+    const TOKEN_KEY = 'munny_google_token';
+
+    let tokenClient = null;
+    let accessToken = null;
+
+    function persistToken(token, expiresInSeconds, scope) {
+      try {
+        localStorage.setItem(TOKEN_KEY, JSON.stringify({
+          access_token: token,
+          expires_at: Date.now() + (expiresInSeconds || 3600) * 1000,
+          scope: scope || ''
+        }));
+      } catch (e) {}
+    }
+    function clearPersistedToken() {
+      try { localStorage.removeItem(TOKEN_KEY); } catch (e) {}
+    }
+    // Google's token client never restores a session on its own after a reload — a
+    // still-valid access token has to be saved and re-hydrated by hand. Once the real
+    // expiry passes (usually ~1hr), the next Calendar request 401s and clears it.
+    function restoreSession() {
+      let stored;
+      try { stored = JSON.parse(localStorage.getItem(TOKEN_KEY) || 'null'); } catch (e) { stored = null; }
+      if (!stored || !stored.access_token || !stored.expires_at) return false;
+      if (Date.now() > stored.expires_at - 60000) { clearPersistedToken(); return false; }
+      accessToken = stored.access_token;
+      return true;
+    }
+
+    function isSignedIn() {
+      return !!accessToken;
+    }
+
+    // A token saved by a sign-in on another tool page is still valid for isSignedIn()
+    // but will 403 on Calendar calls unless that sign-in also happened to include this
+    // scope — this checks the scope actually granted at sign-in time, so the UI can ask
+    // to reconnect instead of just failing partway through a request.
+    const REQUIRED_CALENDAR_SCOPES = ['calendar.events.readonly'];
+    function hasCalendarScope() {
+      let stored;
+      try { stored = JSON.parse(localStorage.getItem(TOKEN_KEY) || 'null'); } catch (e) { stored = null; }
+      if (!stored || typeof stored.scope !== 'string') return false;
+      return REQUIRED_CALENDAR_SCOPES.every(function (s) { return stored.scope.indexOf(s) !== -1; });
+    }
+
+    function signIn() {
+      return new Promise(function (resolve, reject) {
+        if (!window.google || !google.accounts || !google.accounts.oauth2) {
+          reject(new Error('Google sign-in script hasn\'t loaded yet — try again in a moment.'));
+          return;
+        }
+        if (!tokenClient) {
+          tokenClient = google.accounts.oauth2.initTokenClient({
+            client_id: CLIENT_ID,
+            scope: SCOPE,
+            callback: function () {} // replaced per-request below
+          });
+        }
+        let settled = false;
+        // If the popup gets closed/dismissed without Google ever calling back
+        // (e.g. blocked, or the user closes it), don't hang forever.
+        const timer = setTimeout(function () {
+          if (settled) return;
+          settled = true;
+          reject(new Error('Sign-in timed out — the popup may have been closed or blocked. Try again.'));
+        }, 60000);
+        tokenClient.callback = function (resp) {
+          if (settled) return;
+          settled = true;
+          clearTimeout(timer);
+          if (resp.error) { reject(new Error(resp.error)); return; }
+          accessToken = resp.access_token;
+          persistToken(accessToken, resp.expires_in, resp.scope);
+          resolve(accessToken);
+        };
+        // prompt:'' asks Google to try a silent, invisible sign-in first — in Safari this
+        // seems to open the popup, fail to complete quietly, and close itself before you
+        // can interact with it. Forcing consent every time is a little more friction but
+        // actually shows the real interactive screen instead of a flash-and-close window.
+        tokenClient.requestAccessToken({ prompt: 'consent' });
+      });
+    }
+
+    async function api(url, options) {
+      if (!accessToken) throw new Error('not signed in');
+      const headers = Object.assign({ 'Authorization': 'Bearer ' + accessToken }, (options && options.headers) || {});
+      const controller = new AbortController();
+      const timer = setTimeout(function () { controller.abort(); }, 15000);
+      let resp;
+      try {
+        resp = await fetch(url, Object.assign({ cache: 'no-store' }, options, { headers: headers, signal: controller.signal }));
+      } catch (e) {
+        if (e.name === 'AbortError') throw new Error('Google Calendar request timed out — check your connection and try again.');
+        throw new Error('Network error talking to Google Calendar: ' + e.message);
+      } finally {
+        clearTimeout(timer);
+      }
+      if (resp.status === 401) { accessToken = null; clearPersistedToken(); } // expired/revoked — isSignedIn() will now correctly report false
+      return resp;
+    }
+
+    async function getUserEmail() {
+      const resp = await api('https://www.googleapis.com/oauth2/v3/userinfo');
+      if (!resp.ok) throw new Error('HTTP ' + resp.status);
+      const json = await resp.json();
+      return json.email || '';
+    }
+
+    // Google's error responses carry a real explanation (e.g. "Calendar API has not been
+    // used in project ... before or it is disabled", or an insufficient-scope message) —
+    // surfacing that instead of just the status code is the difference between a useful
+    // error and a guessing game.
+    async function errorFromResponse(resp) {
+      try {
+        const json = await resp.json();
+        if (json && json.error && json.error.message) return json.error.message;
+      } catch (e) {}
+      return 'HTTP ' + resp.status;
+    }
+
+    // ---- Calendar (this page's addition — the other tool pages don't need this) ----
+    async function gcalListEvents(timeMinISO, timeMaxISO) {
+      const params = new URLSearchParams({
+        timeMin: timeMinISO,
+        timeMax: timeMaxISO,
+        singleEvents: 'true',
+        orderBy: 'startTime',
+        maxResults: '250'
+      });
+      const resp = await api('https://www.googleapis.com/calendar/v3/calendars/primary/events?' + params.toString());
+      if (!resp.ok) throw new Error(await errorFromResponse(resp));
+      const json = await resp.json();
+      return json.items || [];
+    }
+
+    return { isSignedIn, signIn, restoreSession, getUserEmail, hasCalendarScope, gcalListEvents };
+  })();
+
+  /* ================= Calendar app (namespaced) ================= */
+  const CalendarApp = (function () {
+    const MONTH_NAMES = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+    const WEEKDAY_NAMES = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+
+    let viewYear, viewMonth; // viewMonth is 0-indexed
+    let eventsByDate = {}; // 'YYYY-MM-DD' -> sorted array of events
+    let selectedDate = null;
+    let loadToken = 0; // guards against a slow request landing after a newer one
+
+    function pad2(n) { return n < 10 ? '0' + n : '' + n; }
+    function dateKey(d) { return d.getFullYear() + '-' + pad2(d.getMonth() + 1) + '-' + pad2(d.getDate()); }
+
+    function formatTime(d) {
+      let h = d.getHours();
+      const m = d.getMinutes();
+      const ampm = h >= 12 ? 'PM' : 'AM';
+      h = h % 12;
+      if (h === 0) h = 12;
+      return h + (m ? ':' + pad2(m) : '') + ampm;
+    }
+
+    function setStatus(text, isError) {
+      const el = document.getElementById('cal-status');
+      if (!el) return;
+      el.textContent = text || '';
+      el.classList.toggle('error', !!isError);
+    }
+
+    function render() {
+      const connectEl = document.getElementById('cal-connect');
+      const appEl = document.getElementById('cal-app');
+      const statusEl = document.getElementById('cal-connect-status');
+      if (!connectEl || !appEl) return;
+
+      const signedIn = GoogleDriveSync.isSignedIn();
+      const ready = signedIn && GoogleDriveSync.hasCalendarScope();
+
+      connectEl.hidden = ready;
+      appEl.hidden = !ready;
+
+      if (statusEl) {
+        statusEl.classList.remove('error');
+        statusEl.textContent = (signedIn && !ready)
+          ? 'Signed in, but Calendar access hasn\'t been granted yet — click Connect Calendar to allow it.'
+          : '';
+      }
+
+      if (ready) {
+        if (viewYear === undefined) {
+          const now = new Date();
+          viewYear = now.getFullYear();
+          viewMonth = now.getMonth();
+        }
+        loadMonth();
+      }
+    }
+
+    // The grid always shows 6 full weeks (42 days) so the layout height never jumps
+    // between months, and it's rendered in two passes: the day cells themselves first
+    // (instant, no network), then each day's events once the Calendar request resolves —
+    // so navigating months feels immediate even while events are still loading.
+    function gridStartFor(year, month) {
+      const start = new Date(year, month, 1);
+      start.setDate(start.getDate() - start.getDay());
+      return start;
+    }
+
+    function loadMonth() {
+      const monthLabel = document.getElementById('cal-month-label');
+      if (monthLabel) monthLabel.textContent = MONTH_NAMES[viewMonth] + ' ' + viewYear;
+
+      const gridStart = gridStartFor(viewYear, viewMonth);
+      const gridEnd = new Date(gridStart);
+      gridEnd.setDate(gridEnd.getDate() + 42);
+
+      renderGridSkeleton(gridStart);
+
+      const myToken = ++loadToken;
+      setStatus('Loading events…');
+      GoogleDriveSync.gcalListEvents(gridStart.toISOString(), gridEnd.toISOString()).then(function (events) {
+        if (myToken !== loadToken) return; // a newer month nav superseded this request
+        eventsByDate = {};
+        events.forEach(function (ev) {
+          const startStr = ev.start && (ev.start.date || ev.start.dateTime);
+          if (!startStr) return;
+          const isAllDay = !!ev.start.date;
+          const startDate = isAllDay ? new Date(startStr + 'T00:00:00') : new Date(startStr);
+          const key = dateKey(startDate);
+          if (!eventsByDate[key]) eventsByDate[key] = [];
+          eventsByDate[key].push({
+            title: ev.summary || '(No title)',
+            location: ev.location || '',
+            isAllDay: isAllDay,
+            start: startDate
+          });
+        });
+        Object.keys(eventsByDate).forEach(function (key) {
+          eventsByDate[key].sort(function (a, b) {
+            if (a.isAllDay !== b.isAllDay) return a.isAllDay ? -1 : 1;
+            return a.start - b.start;
+          });
+        });
+        setStatus('');
+        renderGridEvents();
+        if (selectedDate) renderAgenda(selectedDate);
+      }).catch(function (e) {
+        if (myToken !== loadToken) return;
+        setStatus("Couldn't load events: " + e.message, true);
+      });
+    }
+
+    function renderGridSkeleton(gridStart) {
+      const gridEl = document.getElementById('cal-grid');
+      if (!gridEl) return;
+      gridEl.innerHTML = '';
+      const todayKey = dateKey(new Date());
+      for (let i = 0; i < 42; i++) {
+        const d = new Date(gridStart);
+        d.setDate(d.getDate() + i);
+        const key = dateKey(d);
+
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'cal-day'
+          + (d.getMonth() !== viewMonth ? ' outside-month' : '')
+          + (key === todayKey ? ' is-today' : '')
+          + (key === selectedDate ? ' has-selected' : '');
+        btn.dataset.date = key;
+
+        const num = document.createElement('div');
+        num.className = 'cal-day-num';
+        num.textContent = d.getDate();
+        btn.appendChild(num);
+
+        const evWrap = document.createElement('div');
+        evWrap.className = 'cal-day-events';
+        btn.appendChild(evWrap);
+
+        btn.addEventListener('click', function () { selectDate(key); });
+        gridEl.appendChild(btn);
+      }
+    }
+
+    function renderGridEvents() {
+      const MAX_CHIPS = 3;
+      document.querySelectorAll('.cal-day').forEach(function (dayEl) {
+        const key = dayEl.dataset.date;
+        const evWrap = dayEl.querySelector('.cal-day-events');
+        if (!evWrap) return;
+        evWrap.innerHTML = '';
+        const evs = eventsByDate[key] || [];
+        evs.slice(0, MAX_CHIPS).forEach(function (ev) {
+          const chip = document.createElement('div');
+          chip.className = 'cal-event-chip' + (ev.isAllDay ? ' all-day' : '');
+          chip.textContent = ev.isAllDay ? ev.title : (formatTime(ev.start) + ' ' + ev.title);
+          evWrap.appendChild(chip);
+        });
+        if (evs.length > MAX_CHIPS) {
+          const more = document.createElement('div');
+          more.className = 'cal-day-more';
+          more.textContent = '+' + (evs.length - MAX_CHIPS) + ' more';
+          evWrap.appendChild(more);
+        }
+      });
+    }
+
+    function selectDate(key) {
+      selectedDate = key;
+      document.querySelectorAll('.cal-day').forEach(function (el) {
+        el.classList.toggle('has-selected', el.dataset.date === key);
+      });
+      renderAgenda(key);
+    }
+
+    function renderAgenda(key) {
+      const agendaEl = document.getElementById('cal-agenda');
+      const dateEl = document.getElementById('cal-agenda-date');
+      const listEl = document.getElementById('cal-agenda-list');
+      if (!agendaEl || !listEl) return;
+      agendaEl.hidden = false;
+
+      const d = new Date(key + 'T00:00:00');
+      if (dateEl) dateEl.textContent = WEEKDAY_NAMES[d.getDay()] + ', ' + MONTH_NAMES[d.getMonth()] + ' ' + d.getDate();
+
+      const evs = eventsByDate[key] || [];
+      listEl.innerHTML = '';
+      if (!evs.length) {
+        const empty = document.createElement('div');
+        empty.className = 'cal-agenda-empty';
+        empty.textContent = 'No events.';
+        listEl.appendChild(empty);
+        return;
+      }
+      evs.forEach(function (ev) {
+        const item = document.createElement('div');
+        item.className = 'cal-agenda-item';
+
+        const time = document.createElement('div');
+        time.className = 'cal-agenda-time';
+        time.textContent = ev.isAllDay ? 'All day' : formatTime(ev.start);
+
+        const body = document.createElement('div');
+        body.className = 'cal-agenda-body';
+        const title = document.createElement('div');
+        title.className = 'cal-agenda-title';
+        title.textContent = ev.title;
+        body.appendChild(title);
+        if (ev.location) {
+          const loc = document.createElement('div');
+          loc.className = 'cal-agenda-location';
+          loc.textContent = ev.location;
+          body.appendChild(loc);
+        }
+
+        item.appendChild(time);
+        item.appendChild(body);
+        listEl.appendChild(item);
+      });
+    }
+
+    function closeAgenda() {
+      selectedDate = null;
+      const agendaEl = document.getElementById('cal-agenda');
+      if (agendaEl) agendaEl.hidden = true;
+      document.querySelectorAll('.cal-day').forEach(function (el) { el.classList.remove('has-selected'); });
+    }
+
+    function prevMonth() {
+      viewMonth--;
+      if (viewMonth < 0) { viewMonth = 11; viewYear--; }
+      loadMonth();
+    }
+    function nextMonth() {
+      viewMonth++;
+      if (viewMonth > 11) { viewMonth = 0; viewYear++; }
+      loadMonth();
+    }
+    function goToday() {
+      const now = new Date();
+      viewYear = now.getFullYear();
+      viewMonth = now.getMonth();
+      loadMonth();
+    }
+
+    return { render, prevMonth, nextMonth, goToday, closeAgenda };
+  })();
+
+  function setGoogleSignedInUi(signedIn) {
+    const signinBtn = document.getElementById('google-signin-btn');
+    if (signinBtn) signinBtn.hidden = signedIn;
+    updateDropdownLabelFit();
+  }
+
+  async function showSignedInBanner() {
+    const banner = document.getElementById('signed-in-banner');
+    if (!banner) return;
+    try {
+      const email = await GoogleDriveSync.getUserEmail();
+      banner.textContent = email || 'Signed in to Google';
+    } catch (e) {
+      banner.textContent = 'Signed in to Google'; // email lookup failed — still confirm sign-in
+    }
+  }
+
+  async function handleGoogleSignIn() {
+    const status = document.getElementById('save-status');
+    status.style.color = 'var(--gold)';
+    status.textContent = 'Signing in to Google…';
+    try {
+      await GoogleDriveSync.signIn();
+      setGoogleSignedInUi(true);
+      status.textContent = '';
+      await showSignedInBanner();
+      CalendarApp.render();
+    } catch (e) {
+      status.style.color = 'var(--expense)';
+      status.textContent = 'Google sign-in failed: ' + e.message;
+    }
+  }
+
+  async function loadApp() {
+    // Google's sign-in popup needs a real click, so a brand-new sign-in can't happen
+    // automatically on page load. But a still-valid access token from an earlier sign-in
+    // (saved in localStorage) can be restored without any popup — so a refresh doesn't
+    // force signing in again until that token actually expires (usually ~1hr).
+    setGoogleSignedInUi(false);
+    setAppearance(currentAppearance());
+    syncToolMenu(CURRENT_TOOL);
+    updateTabLabelFit();
+
+    if (GoogleDriveSync.restoreSession()) {
+      setGoogleSignedInUi(true);
+      await showSignedInBanner();
+    }
+    CalendarApp.render();
+  }
+
+  loadApp();
+</script>
+
+</body></html>
