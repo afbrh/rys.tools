@@ -318,17 +318,9 @@
   .cal-event-chip.all-day { background: var(--income-bg); color: var(--income); }
   .cal-day-more { font-size: 10px; color: var(--ink-soft); }
 
-  .cal-agenda { margin-top: 20px; border: 1.5px solid var(--ink); border-radius: 10px; padding: 16px; }
-  .cal-agenda-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
-  .cal-agenda-head h2 {
-    font-family: var(--font-header);
-    font-weight: 600;
-    font-size: 18px;
-    margin: 0;
-    letter-spacing: var(--letter-spacing-header);
-  }
-  .cal-agenda-close { background: none; border: none; color: var(--ink); font-size: 22px; cursor: pointer; line-height: 1; padding: 2px 6px; }
-  .cal-agenda-list { display: flex; flex-direction: column; gap: 10px; }
+  /* .cal-agenda-* below styles the items rendered into #cal-upcoming-list — either the
+     next 3 events (renderUpcoming) or a tapped day's events (renderSelectedDay), which
+     share this same box now instead of a separate box below the scroll grid. */
   .cal-agenda-empty { color: var(--ink-soft); font-size: 14px; }
   .cal-agenda-item { display: flex; gap: 12px; align-items: baseline; }
   .cal-agenda-time { flex-shrink: 0; width: 76px; font-family: var(--font-mono); font-size: 12px; color: var(--gold); }
@@ -452,7 +444,7 @@
   <div class="cal-app" id="cal-app">
     <div class="cal-status-row"><span class="cal-status" id="cal-status"></span></div>
     <div class="cal-upcoming" id="cal-upcoming" hidden="">
-      <h2 class="cal-upcoming-title">Upcoming</h2>
+      <h2 class="cal-upcoming-title" id="cal-upcoming-title">Upcoming</h2>
       <div class="cal-upcoming-list" id="cal-upcoming-list"></div>
     </div>
     <div class="cal-scroll-box" id="cal-scroll-box">
@@ -460,14 +452,6 @@
         <span>Sun</span><span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span>
       </div>
       <div id="cal-months"></div>
-    </div>
-
-    <div class="cal-agenda" id="cal-agenda" hidden="">
-      <div class="cal-agenda-head">
-        <h2 id="cal-agenda-date"></h2>
-        <button type="button" class="cal-agenda-close" onclick="CalendarApp.closeAgenda()" aria-label="Close">&times;</button>
-      </div>
-      <div class="cal-agenda-list" id="cal-agenda-list"></div>
     </div>
   </div>
   </div>
@@ -1153,7 +1137,7 @@
           });
         });
         renderGridEvents();
-        if (selectedDate) renderAgenda(selectedDate);
+        if (selectedDate) renderSelectedDay(selectedDate);
       }).catch(function (e) {
         setStatus("Couldn't load events: " + e.message, true);
       });
@@ -1273,23 +1257,46 @@
       });
     }
 
+    // Tapping a day cell selects it, unless it's already the selected one — a second
+    // tap on the same day clears the selection instead. Either way this is the only
+    // entry point a day-cell click goes through (see applySelection/clearSelection).
     function selectDate(key) {
+      if (selectedDate === key) {
+        clearSelection();
+      } else {
+        applySelection(key);
+      }
+    }
+
+    // Unlike selectDate, always selects the given day regardless of what's currently
+    // selected — used right after creating an event, where the intent is "show me what
+    // I just added" unconditionally, not "toggle."
+    function applySelection(key) {
       selectedDate = key;
       document.querySelectorAll('.cal-day').forEach(function (el) {
         el.classList.toggle('has-selected', el.dataset.date === key);
       });
-      renderAgenda(key);
+      renderSelectedDay(key);
     }
 
-    function renderAgenda(key) {
-      const agendaEl = document.getElementById('cal-agenda');
-      const dateEl = document.getElementById('cal-agenda-date');
-      const listEl = document.getElementById('cal-agenda-list');
-      if (!agendaEl || !listEl) return;
-      agendaEl.hidden = false;
+    function clearSelection() {
+      selectedDate = null;
+      document.querySelectorAll('.cal-day').forEach(function (el) { el.classList.remove('has-selected'); });
+      const titleEl = document.getElementById('cal-upcoming-title');
+      if (titleEl) titleEl.textContent = 'Upcoming';
+      loadUpcoming();
+    }
+
+    // A tapped day's events take over the Upcoming box in place (title becomes that
+    // day's date, list becomes that day's events) rather than showing in a separate
+    // box below the grid — restored to the actual next-3-events view by clearSelection.
+    function renderSelectedDay(key) {
+      const titleEl = document.getElementById('cal-upcoming-title');
+      const listEl = document.getElementById('cal-upcoming-list');
+      if (!listEl) return;
 
       const d = new Date(key + 'T00:00:00');
-      if (dateEl) dateEl.textContent = WEEKDAY_NAMES[d.getDay()] + ', ' + MONTH_NAMES[d.getMonth()] + ' ' + d.getDate();
+      if (titleEl) titleEl.textContent = WEEKDAY_NAMES[d.getDay()] + ', ' + MONTH_NAMES[d.getMonth()] + ' ' + d.getDate();
 
       const evs = eventsByDate[key] || [];
       listEl.innerHTML = '';
@@ -1325,13 +1332,6 @@
         item.appendChild(body);
         listEl.appendChild(item);
       });
-    }
-
-    function closeAgenda() {
-      selectedDate = null;
-      const agendaEl = document.getElementById('cal-agenda');
-      if (agendaEl) agendaEl.hidden = true;
-      document.querySelectorAll('.cal-day').forEach(function (el) { el.classList.remove('has-selected'); });
     }
 
     function setComposeStatus(text, isError) {
@@ -1405,12 +1405,13 @@
         closeCompose();
         // Jump to the new event's month/day and refresh so it shows up right away —
         // loading in any months between the current range and it if it's further out
-        // than what's currently in the scroll box.
+        // than what's currently in the scroll box. applySelection (not selectDate) so
+        // this always shows the day regardless of what was already selected, instead
+        // of toggling it off if that day happened to be selected already.
         const d = new Date(date + 'T00:00:00');
         ensureMonthLoaded(d.getFullYear(), d.getMonth());
-        selectDate(date);
+        applySelection(date);
         loadEventsForMonth(d.getFullYear(), d.getMonth());
-        loadUpcoming(); // the new event might now be among the next 3
         const dayEl = document.querySelector('.cal-day[data-date="' + date + '"]');
         if (dayEl) dayEl.scrollIntoView({ block: 'center' });
       } catch (e) {
@@ -1420,7 +1421,7 @@
       }
     }
 
-    return { render, closeAgenda, openCompose, closeCompose, onAllDayToggle, createEvent };
+    return { render, openCompose, closeCompose, onAllDayToggle, createEvent };
   })();
 
   function setGoogleSignedInUi(signedIn) {
