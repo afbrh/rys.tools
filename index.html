@@ -461,14 +461,13 @@
     inset: 0;
     display: flex;
     align-items: center;
-    justify-content: flex-end;
-    padding-right: 22px;
-    background: var(--gold);
     color: var(--paper);
     font-family: var(--font-body);
     font-weight: 600;
     font-size: 13px;
   }
+  .mail-swipe-action.action-archive { justify-content: flex-end; padding-right: 22px; background: var(--gold); }
+  .mail-swipe-action.action-read { justify-content: flex-start; padding-left: 22px; background: var(--income); }
   .mail-list-item {
     position: relative;
     display: block;
@@ -1210,7 +1209,27 @@
       return resp.json();
     }
 
-    return { isSignedIn, signIn, load, save, getUserEmail, restoreSession, hasGmailScope, gmailListInbox, gmailGetMessage, gmailGetThread, gmailSend, gmailArchive, gmailUnarchive, gmailSearch };
+    async function gmailMarkRead(id) {
+      const resp = await api('https://gmail.googleapis.com/gmail/v1/users/me/messages/' + id + '/modify', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ removeLabelIds: ['UNREAD'] })
+      });
+      if (!resp.ok) throw new Error(await errorFromResponse(resp));
+      return resp.json();
+    }
+
+    async function gmailMarkUnread(id) {
+      const resp = await api('https://gmail.googleapis.com/gmail/v1/users/me/messages/' + id + '/modify', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ addLabelIds: ['UNREAD'] })
+      });
+      if (!resp.ok) throw new Error(await errorFromResponse(resp));
+      return resp.json();
+    }
+
+    return { isSignedIn, signIn, load, save, getUserEmail, restoreSession, hasGmailScope, gmailListInbox, gmailGetMessage, gmailGetThread, gmailSend, gmailArchive, gmailUnarchive, gmailMarkRead, gmailMarkUnread, gmailSearch };
   })();
 
   /* ================= Mail app (namespaced) ================= */
@@ -1682,10 +1701,13 @@
       // those should offer to put them back, not archive them again.
       const isArchived = (msg.labelIds || []).indexOf('INBOX') === -1;
 
-      // Swiping left slides .mail-list-item (the visible foreground row) to reveal the
-      // "Archive"/"Unarchive" action sitting behind it in .mail-swipe-row — the row
-      // itself never moves, only its contents do, which is what makes the action feel
-      // like it slides in from behind rather than the row just sliding off unexplained.
+      // Swiping left or right slides .mail-list-item (the visible foreground row) to
+      // reveal an action sitting behind it in .mail-swipe-row — the row itself never
+      // moves, only its contents do, which is what makes the action feel like it
+      // slides in from behind rather than the row just sliding off unexplained.
+      // Left reveals Archive/Unarchive (from the right edge); right reveals Mark
+      // read/unread (from the left edge) — one shared element whose side, color and
+      // text switch to match whichever direction is currently being dragged.
       const row = document.createElement('div');
       row.className = 'mail-swipe-row';
       row.dataset.id = msg.id;
@@ -1693,7 +1715,6 @@
 
       const action = document.createElement('div');
       action.className = 'mail-swipe-action';
-      action.textContent = isArchived ? 'Unarchive' : 'Archive';
       row.appendChild(action);
 
       const btn = document.createElement('button');
@@ -1725,21 +1746,33 @@
       btn.appendChild(snippetEl);
       row.appendChild(btn);
 
-      attachSwipeToArchive(btn, msg.id, isArchived);
+      attachSwipeActions(btn, action, msg.id, isArchived, isUnread);
       return row;
     }
 
     // Pointer Events cover touch, mouse, and pen with one code path — a real swipe on a
     // phone and a click-drag with a mouse both work the same way here. Only a swipe that
     // moves further horizontally than vertically counts (otherwise a normal vertical
-    // scroll through the list would keep getting hijacked), and only leftward swipes
-    // do anything, per what was actually asked for.
-    function attachSwipeToArchive(el, id, isArchived) {
+    // scroll through the list would keep getting hijacked). Left swipes archive/unarchive;
+    // right swipes toggle read/unread — the shared action element behind the row is kept
+    // in sync with whichever direction is currently being dragged.
+    function attachSwipeActions(el, actionEl, id, isArchived, isUnreadInitial) {
       const THRESHOLD = 70;
       const MAX = 96;
       let dragging = false, decided = false, horizontal = false;
       let startX = 0, startY = 0, dx = 0;
       let suppressClick = false;
+      let isUnread = isUnreadInitial;
+
+      function updateAction(dir) {
+        if (dir < 0) {
+          actionEl.className = 'mail-swipe-action action-archive';
+          actionEl.textContent = isArchived ? 'Unarchive' : 'Archive';
+        } else if (dir > 0) {
+          actionEl.className = 'mail-swipe-action action-read';
+          actionEl.textContent = isUnread ? 'Mark read' : 'Mark unread';
+        }
+      }
 
       function onDown(e) {
         if (e.pointerType === 'mouse' && e.button !== 0) return;
@@ -1759,7 +1792,8 @@
         }
         if (!horizontal) return; // let the list scroll vertically as normal
         e.preventDefault();
-        dx = Math.max(-MAX, Math.min(0, curDx));
+        dx = Math.max(-MAX, Math.min(MAX, curDx));
+        updateAction(dx);
         el.style.transform = 'translateX(' + dx + 'px)';
       }
       function onUp() {
@@ -1770,6 +1804,10 @@
           suppressClick = true;
           el.style.transform = 'translateX(-100%)';
           toggleArchiveMessage(id, el.closest('.mail-swipe-row'), isArchived);
+        } else if (horizontal && dx >= THRESHOLD) {
+          suppressClick = true;
+          el.style.transform = 'translateX(0)';
+          toggleReadMessage(id, el, isUnread).then(function (newIsUnread) { isUnread = newIsUnread; });
         } else {
           if (horizontal && Math.abs(dx) > 4) suppressClick = true;
           el.style.transform = 'translateX(0)';
@@ -1810,6 +1848,30 @@
         setMailStatus('Couldn\'t ' + (isArchived ? 'unarchive' : 'archive') + ': ' + e.message, true);
         const btn = rowEl && rowEl.querySelector('.mail-list-item');
         if (btn) { btn.style.transition = 'transform .18s ease'; btn.style.transform = 'translateX(0)'; }
+      }
+    }
+
+    // Unlike archive, the row stays right where it is — only its unread styling (bold
+    // sender/subject, colored timestamp) changes, via the existing CSS for .unread.
+    // Applied optimistically so the swipe feels instant, then reverted if the API call
+    // fails. Returns the resulting unread state so the caller's closure stays in sync
+    // for any later swipe on the same row.
+    async function toggleReadMessage(id, btnEl, wasUnread) {
+      const nowUnread = !wasUnread;
+      btnEl.classList.toggle('unread', nowUnread);
+      try {
+        if (wasUnread) {
+          await GoogleDriveSync.gmailMarkRead(id);
+          setMailStatus('Marked as read.');
+        } else {
+          await GoogleDriveSync.gmailMarkUnread(id);
+          setMailStatus('Marked as unread.');
+        }
+        return nowUnread;
+      } catch (e) {
+        btnEl.classList.toggle('unread', wasUnread);
+        setMailStatus('Couldn\'t update read status: ' + e.message, true);
+        return wasUnread;
       }
     }
 
