@@ -90,8 +90,9 @@
     transition: background-color .15s ease, color .15s ease;
     padding: 0 20px 80px;
     overflow-x: hidden;
-    /* The mail list has its own pull-to-refresh — this stops the browser's native
-       pull-to-refresh (mobile Chrome etc.) from also firing and reloading the page. */
+    /* Stops the browser's native pull-to-refresh (mobile Chrome etc.) from firing
+       and reloading the whole page — refreshing the inbox is the Refresh button's
+       job now, not a swipe gesture. */
     overscroll-behavior-y: contain;
   }
 
@@ -430,17 +431,23 @@
     border-radius: 10px;
     overflow: hidden;
   }
-  .mail-pull-indicator {
-    height: 0;
-    overflow: hidden;
-    display: flex;
+  .mail-list-empty { padding: 20px; font-size: 14px; color: var(--ink-soft); text-align: center; }
+  .mail-refresh-btn {
+    width: 34px;
+    height: 34px;
+    display: inline-flex;
     align-items: center;
     justify-content: center;
-    font-size: 12px;
-    color: var(--ink-soft);
-    transition: height .18s ease;
+    background: none;
+    border: 1.5px solid var(--ink);
+    border-radius: 8px;
+    color: var(--ink);
+    font-size: 16px;
+    line-height: 1;
+    cursor: pointer;
+    flex-shrink: 0;
   }
-  .mail-list-empty { padding: 20px; font-size: 14px; color: var(--ink-soft); text-align: center; }
+  .mail-refresh-btn:hover { background: var(--paper-line); }
   .mail-swipe-row { position: relative; overflow: hidden; border-bottom: 1px solid var(--paper-line); }
   .mail-swipe-row:last-child { border-bottom: none; }
   .mail-swipe-action {
@@ -647,6 +654,7 @@
   <div class="mobile-menu-backdrop" id="mobile-menu-backdrop" onclick="closeMobileMenu()"></div>
   <div class="mail-toolbar" id="mail-header-toolbar" hidden="">
     <button class="save-btn" onclick="MailApp.openCompose()">Compose</button>
+    <button type="button" class="mail-refresh-btn" onclick="MailApp.refreshInbox()" aria-label="Refresh inbox">&#8635;</button>
     <div class="mail-search">
       <input type="search" id="mail-search-input" placeholder="Search mail" oninput="MailApp.onSearchInput()" onkeydown="if (event.key === 'Enter') { event.preventDefault(); MailApp.runSearch(); }">
       <button type="button" class="mail-search-clear" id="mail-search-clear" onclick="MailApp.clearSearch()" aria-label="Clear search" hidden="">&times;</button>
@@ -659,7 +667,6 @@
   <div id="app-content">
   <div class="mail-app" id="mail-app">
     <div class="mail-list-col">
-      <div class="mail-pull-indicator" id="mail-pull-indicator">Pull to refresh</div>
       <div class="mail-list" id="mail-list">
         <div class="mail-list-empty">Sign in to view your inbox.</div>
       </div>
@@ -1861,88 +1868,6 @@
       }
     }
 
-    // Pulling down while already scrolled to the top refreshes the inbox — there's no
-    // separate Refresh button. Same Pointer Events approach as the swipe-to-archive
-    // gesture, just on the vertical axis, and it lives on .mail-list itself (not the
-    // whole column) so it doesn't fight with interactions in the toolbar/search field.
-    // The list has no scroll of its own (it grows with the page, same as everything
-    // else in .mail-list-col) — atTop() checks the page's own scroll position, with a
-    // fallback in case that ever changes back to an internally-scrolling list.
-    function attachPullToRefresh(listEl, indicatorEl) {
-      const THRESHOLD = 60;
-      const MAX = 90;
-      let dragging = false, decided = false, vertical = false;
-      let startX = 0, startY = 0, dy = 0;
-
-      function atTop() {
-        if (listEl.scrollHeight > listEl.clientHeight + 1) return listEl.scrollTop <= 0;
-        return (window.scrollY || document.documentElement.scrollTop || 0) <= 0;
-      }
-
-      function onDown(e) {
-        if (e.pointerType === 'mouse' && e.button !== 0) return;
-        if (!atTop()) return;
-        dragging = true; decided = false; vertical = false; dy = 0;
-        startX = e.clientX; startY = e.clientY;
-        // No easing while actively dragging — only for the release snap below.
-        // Otherwise every pointermove restarts a fresh 180ms transition toward a
-        // constantly-moving target, and the indicator visibly lags/stutters behind
-        // the pointer instead of tracking it 1:1.
-        indicatorEl.style.transition = 'none';
-        // .mail-list-item has touch-action:pan-y so ordinary list scrolling stays
-        // native and smooth — but that also means the browser commits a real touch
-        // to native vertical panning before JS ever sees it, making preventDefault()
-        // a no-op below. Touch-action is the intersection of an element's own value
-        // and its ancestors', so restricting it here on the list (only while already
-        // at the top, i.e. only when a pull could actually be starting) briefly hands
-        // vertical control to JS for this gesture; restored the moment we know it's
-        // not a pull (onMove's horizontal branch) or once it ends (onUp).
-        listEl.style.touchAction = 'none';
-      }
-      function onMove(e) {
-        if (!dragging) return;
-        const curDx = e.clientX - startX;
-        const curDy = e.clientY - startY;
-        if (!decided) {
-          if (Math.abs(curDx) < 8 && Math.abs(curDy) < 8) return;
-          decided = true;
-          vertical = curDy > 0 && Math.abs(curDy) > Math.abs(curDx);
-          if (!vertical) { dragging = false; listEl.style.touchAction = ''; return; }
-        }
-        if (!vertical) return;
-        e.preventDefault();
-        dy = Math.max(0, Math.min(MAX, curDy));
-        indicatorEl.style.height = dy + 'px';
-        indicatorEl.textContent = dy >= THRESHOLD ? 'Release to refresh' : 'Pull to refresh';
-      }
-      function onUp() {
-        if (!dragging) return;
-        dragging = false;
-        listEl.style.touchAction = '';
-        indicatorEl.style.transition = 'height .18s ease';
-        const ready = GoogleDriveSync.isSignedIn() && GoogleDriveSync.hasGmailScope();
-        if (vertical && dy >= THRESHOLD && ready) {
-          indicatorEl.textContent = 'Refreshing…';
-          indicatorEl.style.height = '40px';
-          refreshInbox().then(() => { indicatorEl.style.height = '0px'; });
-        } else if (vertical && dy >= THRESHOLD) {
-          // Not signed in (or missing scope) — nothing to actually refresh, so just
-          // acknowledge the pull instead of letting refreshInbox() hit the API and
-          // show a confusing "not signed in" error over the empty-state message.
-          indicatorEl.textContent = 'Sign in above to load your inbox';
-          setTimeout(() => { indicatorEl.style.height = '0px'; }, 900);
-        } else {
-          indicatorEl.style.height = '0px';
-        }
-        decided = false; vertical = false; dy = 0;
-      }
-
-      listEl.addEventListener('pointerdown', onDown);
-      listEl.addEventListener('pointermove', onMove);
-      listEl.addEventListener('pointerup', onUp);
-      listEl.addEventListener('pointercancel', onUp);
-    }
-
     // Same at every width — no separate detail pane to reset, just whatever's expanded
     // inline in the list.
     function closeDetail() {
@@ -2252,10 +2177,6 @@
         sendBtn.disabled = false;
       }
     }
-
-    const pullListEl = document.getElementById('mail-list');
-    const pullIndicatorEl = document.getElementById('mail-pull-indicator');
-    if (pullListEl && pullIndicatorEl) attachPullToRefresh(pullListEl, pullIndicatorEl);
 
     return { render, refreshInbox, runSearch, updateSearchClear, onSearchInput, clearSearch, openMessage, openCompose, closeCompose, send };
   })();
