@@ -172,28 +172,10 @@
     user-select: none;
   }
   .save-bar { display: flex; align-items: flex-start; justify-content: flex-start; flex-wrap: wrap; gap: 12px; margin-bottom: 13px; }
-  /* Hamburger trigger, drawer close button, and backdrop only ever appear under the
-     mobile media query below — hidden here so desktop layout is untouched. */
-  .mobile-menu-toggle { display: none; }
-  .mobile-menu-close { display: none; }
-  .mobile-menu-backdrop { display: none; }
-  /* On desktop this wrapper must not introduce a layout box of its own — its children
-     (tool-dropdown, tool-controls) need to keep behaving exactly like direct flex
-     children of .save-bar, unchanged from before this wrapper existed. The theme
-     toggle deliberately lives outside this wrapper (see .theme-toggle-btn) so it
-     never collapses into the mobile drawer along with these. */
-  .header-controls { display: contents; }
+  /* The tool dropdown now sits where the page title used to be, with the signed-in
+     banner still stacked underneath it — everything in the header stays inline and
+     wraps naturally at any width now, no more separate mobile layout/drawer. */
   .brand-block { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; }
-  .brand-mark {
-    display: flex;
-    align-items: center;
-    gap: 9px;
-    height: 34px;
-    font-family: var(--font-header);
-    font-weight: 600;
-    font-size: 23px;
-    color: var(--ink);
-  }
   .tool-controls { display: flex; align-items: center; flex-wrap: wrap; gap: 12px; margin-left: auto; }
   .tool-controls[hidden] { display: none; }
   .tool-dropdown { position: relative; }
@@ -262,9 +244,8 @@
   .dropdown-label-short { display: none; }
   .save-bar.labels-short .dropdown-label-full { display: none; }
   .save-bar.labels-short .dropdown-label-short { display: inline; }
-  /* Plain single-click toggle (not a dropdown) — lives outside .header-controls in
-     the markup so it never collapses into the mobile hamburger drawer; margin-left:
-     auto keeps it pinned to the right edge of the header at every width. */
+  /* Plain single-click toggle (not a dropdown). margin-left: auto keeps it pinned to
+     the right edge of the header at every width. */
   .theme-toggle-btn {
     height: 34px;
     display: inline-flex;
@@ -319,81 +300,6 @@
     font-size: 12px;
     color: var(--ink-soft);
     text-align: center;
-  }
-
-  /* Below this width, the tool/theme dropdowns and Save/Sign-in row collapse behind a
-     hamburger icon and slide out as a left-hand drawer instead of sitting inline in the
-     header — desktop keeps the plain inline row above untouched. */
-  @media (max-width: 680px) {
-    .mobile-menu-toggle {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      width: 38px;
-      height: 34px;
-      flex-shrink: 0;
-      background: none;
-      border: 1.5px solid var(--ink);
-      border-radius: 8px;
-      color: var(--ink);
-      font-size: 18px;
-      line-height: 1;
-      cursor: pointer;
-    }
-    .mobile-menu-toggle:hover { background: var(--paper-line); }
-    .header-controls {
-      display: flex;
-      flex-direction: column;
-      align-items: stretch;
-      gap: 18px;
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 80vw;
-      max-width: 300px;
-      height: 100vh;
-      margin: 0;
-      background: var(--paper);
-      border-right: 1.5px solid var(--ink);
-      padding: 64px 18px 24px;
-      box-sizing: border-box;
-      overflow-y: auto;
-      z-index: 1001;
-      transform: translateX(-100%);
-      transition: transform .2s ease;
-    }
-    .header-controls.open { transform: translateX(0); }
-    .header-controls .tool-dropdown { width: 100%; }
-    .header-controls .tool-dropdown-toggle { width: 100%; justify-content: space-between; }
-    .header-controls .tool-dropdown-menu { min-width: 0; width: 100%; }
-    .header-controls .tool-controls { margin-left: 0; flex-direction: column; align-items: stretch; gap: 10px; }
-    .header-controls .save-btn { width: 100%; }
-    .mobile-menu-close {
-      display: block;
-      position: absolute;
-      top: 14px;
-      right: 14px;
-      background: none;
-      border: none;
-      color: var(--ink);
-      font-size: 26px;
-      line-height: 1;
-      padding: 4px 8px;
-      cursor: pointer;
-    }
-    .mobile-menu-backdrop.open {
-      display: block;
-      position: fixed;
-      top: 0;
-      left: 0;
-      /* Not `inset: 0` — .app-header-sticky's `transform` makes it the containing block
-         for fixed descendants, so `right`/`bottom` would resolve against its own (much
-         shorter) box instead of the real viewport. Viewport units sidestep that. */
-      width: 100vw;
-      height: 100vh;
-      background: rgba(0,0,0,0.45);
-      z-index: 1000;
-    }
   }
 
   /* ================= Budget tab (scoped) ================= */
@@ -1199,15 +1105,7 @@
   <div class="app-header-sticky">
   <div class="app-header-inner">
   <div class="save-bar">
-    <button class="mobile-menu-toggle" id="mobile-menu-toggle" onclick="toggleMobileMenu(event)" aria-haspopup="true" aria-expanded="false" aria-controls="header-controls" aria-label="Open menu">
-      <span aria-hidden="true">&#9776;</span>
-    </button>
     <div class="brand-block">
-      <div class="brand-mark"><span>Ry's Tools</span></div>
-      <div class="signed-in-banner" id="signed-in-banner"></div>
-    </div>
-    <div class="header-controls" id="header-controls">
-      <button class="mobile-menu-close" id="mobile-menu-close" onclick="closeMobileMenu()" aria-label="Close menu">&times;</button>
       <div class="tool-dropdown">
         <button class="tool-dropdown-toggle" id="tool-dropdown-toggle" onclick="toggleToolMenu(event)" aria-haspopup="true" aria-expanded="false">
           <span id="tool-dropdown-label" class="dropdown-label-full">Budget Planner</span>
@@ -1220,14 +1118,14 @@
           <button type="button" class="tool-dropdown-item" data-value="calendar" role="menuitemradio" onclick="setActiveTool('calendar')">Calendar</button>
         </div>
       </div>
-      <div class="tool-controls" id="tool-controls">
-        <button class="save-btn export-btn" id="google-signin-btn" onclick="handleGoogleSignIn()">Google Sign-In</button>
-        <span class="save-status" id="save-status"></span>
-      </div>
+      <div class="signed-in-banner" id="signed-in-banner"></div>
+    </div>
+    <div class="tool-controls" id="tool-controls">
+      <button class="save-btn export-btn" id="google-signin-btn" onclick="handleGoogleSignIn()">Google Sign-In</button>
+      <span class="save-status" id="save-status"></span>
     </div>
     <button type="button" class="theme-toggle-btn" id="theme-toggle-btn" onclick="toggleAppearance()">Dark</button>
   </div>
-  <div class="mobile-menu-backdrop" id="mobile-menu-backdrop" onclick="closeMobileMenu()"></div>
   <div id="app-header-tabs">
   <div class="tab-bar">
     <div class="tabs">
@@ -1409,6 +1307,7 @@
     </div>
   </div>
   </div>
+  <p class="app-footnote">Ry's Tools</p>
 </div>
 
 <script>
@@ -3572,9 +3471,9 @@
   // label combos keep their full words much longer). Prefers full labels whenever
   // everything already fits on one row, and only shrinks when doing so actually
   // frees up enough room to get everything back onto a single row. The theme toggle
-  // isn't part of this check — it lives outside .header-controls and just wraps to
-  // its own line via .save-bar's flex-wrap if it doesn't fit, since "Light"/"Dark"
-  // are already as short as they can get.
+  // isn't part of this check — it just wraps to its own line via .save-bar's
+  // flex-wrap if it doesn't fit, since "Light"/"Dark" are already as short as they
+  // can get.
   function updateDropdownLabelFit() {
     const saveBar = document.querySelector('.save-bar');
     const toolDropdown = document.querySelector('.tool-dropdown');
@@ -3670,40 +3569,6 @@
 
   function toggleToolMenu(e) { toggleDropdown(e, 'tool-dropdown-toggle', 'tool-menu'); }
   function closeToolMenu() { closeDropdown('tool-dropdown-toggle', 'tool-menu'); }
-
-  // Mobile-only left-hand drawer: holds the tool/theme dropdowns and Save/Sign-in, which
-  // sit inline in the header on desktop (see the @media (max-width: 680px) block in CSS).
-  function toggleMobileMenu(e) {
-    if (e) e.stopPropagation();
-    const panel = document.getElementById('header-controls');
-    const toggle = document.getElementById('mobile-menu-toggle');
-    const backdrop = document.getElementById('mobile-menu-backdrop');
-    if (!panel || !toggle) return;
-    const isOpen = panel.classList.toggle('open');
-    toggle.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
-    if (backdrop) backdrop.classList.toggle('open', isOpen);
-  }
-
-  function closeMobileMenu() {
-    const panel = document.getElementById('header-controls');
-    const toggle = document.getElementById('mobile-menu-toggle');
-    const backdrop = document.getElementById('mobile-menu-backdrop');
-    if (panel) panel.classList.remove('open');
-    if (toggle) toggle.setAttribute('aria-expanded', 'false');
-    if (backdrop) backdrop.classList.remove('open');
-  }
-
-  document.addEventListener('keydown', function (e) {
-    if (e.key === 'Escape') closeMobileMenu();
-  });
-
-  let mobileMenuResizeTimer = null;
-  window.addEventListener('resize', function () {
-    clearTimeout(mobileMenuResizeTimer);
-    mobileMenuResizeTimer = setTimeout(function () {
-      if (window.matchMedia('(min-width: 681px)').matches) closeMobileMenu();
-    }, 100);
-  });
 
   document.addEventListener('click', function (e) {
     [
