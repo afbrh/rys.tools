@@ -3396,7 +3396,11 @@
     // Client IDs are meant to be public (unlike API tokens) — the real gate is the
     // Google sign-in + consent screen each user goes through, not a hidden secret.
     const CLIENT_ID = '575902569700-4l05lkmf0kbrgq5kdr58canigcvafv3j.apps.googleusercontent.com';
-    const SCOPE = 'https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/userinfo.email';
+    // Every tool page requests this same full set of scopes (not just what this page
+    // itself uses) so signing in once, from any tool, grants everything every other
+    // tool needs too — no per-tool "reconnect" prompts later. Keep this identical to
+    // the SCOPE constant in email.html/cal.html any time a tool's needs change.
+    const SCOPE = 'https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/userinfo.email https://www.googleapis.com/auth/gmail.readonly https://www.googleapis.com/auth/gmail.send https://www.googleapis.com/auth/gmail.modify https://www.googleapis.com/auth/calendar.events';
     const FILE_NAME = 'munny-data.json';
     const FILE_ID_KEY = 'munny_drive_file_id';
     const TOKEN_KEY = 'munny_google_token';
