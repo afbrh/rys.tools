@@ -1904,10 +1904,17 @@
       function onUp() {
         if (!dragging) return;
         dragging = false;
-        if (vertical && dy >= THRESHOLD) {
+        const ready = GoogleDriveSync.isSignedIn() && GoogleDriveSync.hasGmailScope();
+        if (vertical && dy >= THRESHOLD && ready) {
           indicatorEl.textContent = 'Refreshing…';
           indicatorEl.style.height = '40px';
           refreshInbox().then(() => { indicatorEl.style.height = '0px'; });
+        } else if (vertical && dy >= THRESHOLD) {
+          // Not signed in (or missing scope) — nothing to actually refresh, so just
+          // acknowledge the pull instead of letting refreshInbox() hit the API and
+          // show a confusing "not signed in" error over the empty-state message.
+          indicatorEl.textContent = 'Sign in above to load your inbox';
+          setTimeout(() => { indicatorEl.style.height = '0px'; }, 900);
         } else {
           indicatorEl.style.height = '0px';
         }
