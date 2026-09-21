@@ -244,26 +244,50 @@
   .dropdown-label-short { display: none; }
   .save-bar.labels-short .dropdown-label-full { display: none; }
   .save-bar.labels-short .dropdown-label-short { display: inline; }
-  /* Plain single-click toggle (not a dropdown). margin-left: auto keeps it pinned to
-     the right edge of the header at every width. */
+  /* Classic sun/moon slider switch — a plain single-click toggle (not a dropdown),
+     not an actual draggable range input. margin-left: auto keeps it pinned to the
+     right edge of the header at every width. Entirely CSS-driven off the same
+     :root[data-theme="dark"] attribute setAppearance() already toggles, so the
+     thumb's slide and each icon's color need no JS beyond the existing click
+     handler — see .theme-toggle-icon/.theme-toggle-thumb below. */
   .theme-toggle-btn {
+    position: relative;
+    width: 56px;
     height: 34px;
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    padding: 0 14px;
+    padding: 0;
     border-radius: 17px;
     background: none;
     border: 1.5px solid var(--ink);
-    color: var(--ink);
-    font-family: var(--font-body);
-    font-size: 13px;
-    font-weight: 600;
     cursor: pointer;
     margin-left: auto;
     flex-shrink: 0;
   }
   .theme-toggle-btn:hover { background: var(--paper-line); }
+  .theme-toggle-icon {
+    position: absolute;
+    top: 50%;
+    width: 16px;
+    height: 16px;
+    transform: translateY(-50%);
+    color: var(--ink-soft);
+    transition: color .15s ease;
+    pointer-events: none;
+  }
+  .theme-toggle-icon.sun { left: 8px; color: var(--ink); }
+  .theme-toggle-icon.moon { right: 8px; }
+  :root[data-theme="dark"] .theme-toggle-icon.sun { color: var(--ink-soft); }
+  :root[data-theme="dark"] .theme-toggle-icon.moon { color: var(--ink); }
+  .theme-toggle-thumb {
+    position: absolute;
+    top: 4px;
+    left: 4px;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    background: var(--gold-bg);
+    transition: transform .2s ease;
+  }
+  :root[data-theme="dark"] .theme-toggle-thumb { transform: translateX(22px); }
   .save-btn {
     height: 34px;
     display: inline-flex;
@@ -1124,7 +1148,11 @@
       <button class="save-btn export-btn" id="google-signin-btn" onclick="handleGoogleSignIn()">Google Sign-In</button>
       <span class="save-status" id="save-status"></span>
     </div>
-    <button type="button" class="theme-toggle-btn" id="theme-toggle-btn" onclick="toggleAppearance()">Dark</button>
+    <button type="button" class="theme-toggle-btn" id="theme-toggle-btn" onclick="toggleAppearance()" aria-label="Switch to light mode">
+      <span class="theme-toggle-thumb"></span>
+      <svg class="theme-toggle-icon sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4"></circle><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"></path></svg>
+      <svg class="theme-toggle-icon moon" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>
+    </button>
   </div>
   <div id="app-header-tabs">
   <div class="tab-bar">
@@ -3544,9 +3572,12 @@
     new MutationObserver(updateDropdownLabelFit).observe(saveStatusEl, { characterData: true, childList: true, subtree: true });
   }
 
+  // The sun/moon icons and thumb slide purely via CSS off :root[data-theme] (see
+  // .theme-toggle-icon/.theme-toggle-thumb) — this only needs to keep the
+  // accessible label in sync with what a click will actually do.
   function syncThemeToggle(appearance) {
     const btn = document.getElementById('theme-toggle-btn');
-    if (btn) btn.textContent = appearance === 'dark' ? 'Dark' : 'Light';
+    if (btn) btn.setAttribute('aria-label', appearance === 'dark' ? 'Switch to light mode' : 'Switch to dark mode');
     updateDropdownLabelFit();
   }
 
