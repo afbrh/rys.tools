@@ -337,10 +337,28 @@
   .mail-list-item .mail-row-top { display: flex; justify-content: space-between; gap: 8px; font-size: 13px; margin-bottom: 3px; }
   .mail-list-item .mail-from { font-weight: 600; overflow: hidden; text-overflow: clip; white-space: nowrap; }
   .mail-list-item.unread .mail-from, .mail-list-item.unread .mail-subject { font-weight: 700; color: var(--ink); }
+  .mail-list-item .mail-row-right { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
   /* #D9B25E: Budget Planner's --gold in its Dark theme (the "Total income" figure) —
      hardcoded rather than themed, since this should stay this color in every theme here. */
   .mail-list-item .mail-date { flex-shrink: 0; color: #D9B25E; font-family: var(--font-mono); font-size: 11px; }
   .mail-list-item.unread .mail-date { color: var(--income); }
+  /* A chip next to the timestamp, only rendered for messages that carry a List-Unsubscribe
+     header — most senders that don't run mailing lists never show this at all. */
+  .mail-unsub-btn {
+    flex-shrink: 0;
+    font-family: var(--font-mono);
+    font-size: 10px;
+    letter-spacing: .02em;
+    color: var(--ink-soft);
+    border: 1px solid var(--ink-soft);
+    border-radius: 10px;
+    padding: 2px 7px;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: color .15s ease, border-color .15s ease, background .15s ease;
+  }
+  .mail-unsub-btn:hover { color: var(--danger); border-color: var(--danger); }
+  .mail-unsub-btn.done { color: var(--ink-soft); border-color: var(--paper-line); cursor: default; pointer-events: none; }
   .mail-list-item .mail-subject { font-size: 13.5px; margin-bottom: 2px; overflow: hidden; text-overflow: clip; white-space: nowrap; }
   .mail-list-item .mail-snippet { font-size: 12.5px; color: var(--ink-soft); overflow: hidden; text-overflow: clip; white-space: nowrap; }
 
@@ -1054,6 +1072,76 @@
       return h ? h.value : '';
     }
 
+    // List-Unsubscribe looks like "<https://x.com/unsub?id=1>, <mailto:y@x.com?subject=unsub>" —
+    // prefer the https link (opened in a new tab, so no CORS issue with fetching it
+    // ourselves) and fall back to mailto (sent as a blank email via Gmail, same as Compose).
+    function parseListUnsubscribe(value) {
+      if (!value) return null;
+      const matches = value.match(/<([^>]+)>/g) || [];
+      let url = null, mailto = null;
+      matches.forEach(m => {
+        const inner = m.slice(1, -1);
+        if (!url && /^https?:/i.test(inner)) url = inner;
+        if (!mailto && /^mailto:/i.test(inner)) mailto = inner;
+      });
+      return (url || mailto) ? { url, mailto } : null;
+    }
+
+    function buildUnsubButton(target) {
+      const btn = document.createElement('span');
+      btn.className = 'mail-unsub-btn';
+      btn.textContent = 'Unsubscribe';
+      btn.setAttribute('role', 'button');
+      btn.setAttribute('tabindex', '0');
+      btn.setAttribute('aria-label', 'Unsubscribe from this sender');
+      // Stops a tap/drag starting here from being read as the start of the row's
+      // swipe-to-archive gesture or bubbling up to the row's own "open message" click.
+      btn.addEventListener('pointerdown', e => e.stopPropagation());
+      btn.addEventListener('click', e => {
+        e.preventDefault();
+        e.stopPropagation();
+        handleUnsubscribe(target, btn);
+      });
+      btn.addEventListener('keydown', e => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          e.stopPropagation();
+          handleUnsubscribe(target, btn);
+        }
+      });
+      return btn;
+    }
+
+    async function handleUnsubscribe(target, btn) {
+      if (target.url) {
+        // Most senders' unsubscribe links either finish the job on GET or show a one-click
+        // confirmation page — either way, opening it is all a browser can safely do here
+        // (a real RFC 8058 one-click POST would need a same-origin request that CORS blocks).
+        window.open(target.url, '_blank', 'noopener');
+        return;
+      }
+      btn.textContent = '…';
+      btn.classList.add('done');
+      try {
+        const [addr, query] = target.mailto.replace(/^mailto:/i, '').split('?');
+        const params = new URLSearchParams(query || '');
+        const subject = params.get('subject') || 'unsubscribe';
+        const bodyText = params.get('body') || 'Please unsubscribe me from this mailing list.';
+        const mime =
+          'To: ' + decodeURIComponent(addr) + '\r\n' +
+          'Subject: ' + subject + '\r\n' +
+          'Content-Type: text/plain; charset="UTF-8"\r\n' +
+          'MIME-Version: 1.0\r\n\r\n' +
+          bodyText;
+        await GoogleDriveSync.gmailSend(base64UrlEncode(mime));
+        btn.textContent = 'Unsubscribed';
+      } catch (e) {
+        btn.classList.remove('done');
+        btn.textContent = 'Unsubscribe';
+        setMailStatus('Unsubscribe failed: ' + e.message, true);
+      }
+    }
+
     // "Display Name" <addr> -> "Display Name" (falls back to the raw value).
     function displayName(from) {
       const m = /^"?([^"<]*)"?\s*<[^>]+>$/.exec(from || '');
@@ -1528,11 +1616,20 @@
       const fromEl = document.createElement('span');
       fromEl.className = 'mail-from';
       fromEl.textContent = displayName(from);
+      top.appendChild(fromEl);
+
+      const right = document.createElement('div');
+      right.className = 'mail-row-right';
+
+      const unsubTarget = parseListUnsubscribe(header(headers, 'List-Unsubscribe'));
+      if (unsubTarget) right.appendChild(buildUnsubButton(unsubTarget));
+
       const dateEl = document.createElement('span');
       dateEl.className = 'mail-date';
       dateEl.textContent = formatDate(msg.internalDate);
-      top.appendChild(fromEl);
-      top.appendChild(dateEl);
+      right.appendChild(dateEl);
+
+      top.appendChild(right);
 
       const subjectEl = document.createElement('div');
       subjectEl.className = 'mail-subject';
