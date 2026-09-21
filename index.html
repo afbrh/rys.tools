@@ -488,10 +488,10 @@
   .mail-list-item .mail-row-top { display: flex; justify-content: space-between; gap: 8px; font-size: 13px; margin-bottom: 3px; }
   .mail-list-item .mail-from { font-weight: 600; overflow: hidden; text-overflow: clip; white-space: nowrap; }
   .mail-list-item.unread .mail-from, .mail-list-item.unread .mail-subject { font-weight: 700; color: var(--ink); }
-  .mail-list-item .mail-date { flex-shrink: 0; color: var(--ink-soft); font-family: var(--font-mono); font-size: 11px; }
-  :root[data-theme="dark"] .mail-list-item .mail-date { color: var(--danger); }
+  /* #D9B25E: Budget Planner's --gold in its Dark theme (the "Total income" figure) —
+     hardcoded rather than themed, since this should stay this color in every theme here. */
+  .mail-list-item .mail-date { flex-shrink: 0; color: #D9B25E; font-family: var(--font-mono); font-size: 11px; }
   .mail-list-item.unread .mail-date { color: var(--income); }
-  :root[data-theme="dark"] .mail-list-item.unread .mail-date { color: var(--income); }
   .mail-list-item .mail-subject { font-size: 13.5px; margin-bottom: 2px; overflow: hidden; text-overflow: clip; white-space: nowrap; }
   .mail-list-item .mail-snippet { font-size: 12.5px; color: var(--ink-soft); overflow: hidden; text-overflow: clip; white-space: nowrap; }
 
@@ -520,8 +520,7 @@
   .chat-row { display: flex; flex-direction: column; max-width: 82%; }
   .chat-row-theirs { align-self: flex-start; align-items: flex-start; }
   .chat-row-mine { align-self: flex-end; align-items: flex-end; }
-  .chat-meta { font-size: 11px; color: var(--ink-soft); margin: 0 6px 4px; }
-  :root[data-theme="dark"] .chat-meta { color: var(--danger); }
+  .chat-meta { font-size: 11px; color: #D9B25E; margin: 0 6px 4px; }
   .chat-bubble {
     padding: 10px 14px;
     border-radius: 15px;
