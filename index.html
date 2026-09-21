@@ -932,13 +932,11 @@
     // Client IDs are meant to be public (unlike API tokens) — the real gate is the
     // Google sign-in + consent screen each user goes through, not a hidden secret.
     const CLIENT_ID = '575902569700-4l05lkmf0kbrgq5kdr58canigcvafv3j.apps.googleusercontent.com';
-    // This page's sign-in requests Gmail scopes on top of the base Drive/identity ones —
-    // the other tool pages don't need Gmail, so only this page's copy of the module asks
-    // for it (incremental, feature-scoped consent rather than bundling it into every
-    // tool's sign-in). A token saved by another tool's Drive-only sign-in still works for
-    // isSignedIn()/Drive calls here, but Gmail calls need hasGmailScope() to be true —
-    // see handleGoogleSignIn()/MailApp below for the reconnect prompt when it isn't.
-    const SCOPE = 'https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/userinfo.email https://www.googleapis.com/auth/gmail.readonly https://www.googleapis.com/auth/gmail.send https://www.googleapis.com/auth/gmail.modify';
+    // Every tool page requests this same full set of scopes (not just what this page
+    // itself uses) so signing in once, from any tool, grants everything every other
+    // tool needs too — no per-tool "reconnect" prompts later. Keep this identical to
+    // the SCOPE constant in budget.html/cal.html any time a tool's needs change.
+    const SCOPE = 'https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/userinfo.email https://www.googleapis.com/auth/gmail.readonly https://www.googleapis.com/auth/gmail.send https://www.googleapis.com/auth/gmail.modify https://www.googleapis.com/auth/calendar.events';
     const FILE_NAME = 'munny-data.json';
     const FILE_ID_KEY = 'munny_drive_file_id';
     const TOKEN_KEY = 'munny_google_token';
