@@ -876,19 +876,19 @@
 
   /* ================= Google sign-in (shared session with every tool page via the
      same localStorage token — kept in sync with the same module in budget.html/
-     email.html, trimmed to what this page actually needs: no Drive file persistence,
-     just identity + Calendar). ================= */
+     email.html). Requests the full cross-tool scope union (see SCOPE below) even
+     though this page only ever calls the Calendar/identity endpoints — no Drive file
+     persistence or Gmail calls here, those scopes just ride along unused so a
+     sign-in from this page also covers the other tools. ================= */
   const GoogleDriveSync = (function () {
     // Client IDs are meant to be public (unlike API tokens) — the real gate is the
     // Google sign-in + consent screen each user goes through, not a hidden secret.
     const CLIENT_ID = '575902569700-4l05lkmf0kbrgq5kdr58canigcvafv3j.apps.googleusercontent.com';
-    // This page's sign-in requests Calendar scope on top of the base identity one —
-    // the other tool pages don't need Calendar, so only this page's copy of the module
-    // asks for it (incremental, feature-scoped consent rather than bundling it into
-    // every tool's sign-in). A token saved by another tool's sign-in still works for
-    // isSignedIn() here, but Calendar calls need hasCalendarScope() to be true — see
-    // handleGoogleSignIn()/CalendarApp below for the reconnect prompt when it isn't.
-    const SCOPE = 'https://www.googleapis.com/auth/userinfo.email https://www.googleapis.com/auth/calendar.events';
+    // Every tool page requests this same full set of scopes (not just what this page
+    // itself uses) so signing in once, from any tool, grants everything every other
+    // tool needs too — no per-tool "reconnect" prompts later. Keep this identical to
+    // the SCOPE constant in budget.html/email.html any time a tool's needs change.
+    const SCOPE = 'https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/userinfo.email https://www.googleapis.com/auth/gmail.readonly https://www.googleapis.com/auth/gmail.send https://www.googleapis.com/auth/gmail.modify https://www.googleapis.com/auth/calendar.events';
     const TOKEN_KEY = 'munny_google_token';
 
     let tokenClient = null;
