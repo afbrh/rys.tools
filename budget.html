@@ -1,13 +1,13 @@
 <!DOCTYPE html>
 <html lang="en"><head>
-<script>(function(){try{var a=localStorage.getItem('munny_appearance');if(a!=='light'&&a!=='dark'&&a!=='elder'&&a!=='machina'){var s=localStorage.getItem('munny_skin');if(s==='elder'||s==='machina'){a=s;}else{a=(localStorage.getItem('munny_theme')==='light')?'light':'dark';}}if(a==='elder'||a==='machina'){document.documentElement.setAttribute('data-skin',a);}else if(a==='dark'){document.documentElement.setAttribute('data-theme','dark');}}catch(e){}})();</script>
+<script>(function(){try{var a=localStorage.getItem('munny_appearance');if(a!=='light'&&a!=='dark'){a=(localStorage.getItem('munny_theme')==='light')?'light':'dark';}if(a==='dark'){document.documentElement.setAttribute('data-theme','dark');}}catch(e){}})();</script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Ry's Tools</title>
 <link rel="icon" type="image/png" href="logo.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
-<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&amp;family=Source+Sans+Pro:wght@400;600&amp;family=MedievalSharp&amp;family=IM+Fell+English&amp;family=Orbitron:wght@500;700&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&amp;family=Source+Sans+Pro:wght@400;600&amp;display=swap" rel="stylesheet">
 <script src="https://accounts.google.com/gsi/client" async="" defer=""></script>
 <style>
   :root {
@@ -40,45 +40,6 @@
     --gold: #D9B25E;
     --gold-bg: #1F1A0E;
     --danger: #EF5350;
-  }
-  :root[data-skin="elder"] {
-    --paper: #F3E9CE;
-    --paper-line: #D9C79C;
-    --ink: #3B2A16;
-    --ink-soft: #7A6142;
-    --income: #3F6B33;
-    --income-bg: #E4EDD7;
-    --expense: #93402A;
-    --expense-bg: #F1DCC9;
-    --gold: #8A6423;
-    --gold-bg: #EBDBAF;
-    --danger: #93402A;
-    --font-header: 'MedievalSharp', cursive;
-    --font-body: 'IM Fell English', serif;
-    --font-mono: 'IBM Plex Mono', monospace;
-    --letter-spacing-header: 0.01em;
-    --bg-texture:
-      radial-gradient(ellipse at 20% 15%, rgba(154,111,53,0.08), transparent 60%),
-      radial-gradient(ellipse at 85% 80%, rgba(140,58,43,0.06), transparent 55%),
-      repeating-radial-gradient(circle at 50% 50%, rgba(59,42,22,0.03) 0, rgba(59,42,22,0.03) 1px, transparent 2px, transparent 4px);
-  }
-  :root[data-skin="machina"] {
-    --paper: #050807;
-    --paper-line: #10221C;
-    --ink: #52FFC6;
-    --ink-soft: #3C8A78;
-    --income: #52FFC6;
-    --income-bg: #06160F;
-    --expense: #FF4470;
-    --expense-bg: #180208;
-    --gold: #FFC857;
-    --gold-bg: #17130a;
-    --danger: #FF4470;
-    --font-header: 'Orbitron', sans-serif;
-    --font-body: 'IBM Plex Mono', monospace;
-    --font-mono: 'IBM Plex Mono', monospace;
-    --letter-spacing-header: 0.04em;
-    --bg-texture: repeating-linear-gradient(0deg, rgba(82,255,198,0.025) 0px, rgba(82,255,198,0.025) 1px, transparent 1px, transparent 3px);
   }
   * { box-sizing: border-box; }
   body {
@@ -217,8 +178,10 @@
   .mobile-menu-close { display: none; }
   .mobile-menu-backdrop { display: none; }
   /* On desktop this wrapper must not introduce a layout box of its own — its children
-     (tool-dropdown, theme-dropdown, tool-controls) need to keep behaving exactly like
-     direct flex children of .save-bar, unchanged from before this wrapper existed. */
+     (tool-dropdown, tool-controls) need to keep behaving exactly like direct flex
+     children of .save-bar, unchanged from before this wrapper existed. The theme
+     toggle deliberately lives outside this wrapper (see .theme-toggle-btn) so it
+     never collapses into the mobile drawer along with these. */
   .header-controls { display: contents; }
   .brand-block { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; }
   .brand-mark {
@@ -299,8 +262,10 @@
   .dropdown-label-short { display: none; }
   .save-bar.labels-short .dropdown-label-full { display: none; }
   .save-bar.labels-short .dropdown-label-short { display: inline; }
-  .theme-dropdown { position: relative; }
-  .theme-dropdown-toggle {
+  /* Plain single-click toggle (not a dropdown) — lives outside .header-controls in
+     the markup so it never collapses into the mobile hamburger drawer; margin-left:
+     auto keeps it pinned to the right edge of the header at every width. */
+  .theme-toggle-btn {
     height: 34px;
     display: inline-flex;
     align-items: center;
@@ -314,54 +279,10 @@
     font-size: 13px;
     font-weight: 600;
     cursor: pointer;
+    margin-left: auto;
+    flex-shrink: 0;
   }
-  .theme-dropdown-toggle:hover, .theme-dropdown-toggle.is-open { background: var(--paper-line); }
-  .theme-dropdown-caret {
-    font-size: 9px;
-    color: var(--ink-soft);
-    transition: transform .15s ease;
-  }
-  .theme-dropdown-toggle.is-open .theme-dropdown-caret { transform: rotate(180deg); }
-  .theme-dropdown-menu {
-    position: absolute;
-    top: calc(100% + 8px);
-    left: 0;
-    min-width: 150px;
-    background: var(--paper);
-    border: 1.5px solid var(--ink);
-    border-radius: 12px;
-    padding: 6px;
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
-    box-shadow: 0 10px 28px rgba(0,0,0,0.2);
-    opacity: 0;
-    transform: translateY(-6px);
-    pointer-events: none;
-    transition: opacity .15s ease, transform .15s ease;
-    z-index: 50;
-  }
-  .theme-dropdown-menu.expanded {
-    opacity: 1;
-    transform: translateY(0);
-    pointer-events: auto;
-  }
-  .theme-dropdown-item {
-    display: block;
-    width: 100%;
-    text-align: left;
-    background: none;
-    border: none;
-    border-radius: 7px;
-    padding: 9px 12px;
-    font-family: var(--font-body);
-    font-size: 13px;
-    font-weight: 600;
-    color: var(--ink-soft);
-    cursor: pointer;
-  }
-  .theme-dropdown-item:hover { background: var(--paper-line); color: var(--ink); }
-  .theme-dropdown-item.active { color: var(--ink); background: var(--gold-bg); }
+  .theme-toggle-btn:hover { background: var(--paper-line); }
   .save-btn {
     height: 34px;
     display: inline-flex;
@@ -442,12 +363,9 @@
       transition: transform .2s ease;
     }
     .header-controls.open { transform: translateX(0); }
-    .header-controls .tool-dropdown,
-    .header-controls .theme-dropdown { width: 100%; }
-    .header-controls .tool-dropdown-toggle,
-    .header-controls .theme-dropdown-toggle { width: 100%; justify-content: space-between; }
-    .header-controls .tool-dropdown-menu,
-    .header-controls .theme-dropdown-menu { min-width: 0; width: 100%; }
+    .header-controls .tool-dropdown { width: 100%; }
+    .header-controls .tool-dropdown-toggle { width: 100%; justify-content: space-between; }
+    .header-controls .tool-dropdown-menu { min-width: 0; width: 100%; }
     .header-controls .tool-controls { margin-left: 0; flex-direction: column; align-items: stretch; gap: 10px; }
     .header-controls .save-btn { width: 100%; }
     .mobile-menu-close {
@@ -1272,66 +1190,6 @@
   #tab-savings .payment-row .field-label { font-family: var(--font-header); font-weight: 600; font-size: 14px; color: var(--gold); }
   #tab-savings .payment-row .value-text { font-size: 17px; color: var(--gold); }
   #tab-savings .footnote { margin-top: 30px; font-size: 12px; color: var(--ink-soft); text-align: center; }
-
-  /* ================= Theme skins (decorative touches) ================= */
-  [data-skin="elder"] .name-row input[type="radio"] {
-    appearance: none;
-    -webkit-appearance: none;
-    width: 13px;
-    height: 13px;
-    min-width: 13px;
-    margin: 0;
-    padding: 0;
-    border: 1.5px solid var(--ink-soft);
-    border-radius: 50%;
-    background: var(--paper);
-    position: relative;
-    cursor: pointer;
-  }
-  [data-skin="elder"] .name-row input[type="radio"]:hover { border-color: var(--ink); }
-  [data-skin="elder"] .name-row input[type="radio"]:checked {
-    background: var(--gold);
-    border-color: var(--gold);
-  }
-  [data-skin="elder"] .name-row input[type="radio"]:checked::after {
-    content: "";
-    position: absolute;
-    left: 3px;
-    top: 3px;
-    width: 5px;
-    height: 5px;
-    border-radius: 50%;
-    background: var(--paper);
-  }
-  [data-skin="machina"] h1,
-  [data-skin="machina"] .net-line .value {
-    text-shadow: 0 0 8px currentColor;
-  }
-  [data-skin="machina"] .row.locked input {
-    text-shadow: 0 0 2px currentColor;
-  }
-  [data-skin="machina"] .tab-btn.active { box-shadow: 0 0 10px rgba(82,255,198,0.35); }
-  [data-skin="machina"] .tab-btn { padding: 9px 13px 9px; font-size: 13px; letter-spacing: -0.02em; }
-  [data-skin="machina"] .name-row input[type="radio"] {
-    appearance: none;
-    -webkit-appearance: none;
-    width: 13px;
-    height: 13px;
-    min-width: 13px;
-    margin: 0;
-    border-radius: 50%;
-    border: 1.5px solid #7A2233;
-    background: #1A0508;
-    box-shadow: inset 0 0 3px rgba(0,0,0,0.6);
-    cursor: pointer;
-    transition: background .15s ease, box-shadow .15s ease, border-color .15s ease;
-  }
-  [data-skin="machina"] .name-row input[type="radio"]:hover { border-color: #FF4470; }
-  [data-skin="machina"] .name-row input[type="radio"]:checked {
-    background: #FF4470;
-    border-color: #FF4470;
-    box-shadow: 0 0 4px 1px #FF4470, 0 0 10px 3px rgba(255,68,112,0.7), inset 0 0 2px rgba(255,255,255,0.5);
-  }
 </style>
 </head>
 <body>
@@ -1362,24 +1220,12 @@
           <button type="button" class="tool-dropdown-item" data-value="calendar" role="menuitemradio" onclick="setActiveTool('calendar')">Calendar</button>
         </div>
       </div>
-      <div class="theme-dropdown">
-        <button class="theme-dropdown-toggle" id="theme-dropdown-toggle" onclick="toggleSettingsPanel(event)" aria-haspopup="true" aria-expanded="false">
-          <span id="theme-dropdown-label" class="dropdown-label-full">Dark</span>
-          <span id="theme-dropdown-label-short" class="dropdown-label-short" aria-hidden="true">D</span>
-          <span class="theme-dropdown-caret">&#9662;</span>
-        </button>
-        <div class="theme-dropdown-menu" id="appearance-group" role="menu" aria-label="Appearance">
-          <button type="button" class="theme-dropdown-item" data-value="light" role="menuitemradio" onclick="setAppearance('light')">Light</button>
-          <button type="button" class="theme-dropdown-item" data-value="dark" role="menuitemradio" onclick="setAppearance('dark')">Dark</button>
-          <button type="button" class="theme-dropdown-item" data-value="elder" role="menuitemradio" onclick="setAppearance('elder')">Elder</button>
-          <button type="button" class="theme-dropdown-item" data-value="machina" role="menuitemradio" onclick="setAppearance('machina')">Machina</button>
-        </div>
-      </div>
       <div class="tool-controls" id="tool-controls">
         <button class="save-btn export-btn" id="google-signin-btn" onclick="handleGoogleSignIn()">Google Sign-In</button>
         <span class="save-status" id="save-status"></span>
       </div>
     </div>
+    <button type="button" class="theme-toggle-btn" id="theme-toggle-btn" onclick="toggleAppearance()">Dark</button>
   </div>
   <div class="mobile-menu-backdrop" id="mobile-menu-backdrop" onclick="closeMobileMenu()"></div>
   <div id="app-header-tabs">
@@ -3705,38 +3551,38 @@
   }
 
   function setAppearance(appearance) {
-    if (appearance === 'elder' || appearance === 'machina') {
-      document.documentElement.setAttribute('data-skin', appearance);
-      document.documentElement.removeAttribute('data-theme');
-    } else if (appearance === 'dark') {
-      document.documentElement.removeAttribute('data-skin');
+    if (appearance === 'dark') {
       document.documentElement.setAttribute('data-theme', 'dark');
     } else {
       appearance = 'light';
-      document.documentElement.removeAttribute('data-skin');
       document.documentElement.removeAttribute('data-theme');
     }
     try { localStorage.setItem('munny_appearance', appearance); } catch (e) {}
-    syncAppearanceRadios(appearance);
-    closeThemeDropdown();
+    syncThemeToggle(appearance);
   }
 
-  // Shrinks the tool/theme dropdown toggle labels to a single initial only when the
+  function toggleAppearance() {
+    setAppearance(document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark');
+  }
+
+  // Shrinks the tool dropdown's toggle label to a single initial only when the
   // current label text — plus the Save/Google Sign-In buttons, which can't shrink —
   // would otherwise force something onto a new line. Re-checked whenever a label's
   // text changes or the window resizes, never a fixed viewport breakpoint (shorter
   // label combos keep their full words much longer). Prefers full labels whenever
   // everything already fits on one row, and only shrinks when doing so actually
-  // frees up enough room to get everything back onto a single row.
+  // frees up enough room to get everything back onto a single row. The theme toggle
+  // isn't part of this check — it lives outside .header-controls and just wraps to
+  // its own line via .save-bar's flex-wrap if it doesn't fit, since "Light"/"Dark"
+  // are already as short as they can get.
   function updateDropdownLabelFit() {
     const saveBar = document.querySelector('.save-bar');
     const toolDropdown = document.querySelector('.tool-dropdown');
-    const themeDropdown = document.querySelector('.theme-dropdown');
     const toolControls = document.getElementById('tool-controls');
-    if (!saveBar || !toolDropdown || !themeDropdown) return;
+    if (!saveBar || !toolDropdown) return;
 
     function rowTops() {
-      const els = [toolDropdown, themeDropdown];
+      const els = [toolDropdown];
       if (toolControls && !toolControls.hidden) els.push(toolControls);
       return els.map(function (el) { return Math.round(el.getBoundingClientRect().top); });
     }
@@ -3799,18 +3645,10 @@
     new MutationObserver(updateDropdownLabelFit).observe(saveStatusEl, { characterData: true, childList: true, subtree: true });
   }
 
-  function syncAppearanceRadios(appearance) {
-    const label = { light: 'Light', dark: 'Dark', elder: 'Elder', machina: 'Machina' }[appearance] || 'Dark';
-    const toggleLabel = document.getElementById('theme-dropdown-label');
-    if (toggleLabel) toggleLabel.textContent = label;
-    const toggleLabelShort = document.getElementById('theme-dropdown-label-short');
-    if (toggleLabelShort) toggleLabelShort.textContent = label.charAt(0);
+  function syncThemeToggle(appearance) {
+    const btn = document.getElementById('theme-toggle-btn');
+    if (btn) btn.textContent = appearance === 'dark' ? 'Dark' : 'Light';
     updateDropdownLabelFit();
-    document.querySelectorAll('.theme-dropdown-item').forEach(function (item) {
-      const isActive = item.dataset.value === appearance;
-      item.classList.toggle('active', isActive);
-      item.setAttribute('aria-checked', isActive ? 'true' : 'false');
-    });
   }
 
   function toggleDropdown(e, toggleId, menuId) {
@@ -3830,8 +3668,6 @@
     if (toggle) { toggle.classList.remove('is-open'); toggle.setAttribute('aria-expanded', 'false'); }
   }
 
-  function toggleSettingsPanel(e) { toggleDropdown(e, 'theme-dropdown-toggle', 'appearance-group'); }
-  function closeThemeDropdown() { closeDropdown('theme-dropdown-toggle', 'appearance-group'); }
   function toggleToolMenu(e) { toggleDropdown(e, 'tool-dropdown-toggle', 'tool-menu'); }
   function closeToolMenu() { closeDropdown('tool-dropdown-toggle', 'tool-menu'); }
 
@@ -3871,7 +3707,6 @@
 
   document.addEventListener('click', function (e) {
     [
-      ['theme-dropdown-toggle', 'appearance-group', '.theme-dropdown'],
       ['tool-dropdown-toggle', 'tool-menu', '.tool-dropdown']
     ].forEach(function (entry) {
       const toggleId = entry[0], menuId = entry[1], wrapSelector = entry[2];
@@ -3917,13 +3752,10 @@
   function currentAppearance() {
     let appearance;
     try { appearance = localStorage.getItem('munny_appearance'); } catch (e) {}
-    if (appearance === 'light' || appearance === 'dark' || appearance === 'elder' || appearance === 'machina') {
-      return appearance;
-    }
-    // Migrate from the older separate dark-mode / skin toggles, if present.
-    let skin, theme;
-    try { skin = localStorage.getItem('munny_skin'); } catch (e) {}
-    if (skin === 'elder' || skin === 'machina') return skin;
+    if (appearance === 'light' || appearance === 'dark') return appearance;
+    // Anything else — the older dark-mode-only toggle, or a stale Elder/Machina
+    // value from before those themes were removed — falls back to dark.
+    let theme;
     try { theme = localStorage.getItem('munny_theme'); } catch (e) {}
     return theme === 'light' ? 'light' : 'dark';
   }
