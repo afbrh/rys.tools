@@ -251,7 +251,7 @@
   .cal-scroll-box {
     border: 1.5px solid var(--ink);
     border-radius: 10px;
-    height: min(70vh, 640px);
+    aspect-ratio: 1 / 1;
     overflow-y: auto;
     overflow-x: hidden;
     padding: 0 10px 10px;
@@ -874,12 +874,32 @@
     let monthEntries = []; // [{year, month}], ascending chronological order — what's currently loaded into #cal-months
     let isPrepending = false;
     let isAppending = false;
-    // A generous backstop against a runaway scroll-triggered load loop, not a real
-    // "how far back/forward can you go" limit — nobody scrolls 4 years in one sitting.
+    // A generous backstop against a runaway scroll-triggered load loop on the forward
+    // side — not a real "how far forward can you go" limit, nobody scrolls 2 years in
+    // one sitting. The backward side has its own hard floor — see getMinDate().
     const MAX_MONTHS_RANGE = 24;
 
     function pad2(n) { return n < 10 ? '0' + n : '' + n; }
     function dateKey(d) { return d.getFullYear() + '-' + pad2(d.getMonth() + 1) + '-' + pad2(d.getDate()); }
+
+    // The topmost date the scroll box will ever show — the Sunday that starts "last
+    // week" (7 days ago, backed up to that week's Sunday). Computed once and cached
+    // so the floor stays put for the rest of the session instead of creeping forward
+    // as real time passes while the page is open.
+    let minDateCache = null;
+    function getMinDate() {
+      if (minDateCache) return minDateCache;
+      const d = new Date();
+      d.setHours(0, 0, 0, 0);
+      d.setDate(d.getDate() - 7);
+      d.setDate(d.getDate() - d.getDay());
+      minDateCache = d;
+      return minDateCache;
+    }
+    function minDateIndex() {
+      const d = getMinDate();
+      return d.getFullYear() * 12 + d.getMonth();
+    }
 
     function formatTime(d) {
       let h = d.getHours();
@@ -1011,9 +1031,10 @@
       });
     }
 
-    // Starts with the previous/current/next month loaded so there's already something
-    // to scroll to in either direction, then grows one month at a time as the scroll
-    // box nears either edge (see attachInfiniteScroll). Runs once per page load.
+    // Starts at the floor (see getMinDate — "last week", the topmost date the box will
+    // ever show) and loads every month through next month, then grows forward one month
+    // at a time as the scroll box nears its bottom edge (see attachInfiniteScroll) — it
+    // never grows past the floor at the top. Runs once per page load.
     function initMonths() {
       monthsInitialized = true;
       const monthsEl = document.getElementById('cal-months');
@@ -1021,14 +1042,19 @@
       const now = new Date();
       monthsEl.innerHTML = '';
       monthEntries = [];
-      [-1, 0, 1].forEach(function (offset) {
-        let year = now.getFullYear();
-        let month = now.getMonth() + offset;
-        if (month < 0) { month += 12; year--; }
-        if (month > 11) { month -= 12; year++; }
+
+      let nextMonthYear = now.getFullYear(), nextMonthMonth = now.getMonth() + 1;
+      if (nextMonthMonth > 11) { nextMonthMonth = 0; nextMonthYear++; }
+      const endIndex = nextMonthYear * 12 + nextMonthMonth;
+
+      const minDate = getMinDate();
+      let year = minDate.getFullYear(), month = minDate.getMonth();
+      while (year * 12 + month <= endIndex) {
         monthsEl.appendChild(buildMonthSection(year, month));
         monthEntries.push({ year: year, month: month });
-      });
+        month++; if (month > 11) { month = 0; year++; }
+      }
+
       attachInfiniteScroll();
       // Land on today once the layout has settled, so there's no "Today" button to need.
       requestAnimationFrame(function () {
@@ -1051,15 +1077,23 @@
       section.appendChild(grid);
 
       const todayKey = dateKey(new Date());
-      const firstDay = new Date(year, month, 1);
       const daysInMonth = new Date(year, month + 1, 0).getDate();
+      const minDate = getMinDate();
+      const isFloorMonth = (year === minDate.getFullYear() && month === minDate.getMonth());
+      const startDay = isFloorMonth ? minDate.getDate() : 1;
+
       // Leading blanks keep each month's day-1 lined up under the right weekday column
       // in the sticky header above — no trailing padding needed since the next month's
-      // section just continues directly underneath.
-      for (let i = 0; i < firstDay.getDay(); i++) {
-        grid.appendChild(document.createElement('div'));
+      // section just continues directly underneath. The floor month skips this: its
+      // start date is always a Sunday by construction, so it already lines up under
+      // the first column with nothing blank (and nothing earlier) ahead of it.
+      if (!isFloorMonth) {
+        const firstDay = new Date(year, month, 1);
+        for (let i = 0; i < firstDay.getDay(); i++) {
+          grid.appendChild(document.createElement('div'));
+        }
       }
-      for (let d = 1; d <= daysInMonth; d++) {
+      for (let d = startDay; d <= daysInMonth; d++) {
         const key = dateKey(new Date(year, month, d));
 
         const btn = document.createElement('button');
@@ -1143,6 +1177,10 @@
     function prependMonth() {
       if (isPrepending || monthEntries.length === 0) return;
       const first = monthEntries[0];
+      // initMonths() always starts exactly at the floor month, so in practice this is
+      // already true from the very first scroll — kept explicit as the real guarantee
+      // behind "no rows before last week," not just a byproduct of the starting state.
+      if (first.year * 12 + first.month <= minDateIndex()) return;
       let year = first.year, month = first.month - 1;
       if (month < 0) { month = 11; year--; }
       if (monthEntries.length >= MAX_MONTHS_RANGE) return;
@@ -1177,16 +1215,18 @@
       isAppending = false;
     }
 
-    // Extends the loaded range (in either direction, bounded by MAX_MONTHS_RANGE) until
-    // it covers the given month — used when creating an event further out than what's
-    // currently in the scroll box, so jumping to it doesn't need a missing day cell.
+    // Extends the loaded range (in either direction, bounded by MAX_MONTHS_RANGE going
+    // forward and by the floor going backward) until it covers the given month — used
+    // when creating an event further out than what's currently in the scroll box, so
+    // jumping to it doesn't need a missing day cell. A target month earlier than the
+    // floor just clamps to the floor — that date's day cell was never meant to exist.
     function ensureMonthLoaded(year, month) {
       if (monthEntries.length === 0) return;
-      const targetIndex = year * 12 + month;
+      const targetIndex = Math.max(year * 12 + month, minDateIndex());
       const monthsEl = document.getElementById('cal-months');
 
       let first = monthEntries[0];
-      while (targetIndex < first.year * 12 + first.month && monthEntries.length < MAX_MONTHS_RANGE) {
+      while (targetIndex < first.year * 12 + first.month && first.year * 12 + first.month > minDateIndex()) {
         let y = first.year, m = first.month - 1;
         if (m < 0) { m = 11; y--; }
         monthsEl.insertBefore(buildMonthSection(y, m), monthsEl.firstChild);
