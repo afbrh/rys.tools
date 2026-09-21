@@ -371,19 +371,6 @@
   }
 
   /* ---------- E-Mail tool ---------- */
-  .mail-connect { max-width: 640px; margin: 60px auto 0; text-align: center; }
-  .mail-connect h1 {
-    font-family: var(--font-header);
-    font-weight: 600;
-    font-size: 32px;
-    margin: 0 0 12px;
-    letter-spacing: var(--letter-spacing-header);
-    color: var(--ink);
-  }
-  .mail-connect p { color: var(--ink-soft); font-size: 15px; line-height: 1.5; margin: 0 0 20px; }
-  .mail-connect-status { font-size: 13px; color: var(--gold); min-height: 16px; margin: 14px 0 0 !important; }
-  .mail-connect-status.error { color: var(--expense); }
-
   /* Matches .app-header-inner's own 860px cap — same content width as the sticky header
      above it (and everywhere else in the app), so the list reads as filling the page
      properly instead of sitting oddly narrow inside a wider column. */
@@ -670,18 +657,11 @@
   </div>
 
   <div id="app-content">
-  <div class="mail-connect" id="mail-connect">
-    <h1>E-Mail</h1>
-    <p>Connect your Google account to read and send mail from your Gmail inbox.</p>
-    <button class="save-btn" onclick="handleGoogleSignIn()">Connect Gmail</button>
-    <p class="mail-connect-status" id="mail-connect-status"></p>
-  </div>
-
-  <div class="mail-app" id="mail-app" hidden="">
+  <div class="mail-app" id="mail-app">
     <div class="mail-list-col">
       <div class="mail-pull-indicator" id="mail-pull-indicator">Pull to refresh</div>
       <div class="mail-list" id="mail-list">
-        <div class="mail-list-empty">Loading…</div>
+        <div class="mail-list-empty">Sign in to view your inbox.</div>
       </div>
     </div>
   </div>
@@ -1538,27 +1518,34 @@
       }
     }
 
+    // The inbox shell (toolbar, list) is always visible now — no separate "Connect
+    // Gmail" gate screen. Signing in happens from the one shared Google Sign-In
+    // button in the header; until that's done (or a stale session is missing the
+    // Gmail scope), the list just shows an empty-state message in its place.
     function render() {
-      const connectEl = document.getElementById('mail-connect');
       const appEl = document.getElementById('mail-app');
-      const statusEl = document.getElementById('mail-connect-status');
-      if (!connectEl || !appEl) return;
+      if (!appEl) return;
 
       const signedIn = GoogleDriveSync.isSignedIn();
       const ready = signedIn && GoogleDriveSync.hasGmailScope();
 
-      connectEl.hidden = ready;
-      appEl.hidden = !ready;
-
-      if (statusEl) {
-        statusEl.classList.remove('error');
-        statusEl.textContent = (signedIn && !ready)
-          ? 'Signed in, but Gmail access hasn\'t been granted yet — click Connect Gmail to allow it.'
-          : '';
-      }
-
       updateMailHeaderToolbarVisibility();
-      if (ready && !inboxLoaded) refreshInbox();
+
+      if (ready) {
+        if (!inboxLoaded) refreshInbox();
+      } else {
+        inboxLoaded = false;
+        const listEl = document.getElementById('mail-list');
+        if (listEl) {
+          listEl.innerHTML = '';
+          const empty = document.createElement('div');
+          empty.className = 'mail-list-empty';
+          empty.textContent = signedIn
+            ? 'Signed in, but Gmail access hasn\'t been granted yet — click Google Sign-In above to reconnect.'
+            : 'Sign in to view your inbox.';
+          listEl.appendChild(empty);
+        }
+      }
     }
 
     function setMailStatus(text, isError) {
