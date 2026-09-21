@@ -1884,6 +1884,20 @@
         if (!atTop()) return;
         dragging = true; decided = false; vertical = false; dy = 0;
         startX = e.clientX; startY = e.clientY;
+        // No easing while actively dragging — only for the release snap below.
+        // Otherwise every pointermove restarts a fresh 180ms transition toward a
+        // constantly-moving target, and the indicator visibly lags/stutters behind
+        // the pointer instead of tracking it 1:1.
+        indicatorEl.style.transition = 'none';
+        // .mail-list-item has touch-action:pan-y so ordinary list scrolling stays
+        // native and smooth — but that also means the browser commits a real touch
+        // to native vertical panning before JS ever sees it, making preventDefault()
+        // a no-op below. Touch-action is the intersection of an element's own value
+        // and its ancestors', so restricting it here on the list (only while already
+        // at the top, i.e. only when a pull could actually be starting) briefly hands
+        // vertical control to JS for this gesture; restored the moment we know it's
+        // not a pull (onMove's horizontal branch) or once it ends (onUp).
+        listEl.style.touchAction = 'none';
       }
       function onMove(e) {
         if (!dragging) return;
@@ -1893,7 +1907,7 @@
           if (Math.abs(curDx) < 8 && Math.abs(curDy) < 8) return;
           decided = true;
           vertical = curDy > 0 && Math.abs(curDy) > Math.abs(curDx);
-          if (!vertical) { dragging = false; return; }
+          if (!vertical) { dragging = false; listEl.style.touchAction = ''; return; }
         }
         if (!vertical) return;
         e.preventDefault();
@@ -1904,6 +1918,8 @@
       function onUp() {
         if (!dragging) return;
         dragging = false;
+        listEl.style.touchAction = '';
+        indicatorEl.style.transition = 'height .18s ease';
         const ready = GoogleDriveSync.isSignedIn() && GoogleDriveSync.hasGmailScope();
         if (vertical && dy >= THRESHOLD && ready) {
           indicatorEl.textContent = 'Refreshing…';
