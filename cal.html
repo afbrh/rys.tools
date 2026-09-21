@@ -368,18 +368,6 @@
   }
 
   /* ---------- Calendar tool ---------- */
-  .cal-connect { max-width: 640px; margin: 60px auto 0; text-align: center; }
-  .cal-connect h1 {
-    font-family: var(--font-header);
-    font-weight: 600;
-    font-size: 32px;
-    margin: 0 0 12px;
-    letter-spacing: var(--letter-spacing-header);
-  }
-  .cal-connect p { color: var(--ink-soft); font-size: 15px; line-height: 1.5; margin: 0 0 20px; }
-  .cal-connect-status { font-size: 13px; color: var(--gold); min-height: 16px; margin: 14px 0 0 !important; }
-  .cal-connect-status.error { color: var(--expense); }
-
   .cal-app { max-width: 860px; margin: 12px auto 0; }
   .cal-toolbar { display: flex; align-items: center; gap: 10px; margin-bottom: 6px; }
   .cal-nav-btn {
@@ -599,20 +587,13 @@
   </div>
 
   <div id="app-content">
-  <div class="cal-connect" id="cal-connect">
-    <h1>Calendar</h1>
-    <p>Connect your Google account to view and add events on your Google Calendar.</p>
-    <button class="save-btn" onclick="handleGoogleSignIn()">Connect Calendar</button>
-    <p class="cal-connect-status" id="cal-connect-status"></p>
-  </div>
-
-  <div class="cal-app" id="cal-app" hidden="">
+  <div class="cal-app" id="cal-app">
     <div class="cal-toolbar">
       <button type="button" class="cal-nav-btn" onclick="CalendarApp.prevMonth()" aria-label="Previous month">&#8249;</button>
       <div class="cal-month-label" id="cal-month-label"></div>
       <button type="button" class="cal-nav-btn" onclick="CalendarApp.nextMonth()" aria-label="Next month">&#8250;</button>
       <button type="button" class="save-btn export-btn cal-today-btn" onclick="CalendarApp.goToday()">Today</button>
-      <button type="button" class="save-btn" onclick="CalendarApp.openCompose()">+ Add event</button>
+      <button type="button" class="save-btn" id="cal-add-event-btn" onclick="CalendarApp.openCompose()" hidden="">+ Add event</button>
     </div>
     <div class="cal-status-row"><span class="cal-status" id="cal-status"></span></div>
     <div class="cal-weekday-row">
@@ -1074,32 +1055,38 @@
       el.classList.toggle('error', !!isError);
     }
 
+    // The month grid (toolbar, weekday header, day cells) is always visible now — no
+    // separate "Connect Calendar" gate screen. Signing in happens from the one shared
+    // Google Sign-In button in the header; until that's done (or a stale session is
+    // missing the Calendar scope), the grid just renders empty and "+ Add event" stays
+    // hidden (creating an event needs a real connection, unlike just looking at dates).
     function render() {
-      const connectEl = document.getElementById('cal-connect');
       const appEl = document.getElementById('cal-app');
-      const statusEl = document.getElementById('cal-connect-status');
-      if (!connectEl || !appEl) return;
+      if (!appEl) return;
 
+      if (viewYear === undefined) {
+        const now = new Date();
+        viewYear = now.getFullYear();
+        viewMonth = now.getMonth();
+      }
+      refreshView();
+    }
+
+    function refreshView() {
+      const addBtn = document.getElementById('cal-add-event-btn');
       const signedIn = GoogleDriveSync.isSignedIn();
       const ready = signedIn && GoogleDriveSync.hasCalendarScope();
-
-      connectEl.hidden = ready;
-      appEl.hidden = !ready;
-
-      if (statusEl) {
-        statusEl.classList.remove('error');
-        statusEl.textContent = (signedIn && !ready)
-          ? 'Signed in, but Calendar access hasn\'t been granted yet — click Connect Calendar to allow it.'
-          : '';
-      }
+      if (addBtn) addBtn.hidden = !ready;
 
       if (ready) {
-        if (viewYear === undefined) {
-          const now = new Date();
-          viewYear = now.getFullYear();
-          viewMonth = now.getMonth();
-        }
         loadMonth();
+      } else {
+        eventsByDate = {};
+        renderMonthSkeleton();
+        renderGridEvents();
+        setStatus(signedIn
+          ? 'Signed in, but Calendar access hasn\'t been granted yet — click Google Sign-In above to reconnect.'
+          : 'Sign in to view your events.');
       }
     }
 
@@ -1113,15 +1100,18 @@
       return start;
     }
 
-    function loadMonth() {
+    function renderMonthSkeleton() {
       const monthLabel = document.getElementById('cal-month-label');
       if (monthLabel) monthLabel.textContent = MONTH_NAMES[viewMonth] + ' ' + viewYear;
+      renderGridSkeleton(gridStartFor(viewYear, viewMonth));
+    }
+
+    function loadMonth() {
+      renderMonthSkeleton();
 
       const gridStart = gridStartFor(viewYear, viewMonth);
       const gridEnd = new Date(gridStart);
       gridEnd.setDate(gridEnd.getDate() + 42);
-
-      renderGridSkeleton(gridStart);
 
       const myToken = ++loadToken;
       setStatus('Loading events…');
@@ -1276,18 +1266,18 @@
     function prevMonth() {
       viewMonth--;
       if (viewMonth < 0) { viewMonth = 11; viewYear--; }
-      loadMonth();
+      refreshView();
     }
     function nextMonth() {
       viewMonth++;
       if (viewMonth > 11) { viewMonth = 0; viewYear++; }
-      loadMonth();
+      refreshView();
     }
     function goToday() {
       const now = new Date();
       viewYear = now.getFullYear();
       viewMonth = now.getMonth();
-      loadMonth();
+      refreshView();
     }
 
     function setComposeStatus(text, isError) {
