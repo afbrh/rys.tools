@@ -225,36 +225,32 @@
 
   /* ---------- Calendar tool ---------- */
   .cal-app { max-width: 860px; margin: 12px auto 0; }
-  .cal-toolbar { display: flex; align-items: center; gap: 10px; margin-bottom: 6px; }
-  .cal-nav-btn {
-    width: 34px;
-    height: 34px;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    background: none;
-    border: 1.5px solid var(--ink);
-    border-radius: 8px;
-    color: var(--ink);
-    font-size: 18px;
-    line-height: 1;
-    cursor: pointer;
-  }
-  .cal-nav-btn:hover { background: var(--paper-line); }
-  .cal-month-label {
-    font-family: var(--font-header);
-    font-weight: 600;
-    font-size: 20px;
-    color: var(--ink);
-    flex: 1;
-    text-align: center;
-    letter-spacing: var(--letter-spacing-header);
-  }
-  .cal-today-btn { margin-left: auto; }
   .cal-status-row { min-height: 18px; margin-bottom: 8px; }
   .cal-status { font-size: 13px; color: var(--gold); }
   .cal-status.error { color: var(--expense); }
-  .cal-weekday-row { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; margin-bottom: 6px; }
+  /* The month grid lives inside its own bordered, scrollable box instead of the page —
+     scrolling it up/down is how you move between months now (see .cal-month-section),
+     there's no more prev/next/Today control. The weekday row is sticky *within* this
+     box (not the page) so it stays pinned to the top as month sections scroll under it. */
+  .cal-scroll-box {
+    border: 1.5px solid var(--ink);
+    border-radius: 10px;
+    height: min(70vh, 640px);
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding: 0 10px 10px;
+  }
+  .cal-weekday-row {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 4px;
+    margin-bottom: 6px;
+    position: sticky;
+    top: 0;
+    background: var(--paper);
+    z-index: 2;
+    padding-top: 10px;
+  }
   .cal-weekday-row span {
     text-align: center;
     font-size: 12px;
@@ -263,6 +259,15 @@
     text-transform: uppercase;
     letter-spacing: 0.04em;
   }
+  .cal-month-heading {
+    font-family: var(--font-header);
+    font-weight: 600;
+    font-size: 16px;
+    color: var(--ink);
+    letter-spacing: var(--letter-spacing-header);
+    margin: 14px 2px 6px;
+  }
+  .cal-month-section:first-child .cal-month-heading { margin-top: 2px; }
   .cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; }
   .cal-day {
     height: 84px;
@@ -279,7 +284,6 @@
     overflow: hidden;
   }
   .cal-day:hover { background: var(--paper-line); }
-  .cal-day.outside-month { opacity: 0.4; }
   .cal-day.is-today { border-color: var(--gold); border-width: 2px; }
   .cal-day.has-selected { background: var(--gold-bg); border-color: var(--gold); }
   .cal-day-num { font-size: 13px; font-weight: 600; color: var(--ink); font-family: var(--font-mono); }
@@ -416,6 +420,7 @@
     </div>
     <div class="tool-controls" id="tool-controls">
       <button class="save-btn export-btn" id="google-signin-btn" onclick="handleGoogleSignIn()">Google Sign-In</button>
+      <button type="button" class="save-btn" id="cal-add-event-btn" onclick="CalendarApp.openCompose()" hidden="">+ Add event</button>
       <span class="save-status" id="save-status"></span>
     </div>
     <button type="button" class="theme-toggle-btn" id="theme-toggle-btn" onclick="toggleAppearance()" aria-label="Switch to light mode">
@@ -429,18 +434,13 @@
 
   <div id="app-content">
   <div class="cal-app" id="cal-app">
-    <div class="cal-toolbar">
-      <button type="button" class="cal-nav-btn" onclick="CalendarApp.prevMonth()" aria-label="Previous month">&#8249;</button>
-      <div class="cal-month-label" id="cal-month-label"></div>
-      <button type="button" class="cal-nav-btn" onclick="CalendarApp.nextMonth()" aria-label="Next month">&#8250;</button>
-      <button type="button" class="save-btn export-btn cal-today-btn" onclick="CalendarApp.goToday()">Today</button>
-      <button type="button" class="save-btn" id="cal-add-event-btn" onclick="CalendarApp.openCompose()" hidden="">+ Add event</button>
-    </div>
     <div class="cal-status-row"><span class="cal-status" id="cal-status"></span></div>
-    <div class="cal-weekday-row">
-      <span>Sun</span><span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span>
+    <div class="cal-scroll-box" id="cal-scroll-box">
+      <div class="cal-weekday-row">
+        <span>Sun</span><span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span>
+      </div>
+      <div id="cal-months"></div>
     </div>
-    <div class="cal-grid" id="cal-grid"></div>
 
     <div class="cal-agenda" id="cal-agenda" hidden="">
       <div class="cal-agenda-head">
@@ -832,10 +832,15 @@
     const MONTH_NAMES = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
     const WEEKDAY_NAMES = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 
-    let viewYear, viewMonth; // viewMonth is 0-indexed
     let eventsByDate = {}; // 'YYYY-MM-DD' -> sorted array of events
     let selectedDate = null;
-    let loadToken = 0; // guards against a slow request landing after a newer one
+    let monthsInitialized = false;
+    let monthEntries = []; // [{year, month}], ascending chronological order — what's currently loaded into #cal-months
+    let isPrepending = false;
+    let isAppending = false;
+    // A generous backstop against a runaway scroll-triggered load loop, not a real
+    // "how far back/forward can you go" limit — nobody scrolls 4 years in one sitting.
+    const MAX_MONTHS_RANGE = 24;
 
     function pad2(n) { return n < 10 ? '0' + n : '' + n; }
     function dateKey(d) { return d.getFullYear() + '-' + pad2(d.getMonth() + 1) + '-' + pad2(d.getDate()); }
@@ -856,20 +861,14 @@
       el.classList.toggle('error', !!isError);
     }
 
-    // The month grid (toolbar, weekday header, day cells) is always visible now — no
-    // separate "Connect Calendar" gate screen. Signing in happens from the one shared
-    // Google Sign-In button in the header; until that's done (or a stale session is
-    // missing the Calendar scope), the grid just renders empty and "+ Add event" stays
-    // hidden (creating an event needs a real connection, unlike just looking at dates).
+    // The month grid (weekday header, day cells) is always visible now — no separate
+    // "Connect Calendar" gate screen. Signing in happens from the one shared Google
+    // Sign-In button in the header; until that's done (or a stale session is missing
+    // the Calendar scope), the grid just renders empty and "+ Add event" stays hidden
+    // (creating an event needs a real connection, unlike just looking at dates).
     function render() {
       const appEl = document.getElementById('cal-app');
       if (!appEl) return;
-
-      if (viewYear === undefined) {
-        const now = new Date();
-        viewYear = now.getFullYear();
-        viewMonth = now.getMonth();
-      }
       refreshView();
     }
 
@@ -879,11 +878,15 @@
       const ready = signedIn && GoogleDriveSync.hasCalendarScope();
       if (addBtn) addBtn.hidden = !ready;
 
+      if (!monthsInitialized) initMonths();
+
       if (ready) {
-        loadMonth();
+        setStatus('');
+        // Re-fetch every month currently loaded into the scroll box — cheap (usually
+        // just 3 months), and covers the case where this runs right after connecting.
+        monthEntries.forEach(function (entry) { loadEventsForMonth(entry.year, entry.month); });
       } else {
         eventsByDate = {};
-        renderMonthSkeleton();
         renderGridEvents();
         setStatus(signedIn
           ? 'Signed in, but Calendar access hasn\'t been granted yet — click Google Sign-In above to reconnect.'
@@ -891,34 +894,93 @@
       }
     }
 
-    // The grid always shows 6 full weeks (42 days) so the layout height never jumps
-    // between months, and it's rendered in two passes: the day cells themselves first
-    // (instant, no network), then each day's events once the Calendar request resolves —
-    // so navigating months feels immediate even while events are still loading.
-    function gridStartFor(year, month) {
+    // Starts with the previous/current/next month loaded so there's already something
+    // to scroll to in either direction, then grows one month at a time as the scroll
+    // box nears either edge (see attachInfiniteScroll). Runs once per page load.
+    function initMonths() {
+      monthsInitialized = true;
+      const monthsEl = document.getElementById('cal-months');
+      if (!monthsEl) return;
+      const now = new Date();
+      monthsEl.innerHTML = '';
+      monthEntries = [];
+      [-1, 0, 1].forEach(function (offset) {
+        let year = now.getFullYear();
+        let month = now.getMonth() + offset;
+        if (month < 0) { month += 12; year--; }
+        if (month > 11) { month -= 12; year++; }
+        monthsEl.appendChild(buildMonthSection(year, month));
+        monthEntries.push({ year: year, month: month });
+      });
+      attachInfiniteScroll();
+      // Land on today once the layout has settled, so there's no "Today" button to need.
+      requestAnimationFrame(function () {
+        const todayEl = document.querySelector('.cal-day[data-date="' + dateKey(now) + '"]');
+        if (todayEl) todayEl.scrollIntoView({ block: 'center' });
+      });
+    }
+
+    function buildMonthSection(year, month) {
+      const section = document.createElement('div');
+      section.className = 'cal-month-section';
+
+      const heading = document.createElement('div');
+      heading.className = 'cal-month-heading';
+      heading.textContent = MONTH_NAMES[month] + ' ' + year;
+      section.appendChild(heading);
+
+      const grid = document.createElement('div');
+      grid.className = 'cal-grid';
+      section.appendChild(grid);
+
+      const todayKey = dateKey(new Date());
+      const firstDay = new Date(year, month, 1);
+      const daysInMonth = new Date(year, month + 1, 0).getDate();
+      // Leading blanks keep each month's day-1 lined up under the right weekday column
+      // in the sticky header above — no trailing padding needed since the next month's
+      // section just continues directly underneath.
+      for (let i = 0; i < firstDay.getDay(); i++) {
+        grid.appendChild(document.createElement('div'));
+      }
+      for (let d = 1; d <= daysInMonth; d++) {
+        const key = dateKey(new Date(year, month, d));
+
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'cal-day'
+          + (key === todayKey ? ' is-today' : '')
+          + (key === selectedDate ? ' has-selected' : '');
+        btn.dataset.date = key;
+
+        const num = document.createElement('div');
+        num.className = 'cal-day-num';
+        num.textContent = d;
+        btn.appendChild(num);
+
+        const evWrap = document.createElement('div');
+        evWrap.className = 'cal-day-events';
+        btn.appendChild(evWrap);
+
+        btn.addEventListener('click', function () { selectDate(key); });
+        grid.appendChild(btn);
+      }
+
+      return section;
+    }
+
+    function loadEventsForMonth(year, month) {
+      const daysInMonth = new Date(year, month + 1, 0).getDate();
+      // Clear this month's own dates before repopulating — loadEventsForMonth can be
+      // called again for an already-loaded month (e.g. right after signing in), and
+      // without this a refetch would just pile duplicate chips onto the existing ones.
+      for (let d = 1; d <= daysInMonth; d++) {
+        delete eventsByDate[year + '-' + pad2(month + 1) + '-' + pad2(d)];
+      }
+      if (!GoogleDriveSync.isSignedIn() || !GoogleDriveSync.hasCalendarScope()) return;
+
       const start = new Date(year, month, 1);
-      start.setDate(start.getDate() - start.getDay());
-      return start;
-    }
-
-    function renderMonthSkeleton() {
-      const monthLabel = document.getElementById('cal-month-label');
-      if (monthLabel) monthLabel.textContent = MONTH_NAMES[viewMonth] + ' ' + viewYear;
-      renderGridSkeleton(gridStartFor(viewYear, viewMonth));
-    }
-
-    function loadMonth() {
-      renderMonthSkeleton();
-
-      const gridStart = gridStartFor(viewYear, viewMonth);
-      const gridEnd = new Date(gridStart);
-      gridEnd.setDate(gridEnd.getDate() + 42);
-
-      const myToken = ++loadToken;
-      setStatus('Loading events…');
-      GoogleDriveSync.gcalListEvents(gridStart.toISOString(), gridEnd.toISOString()).then(function (events) {
-        if (myToken !== loadToken) return; // a newer month nav superseded this request
-        eventsByDate = {};
+      const end = new Date(year, month + 1, 1);
+      GoogleDriveSync.gcalListEvents(start.toISOString(), end.toISOString()).then(function (events) {
         events.forEach(function (ev) {
           const startStr = ev.start && (ev.start.date || ev.start.dateTime);
           if (!startStr) return;
@@ -939,44 +1001,91 @@
             return a.start - b.start;
           });
         });
-        setStatus('');
         renderGridEvents();
         if (selectedDate) renderAgenda(selectedDate);
       }).catch(function (e) {
-        if (myToken !== loadToken) return;
         setStatus("Couldn't load events: " + e.message, true);
       });
     }
 
-    function renderGridSkeleton(gridStart) {
-      const gridEl = document.getElementById('cal-grid');
-      if (!gridEl) return;
-      gridEl.innerHTML = '';
-      const todayKey = dateKey(new Date());
-      for (let i = 0; i < 42; i++) {
-        const d = new Date(gridStart);
-        d.setDate(d.getDate() + i);
-        const key = dateKey(d);
+    // Scrolling near either edge of the box loads one more month there — this is the
+    // whole "navigation" model now, replacing the old prev/next/Today buttons.
+    function attachInfiniteScroll() {
+      const box = document.getElementById('cal-scroll-box');
+      if (!box) return;
+      const TRIGGER_PX = 300;
+      box.addEventListener('scroll', function () {
+        if (box.scrollTop < TRIGGER_PX) {
+          prependMonth();
+        } else if (box.scrollHeight - box.scrollTop - box.clientHeight < TRIGGER_PX) {
+          appendMonth();
+        }
+      });
+    }
 
-        const btn = document.createElement('button');
-        btn.type = 'button';
-        btn.className = 'cal-day'
-          + (d.getMonth() !== viewMonth ? ' outside-month' : '')
-          + (key === todayKey ? ' is-today' : '')
-          + (key === selectedDate ? ' has-selected' : '');
-        btn.dataset.date = key;
+    function prependMonth() {
+      if (isPrepending || monthEntries.length === 0) return;
+      const first = monthEntries[0];
+      let year = first.year, month = first.month - 1;
+      if (month < 0) { month = 11; year--; }
+      if (monthEntries.length >= MAX_MONTHS_RANGE) return;
 
-        const num = document.createElement('div');
-        num.className = 'cal-day-num';
-        num.textContent = d.getDate();
-        btn.appendChild(num);
+      isPrepending = true;
+      const box = document.getElementById('cal-scroll-box');
+      const monthsEl = document.getElementById('cal-months');
+      const prevScrollHeight = box.scrollHeight;
+      monthsEl.insertBefore(buildMonthSection(year, month), monthsEl.firstChild);
+      monthEntries.unshift({ year: year, month: month });
+      loadEventsForMonth(year, month);
+      // Keep the currently-visible content pinned in place instead of jumping down
+      // when new content is inserted above it.
+      requestAnimationFrame(function () {
+        box.scrollTop += (box.scrollHeight - prevScrollHeight);
+        isPrepending = false;
+      });
+    }
 
-        const evWrap = document.createElement('div');
-        evWrap.className = 'cal-day-events';
-        btn.appendChild(evWrap);
+    function appendMonth() {
+      if (isAppending || monthEntries.length === 0) return;
+      const last = monthEntries[monthEntries.length - 1];
+      let year = last.year, month = last.month + 1;
+      if (month > 11) { month = 0; year++; }
+      if (monthEntries.length >= MAX_MONTHS_RANGE) return;
 
-        btn.addEventListener('click', function () { selectDate(key); });
-        gridEl.appendChild(btn);
+      isAppending = true;
+      const monthsEl = document.getElementById('cal-months');
+      monthsEl.appendChild(buildMonthSection(year, month));
+      monthEntries.push({ year: year, month: month });
+      loadEventsForMonth(year, month);
+      isAppending = false;
+    }
+
+    // Extends the loaded range (in either direction, bounded by MAX_MONTHS_RANGE) until
+    // it covers the given month — used when creating an event further out than what's
+    // currently in the scroll box, so jumping to it doesn't need a missing day cell.
+    function ensureMonthLoaded(year, month) {
+      if (monthEntries.length === 0) return;
+      const targetIndex = year * 12 + month;
+      const monthsEl = document.getElementById('cal-months');
+
+      let first = monthEntries[0];
+      while (targetIndex < first.year * 12 + first.month && monthEntries.length < MAX_MONTHS_RANGE) {
+        let y = first.year, m = first.month - 1;
+        if (m < 0) { m = 11; y--; }
+        monthsEl.insertBefore(buildMonthSection(y, m), monthsEl.firstChild);
+        monthEntries.unshift({ year: y, month: m });
+        loadEventsForMonth(y, m);
+        first = monthEntries[0];
+      }
+
+      let last = monthEntries[monthEntries.length - 1];
+      while (targetIndex > last.year * 12 + last.month && monthEntries.length < MAX_MONTHS_RANGE) {
+        let y = last.year, m = last.month + 1;
+        if (m > 11) { m = 0; y++; }
+        monthsEl.appendChild(buildMonthSection(y, m));
+        monthEntries.push({ year: y, month: m });
+        loadEventsForMonth(y, m);
+        last = monthEntries[monthEntries.length - 1];
       }
     }
 
@@ -1068,23 +1177,6 @@
       document.querySelectorAll('.cal-day').forEach(function (el) { el.classList.remove('has-selected'); });
     }
 
-    function prevMonth() {
-      viewMonth--;
-      if (viewMonth < 0) { viewMonth = 11; viewYear--; }
-      refreshView();
-    }
-    function nextMonth() {
-      viewMonth++;
-      if (viewMonth > 11) { viewMonth = 0; viewYear++; }
-      refreshView();
-    }
-    function goToday() {
-      const now = new Date();
-      viewYear = now.getFullYear();
-      viewMonth = now.getMonth();
-      refreshView();
-    }
-
     function setComposeStatus(text, isError) {
       const el = document.getElementById('cal-compose-status');
       if (!el) return;
@@ -1154,12 +1246,15 @@
       try {
         await GoogleDriveSync.gcalCreateEvent(eventResource);
         closeCompose();
-        // Jump the grid to the new event's month/day and refresh so it shows up right away.
+        // Jump to the new event's month/day and refresh so it shows up right away —
+        // loading in any months between the current range and it if it's further out
+        // than what's currently in the scroll box.
         const d = new Date(date + 'T00:00:00');
-        viewYear = d.getFullYear();
-        viewMonth = d.getMonth();
-        selectedDate = date;
-        loadMonth();
+        ensureMonthLoaded(d.getFullYear(), d.getMonth());
+        selectDate(date);
+        loadEventsForMonth(d.getFullYear(), d.getMonth());
+        const dayEl = document.querySelector('.cal-day[data-date="' + date + '"]');
+        if (dayEl) dayEl.scrollIntoView({ block: 'center' });
       } catch (e) {
         setComposeStatus("Couldn't save event: " + e.message, true);
       } finally {
@@ -1167,7 +1262,7 @@
       }
     }
 
-    return { render, prevMonth, nextMonth, goToday, closeAgenda, openCompose, closeCompose, onAllDayToggle, createEvent };
+    return { render, closeAgenda, openCompose, closeCompose, onAllDayToggle, createEvent };
   })();
 
   function setGoogleSignedInUi(signedIn) {
