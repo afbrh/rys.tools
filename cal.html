@@ -228,6 +228,22 @@
   .cal-status-row { min-height: 18px; margin-bottom: 8px; }
   .cal-status { font-size: 13px; color: var(--gold); }
   .cal-status.error { color: var(--expense); }
+  .cal-upcoming { border: 1.5px solid var(--ink); border-radius: 10px; padding: 14px 16px; margin-bottom: 14px; }
+  .cal-upcoming[hidden] { display: none; }
+  .cal-upcoming-title {
+    font-family: var(--font-body);
+    font-weight: 600;
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--ink-soft);
+    margin: 0 0 10px;
+  }
+  .cal-upcoming-list { display: flex; flex-direction: column; gap: 10px; }
+  /* Compound selector so this beats .cal-agenda-time's --gold regardless of source
+     order — a currently-in-progress event gets the same green used for income
+     figures elsewhere, instead of the plain gold used for a future start time. */
+  .cal-agenda-time.cal-upcoming-now { color: var(--income); font-weight: 700; }
   /* The month grid lives inside its own bordered, scrollable box instead of the page —
      scrolling it up/down is how you move between months now (see .cal-month-section),
      there's no more prev/next/Today control. The weekday row is sticky *within* this
@@ -435,6 +451,10 @@
   <div id="app-content">
   <div class="cal-app" id="cal-app">
     <div class="cal-status-row"><span class="cal-status" id="cal-status"></span></div>
+    <div class="cal-upcoming" id="cal-upcoming" hidden="">
+      <h2 class="cal-upcoming-title">Upcoming</h2>
+      <div class="cal-upcoming-list" id="cal-upcoming-list"></div>
+    </div>
     <div class="cal-scroll-box" id="cal-scroll-box">
       <div class="cal-weekday-row">
         <span>Sun</span><span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span>
@@ -824,7 +844,23 @@
       return resp.json();
     }
 
-    return { isSignedIn, signIn, restoreSession, getUserEmail, hasCalendarScope, gcalListEvents, gcalCreateEvent };
+    // timeMin filters by *end* time (exclusive), not start time — so this naturally
+    // includes an event that's currently in progress (started before now, still not
+    // over) alongside ones that haven't started yet, sorted soonest-first.
+    async function gcalListUpcoming(maxResults) {
+      const params = new URLSearchParams({
+        timeMin: new Date().toISOString(),
+        singleEvents: 'true',
+        orderBy: 'startTime',
+        maxResults: String(maxResults || 3)
+      });
+      const resp = await api('https://www.googleapis.com/calendar/v3/calendars/primary/events?' + params.toString());
+      if (!resp.ok) throw new Error(await errorFromResponse(resp));
+      const json = await resp.json();
+      return json.items || [];
+    }
+
+    return { isSignedIn, signIn, restoreSession, getUserEmail, hasCalendarScope, gcalListEvents, gcalCreateEvent, gcalListUpcoming };
   })();
 
   /* ================= Calendar app (namespaced) ================= */
@@ -874,9 +910,11 @@
 
     function refreshView() {
       const addBtn = document.getElementById('cal-add-event-btn');
+      const upcomingBox = document.getElementById('cal-upcoming');
       const signedIn = GoogleDriveSync.isSignedIn();
       const ready = signedIn && GoogleDriveSync.hasCalendarScope();
       if (addBtn) addBtn.hidden = !ready;
+      if (upcomingBox) upcomingBox.hidden = !ready;
 
       if (!monthsInitialized) initMonths();
 
@@ -885,6 +923,7 @@
         // Re-fetch every month currently loaded into the scroll box — cheap (usually
         // just 3 months), and covers the case where this runs right after connecting.
         monthEntries.forEach(function (entry) { loadEventsForMonth(entry.year, entry.month); });
+        loadUpcoming();
       } else {
         eventsByDate = {};
         renderGridEvents();
@@ -892,6 +931,84 @@
           ? 'Signed in, but Calendar access hasn\'t been granted yet — click Google Sign-In above to reconnect.'
           : 'Sign in to view your events.');
       }
+    }
+
+    // Independent of whatever months happen to be scrolled into view — a dedicated
+    // request for whatever's actually next, currently-happening events included (see
+    // gcalListUpcoming's timeMin comment).
+    function loadUpcoming() {
+      GoogleDriveSync.gcalListUpcoming(3).then(renderUpcoming).catch(function (e) {
+        const listEl = document.getElementById('cal-upcoming-list');
+        if (!listEl) return;
+        listEl.innerHTML = '';
+        const err = document.createElement('div');
+        err.className = 'cal-agenda-empty';
+        err.textContent = "Couldn't load upcoming events: " + e.message;
+        listEl.appendChild(err);
+      });
+    }
+
+    function relativeDayLabel(d) {
+      const todayKey = dateKey(new Date());
+      const key = dateKey(d);
+      if (key === todayKey) return 'Today';
+      const tomorrow = new Date();
+      tomorrow.setDate(tomorrow.getDate() + 1);
+      if (key === dateKey(tomorrow)) return 'Tomorrow';
+      return WEEKDAY_NAMES[d.getDay()].slice(0, 3) + ', ' + MONTH_NAMES[d.getMonth()] + ' ' + d.getDate();
+    }
+
+    function renderUpcoming(events) {
+      const listEl = document.getElementById('cal-upcoming-list');
+      if (!listEl) return;
+      listEl.innerHTML = '';
+
+      if (!events.length) {
+        const empty = document.createElement('div');
+        empty.className = 'cal-agenda-empty';
+        empty.textContent = 'No upcoming events.';
+        listEl.appendChild(empty);
+        return;
+      }
+
+      const now = new Date();
+      events.forEach(function (ev) {
+        const startStr = ev.start && (ev.start.date || ev.start.dateTime);
+        const endStr = ev.end && (ev.end.date || ev.end.dateTime);
+        if (!startStr) return;
+        const isAllDay = !!ev.start.date;
+        const start = isAllDay ? new Date(startStr + 'T00:00:00') : new Date(startStr);
+        const end = endStr ? (isAllDay ? new Date(endStr + 'T00:00:00') : new Date(endStr)) : null;
+        const isHappeningNow = !!end && start <= now && now < end;
+
+        const item = document.createElement('div');
+        item.className = 'cal-agenda-item';
+
+        const time = document.createElement('div');
+        time.className = 'cal-agenda-time' + (isHappeningNow ? ' cal-upcoming-now' : '');
+        time.textContent = isHappeningNow ? 'Now' : (isAllDay ? 'All day' : formatTime(start));
+
+        const body = document.createElement('div');
+        body.className = 'cal-agenda-body';
+        const title = document.createElement('div');
+        title.className = 'cal-agenda-title';
+        title.textContent = ev.summary || '(No title)';
+        body.appendChild(title);
+        const when = document.createElement('div');
+        when.className = 'cal-agenda-location';
+        when.textContent = relativeDayLabel(start);
+        body.appendChild(when);
+        if (ev.location) {
+          const loc = document.createElement('div');
+          loc.className = 'cal-agenda-location';
+          loc.textContent = ev.location;
+          body.appendChild(loc);
+        }
+
+        item.appendChild(time);
+        item.appendChild(body);
+        listEl.appendChild(item);
+      });
     }
 
     // Starts with the previous/current/next month loaded so there's already something
@@ -1253,6 +1370,7 @@
         ensureMonthLoaded(d.getFullYear(), d.getMonth());
         selectDate(date);
         loadEventsForMonth(d.getFullYear(), d.getMonth());
+        loadUpcoming(); // the new event might now be among the next 3
         const dayEl = document.querySelector('.cal-day[data-date="' + date + '"]');
         if (dayEl) dayEl.scrollIntoView({ block: 'center' });
       } catch (e) {
