@@ -279,7 +279,7 @@
   .cal-month-section:first-child .cal-month-heading { margin-top: 2px; }
   .cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; }
   .cal-day {
-    height: 84px;
+    aspect-ratio: 1 / 1;
     padding: 6px;
     border: 1px solid var(--paper-line);
     border-radius: 8px;
@@ -431,7 +431,7 @@
   .save-btn.cal-delete-btn:hover { background: var(--expense); color: var(--paper); }
 
   @media (max-width: 680px) {
-    .cal-day { height: 72px; padding: 4px; gap: 2px; }
+    .cal-day { padding: 4px; gap: 2px; }
     .cal-day-num { font-size: 12px; }
     .cal-event-chip { font-size: 9px; padding: 1px 4px; }
     /* Anything under 16px makes iOS Safari zoom the whole page in on focus. */
