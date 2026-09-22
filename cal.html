@@ -949,6 +949,19 @@
       return pad2(d.getHours()) + ':' + pad2(d.getMinutes());
     }
 
+    // Builds a well-formed "YYYY-MM-DDTHH:MM:00" regardless of exactly what shape the
+    // time input's value came in as — a spec-compliant browser always hands back plain
+    // "HH:MM", but this re-parses and re-pads it defensively rather than trusting a
+    // straight string concatenation, since a malformed value here (extra seconds, a
+    // missing leading zero, stray whitespace) is exactly what produces Google Calendar's
+    // opaque "Invalid start time." error with no indication of which field caused it.
+    function localDateTimeString(dateStr, timeStr) {
+      const parts = (timeStr || '').split(':');
+      const h = parseInt(parts[0], 10) || 0;
+      const m = parseInt(parts[1], 10) || 0;
+      return dateStr + 'T' + pad2(Math.min(Math.max(h, 0), 23)) + ':' + pad2(Math.min(Math.max(m, 0), 59)) + ':00';
+    }
+
     function setStatus(text, isError) {
       const el = document.getElementById('cal-status');
       if (!el) return;
@@ -1488,8 +1501,8 @@
         const startTime = document.getElementById('cal-compose-start-time').value || '09:00';
         const endTime = document.getElementById('cal-compose-end-time').value || '10:00';
         const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
-        eventResource.start = { dateTime: date + 'T' + startTime + ':00', timeZone: timeZone };
-        eventResource.end = { dateTime: date + 'T' + endTime + ':00', timeZone: timeZone };
+        eventResource.start = { dateTime: localDateTimeString(date, startTime), timeZone: timeZone };
+        eventResource.end = { dateTime: localDateTimeString(date, endTime), timeZone: timeZone };
       }
 
       const editingId = editingEventId;
