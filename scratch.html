@@ -1,0 +1,865 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<script>(function(){try{var a=localStorage.getItem('munny_appearance');if(a!=='light'&&a!=='dark'){a=(localStorage.getItem('munny_theme')==='light')?'light':'dark';}if(a==='dark'){document.documentElement.setAttribute('data-theme','dark');}}catch(e){}})();</script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ry's Tools</title>
+<link rel="icon" type="image/png" href="logo.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&amp;family=Source+Sans+Pro:wght@400;600&amp;display=swap" rel="stylesheet">
+<script src="https://accounts.google.com/gsi/client" async="" defer=""></script>
+<style>
+  :root {
+    --paper: #F3E9CE;
+    --paper-line: #D9C79C;
+    --ink: #3B2A16;
+    --ink-soft: #7A6142;
+    --income: #3F6B33;
+    --income-bg: #E4EDD7;
+    --expense: #93402A;
+    --expense-bg: #F1DCC9;
+    --gold: #8A6423;
+    --gold-bg: #EBDBAF;
+    --danger: #93402A;
+    --font-header: 'Source Sans Pro', sans-serif;
+    --font-body: 'Source Sans Pro', sans-serif;
+    --font-mono: 'IBM Plex Mono', monospace;
+    --bg-texture: none;
+    --letter-spacing-header: -0.01em;
+  }
+  :root[data-theme="dark"] {
+    --paper: #000000;
+    --paper-line: #1C1C1C;
+    --ink: #F0F0EA;
+    --ink-soft: #8C8C84;
+    --income: #6FCF7A;
+    --income-bg: #101F13;
+    --expense: #E2685A;
+    --expense-bg: #241211;
+    --gold: #D9B25E;
+    --gold-bg: #1F1A0E;
+    --danger: #EF5350;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg-texture), var(--paper);
+    background-attachment: fixed;
+    color: var(--ink);
+    font-family: var(--font-body);
+    transition: background-color .15s ease, color .15s ease;
+    padding: 0 20px 80px;
+    overflow-x: hidden;
+  }
+
+  /* ---------- app shell / header (shared chrome — keep in sync with budget.html/email.html/cal.html) ---------- */
+  .app-shell { max-width: 820px; margin: 0 auto; }
+  .app-header-sticky {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    background: var(--paper);
+    padding-top: 10px;
+    width: 100vw;
+    margin-left: 50%;
+    transform: translateX(-50%);
+  }
+  .app-header-inner { max-width: 860px; margin: 0 auto; padding: 0 20px; }
+  .save-bar { display: flex; align-items: flex-start; justify-content: flex-start; flex-wrap: wrap; gap: 12px; margin-bottom: 12px; }
+  .brand-block { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; }
+  .tool-controls { display: flex; align-items: center; flex-wrap: wrap; gap: 12px; margin-left: auto; }
+  .tool-controls[hidden] { display: none; }
+  .tool-dropdown { position: relative; }
+  .tool-dropdown-toggle {
+    height: 34px;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 0 14px;
+    border-radius: 17px;
+    background: none;
+    border: 1.5px solid var(--ink);
+    color: var(--ink);
+    font-family: var(--font-body);
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+  .tool-dropdown-toggle:hover, .tool-dropdown-toggle.is-open { background: var(--paper-line); }
+  .tool-dropdown-caret {
+    font-size: 9px;
+    color: var(--ink-soft);
+    transition: transform .15s ease;
+  }
+  .tool-dropdown-toggle.is-open .tool-dropdown-caret { transform: rotate(180deg); }
+  .tool-dropdown-menu {
+    position: absolute;
+    top: calc(100% + 8px);
+    left: 0;
+    min-width: 160px;
+    background: var(--paper);
+    border: 1.5px solid var(--ink);
+    border-radius: 12px;
+    padding: 6px;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    box-shadow: 0 10px 28px rgba(0,0,0,0.2);
+    opacity: 0;
+    transform: translateY(-6px);
+    pointer-events: none;
+    transition: opacity .15s ease, transform .15s ease;
+    z-index: 50;
+  }
+  .tool-dropdown-menu.expanded {
+    opacity: 1;
+    transform: translateY(0);
+    pointer-events: auto;
+  }
+  .tool-dropdown-item {
+    display: block;
+    width: 100%;
+    text-align: left;
+    background: none;
+    border: none;
+    border-radius: 7px;
+    padding: 9px 12px;
+    font-family: var(--font-body);
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--ink-soft);
+    cursor: pointer;
+  }
+  .tool-dropdown-item:hover { background: var(--paper-line); color: var(--ink); }
+  .tool-dropdown-item.active { color: var(--ink); background: var(--gold-bg); }
+  .dropdown-label-short { display: none; }
+  .save-bar.labels-short .dropdown-label-full { display: none; }
+  .save-bar.labels-short .dropdown-label-short { display: inline; }
+  .theme-toggle-btn {
+    position: relative;
+    width: 56px;
+    height: 34px;
+    padding: 0;
+    border-radius: 17px;
+    background: none;
+    border: 1.5px solid var(--ink);
+    cursor: pointer;
+    margin-left: auto;
+    flex-shrink: 0;
+  }
+  .theme-toggle-btn:hover { background: var(--paper-line); }
+  .theme-toggle-icon {
+    position: absolute;
+    top: 50%;
+    width: 16px;
+    height: 16px;
+    transform: translateY(-50%);
+    color: var(--ink-soft);
+    transition: color .15s ease;
+    pointer-events: none;
+  }
+  .theme-toggle-icon.sun { left: 8px; color: var(--ink); }
+  .theme-toggle-icon.moon { right: 8px; }
+  :root[data-theme="dark"] .theme-toggle-icon.sun { color: var(--ink-soft); }
+  :root[data-theme="dark"] .theme-toggle-icon.moon { color: var(--ink); }
+  .theme-toggle-thumb {
+    position: absolute;
+    top: 4px;
+    left: 4px;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    background: var(--gold-bg);
+    transition: transform .2s ease;
+  }
+  :root[data-theme="dark"] .theme-toggle-thumb { transform: translateX(22px); }
+  .save-btn {
+    height: 34px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--ink);
+    color: var(--paper);
+    border: none;
+    font-family: var(--font-body);
+    font-size: 14px;
+    font-weight: 600;
+    padding: 0 20px;
+    border-radius: 6px;
+    cursor: pointer;
+  }
+  .save-btn:hover { opacity: 0.88; }
+  .save-btn[hidden] { display: none; }
+  .save-btn.export-btn {
+    background: none;
+    color: var(--ink);
+    border: 1.5px solid var(--ink);
+  }
+  .save-btn.export-btn:hover { opacity: 1; background: var(--paper-line); }
+  .save-status { font-size: 13px; color: var(--income); min-height: 16px; }
+  .signed-in-banner {
+    font-size: 12px;
+    color: var(--ink-soft);
+    text-align: left;
+    min-height: 16px;
+  }
+  .app-footnote {
+    max-width: 820px;
+    margin: 30px auto 0;
+    font-size: 12px;
+    color: var(--ink-soft);
+    text-align: center;
+  }
+
+  /* ---------- Scratch tool ---------- */
+  .scratch-app { max-width: 860px; margin: 20px auto 0; }
+  .scratch-boxes { display: flex; flex-direction: column; gap: 16px; }
+  .scratch-box {
+    border: 1.5px solid var(--ink);
+    border-radius: 10px;
+    padding: 4px;
+  }
+  .scratch-box textarea {
+    display: block;
+    width: 100%;
+    min-height: 120px;
+    border: none;
+    outline: none;
+    resize: none;
+    overflow: hidden;
+    background: none;
+    color: var(--ink);
+    font-family: var(--font-body);
+    /* 16px, not smaller — anything under that makes iOS Safari zoom the page on focus. */
+    font-size: 16px;
+    line-height: 1.5;
+    padding: 16px;
+  }
+  .scratch-box textarea::placeholder { color: var(--ink-soft); }
+</style>
+</head>
+<body>
+
+<div class="app-shell">
+  <div class="app-header-sticky">
+  <div class="app-header-inner">
+  <div class="save-bar">
+    <div class="brand-block">
+      <div class="tool-dropdown">
+        <button class="tool-dropdown-toggle" id="tool-dropdown-toggle" onclick="toggleToolMenu(event)" aria-haspopup="true" aria-expanded="false">
+          <span id="tool-dropdown-label" class="dropdown-label-full">Scratch</span>
+          <span id="tool-dropdown-label-short" class="dropdown-label-short" aria-hidden="true">S</span>
+          <span class="tool-dropdown-caret">&#9662;</span>
+        </button>
+        <div class="tool-dropdown-menu" id="tool-menu" role="menu" aria-label="Tool">
+          <button type="button" class="tool-dropdown-item" data-value="budget" role="menuitemradio" onclick="setActiveTool('budget')">Budget Planner</button>
+          <button type="button" class="tool-dropdown-item" data-value="email" role="menuitemradio" onclick="setActiveTool('email')">E-Mail</button>
+          <button type="button" class="tool-dropdown-item" data-value="calendar" role="menuitemradio" onclick="setActiveTool('calendar')">Calendar</button>
+          <button type="button" class="tool-dropdown-item" data-value="scratch" role="menuitemradio" onclick="setActiveTool('scratch')">Scratch</button>
+        </div>
+      </div>
+      <div class="signed-in-banner" id="signed-in-banner"></div>
+    </div>
+    <div class="tool-controls" id="tool-controls">
+      <button class="save-btn export-btn" id="google-signin-btn" onclick="handleGoogleSignIn()">Google Sign-In</button>
+      <span class="save-status" id="save-status"></span>
+    </div>
+    <button type="button" class="theme-toggle-btn" id="theme-toggle-btn" onclick="toggleAppearance()" aria-label="Switch to light mode">
+      <span class="theme-toggle-thumb"></span>
+      <svg class="theme-toggle-icon sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4"></circle><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"></path></svg>
+      <svg class="theme-toggle-icon moon" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>
+    </button>
+  </div>
+  </div>
+  </div>
+
+  <div id="app-content">
+  <div class="scratch-app" id="scratch-app">
+    <div class="scratch-boxes" id="scratch-boxes"></div>
+  </div>
+  </div>
+  <p class="app-footnote">Ry's Tools</p>
+</div>
+
+<script>
+  function setAppearance(appearance) {
+    if (appearance === 'dark') {
+      document.documentElement.setAttribute('data-theme', 'dark');
+    } else {
+      appearance = 'light';
+      document.documentElement.removeAttribute('data-theme');
+    }
+    try { localStorage.setItem('munny_appearance', appearance); } catch (e) {}
+    syncThemeToggle(appearance);
+  }
+
+  function toggleAppearance() {
+    setAppearance(document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark');
+  }
+
+  // Shrinks the tool dropdown's toggle label to a single initial only when the
+  // current label text would otherwise force something onto a new line. Re-checked
+  // whenever a label's text changes or the window resizes, never a fixed viewport
+  // breakpoint. Kept in sync with the same function in budget.html/email.html/cal.html.
+  function updateDropdownLabelFit() {
+    const saveBar = document.querySelector('.save-bar');
+    const toolDropdown = document.querySelector('.tool-dropdown');
+    const toolControls = document.getElementById('tool-controls');
+    if (!saveBar || !toolDropdown) return;
+
+    function rowTops() {
+      const els = [toolDropdown];
+      if (toolControls && !toolControls.hidden) els.push(toolControls);
+      return els.map(function (el) { return Math.round(el.getBoundingClientRect().top); });
+    }
+
+    function sameRow(tops) {
+      return tops.every(function (t) { return t === tops[0]; });
+    }
+
+    saveBar.classList.remove('labels-short');
+    if (sameRow(rowTops())) return;
+
+    saveBar.classList.add('labels-short');
+    if (!sameRow(rowTops())) {
+      saveBar.classList.remove('labels-short');
+    }
+  }
+
+  let dropdownLabelFitResizeTimer = null;
+  window.addEventListener('resize', function () {
+    clearTimeout(dropdownLabelFitResizeTimer);
+    dropdownLabelFitResizeTimer = setTimeout(updateDropdownLabelFit, 100);
+  });
+
+  // No tab bar on this page — kept as a harmless no-op so shared init code that calls
+  // it doesn't need a page-specific fork.
+  function updateTabLabelFit() {
+    const tabsEl = document.querySelector('.tabs');
+    const scrollEl = document.querySelector('.tabs-scroll');
+    if (!tabsEl || !scrollEl) return;
+    function fits() { return scrollEl.scrollWidth <= scrollEl.clientWidth + 1; }
+
+    tabsEl.classList.remove('labels-medium', 'labels-short');
+    if (fits()) return;
+
+    tabsEl.classList.add('labels-medium');
+    if (fits()) return;
+
+    tabsEl.classList.remove('labels-medium');
+    tabsEl.classList.add('labels-short');
+  }
+
+  // The sun/moon icons and thumb slide purely via CSS off :root[data-theme] (see
+  // .theme-toggle-icon/.theme-toggle-thumb) — this only needs to keep the
+  // accessible label in sync with what a click will actually do.
+  function syncThemeToggle(appearance) {
+    const btn = document.getElementById('theme-toggle-btn');
+    if (btn) btn.setAttribute('aria-label', appearance === 'dark' ? 'Switch to light mode' : 'Switch to dark mode');
+    updateDropdownLabelFit();
+  }
+
+  function toggleDropdown(e, toggleId, menuId) {
+    if (e) e.stopPropagation();
+    const panel = document.getElementById(menuId);
+    const toggle = document.getElementById(toggleId);
+    if (!panel || !toggle) return;
+    const isOpen = panel.classList.toggle('expanded');
+    toggle.classList.toggle('is-open', isOpen);
+    toggle.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+  }
+
+  function closeDropdown(toggleId, menuId) {
+    const panel = document.getElementById(menuId);
+    const toggle = document.getElementById(toggleId);
+    if (panel) panel.classList.remove('expanded');
+    if (toggle) { toggle.classList.remove('is-open'); toggle.setAttribute('aria-expanded', 'false'); }
+  }
+
+  function toggleToolMenu(e) { toggleDropdown(e, 'tool-dropdown-toggle', 'tool-menu'); }
+  function closeToolMenu() { closeDropdown('tool-dropdown-toggle', 'tool-menu'); }
+
+  document.addEventListener('click', function (e) {
+    [
+      ['tool-dropdown-toggle', 'tool-menu', '.tool-dropdown']
+    ].forEach(function (entry) {
+      const toggleId = entry[0], menuId = entry[1], wrapSelector = entry[2];
+      const panel = document.getElementById(menuId);
+      const wrap = document.querySelector(wrapSelector);
+      if (!panel || !wrap || !panel.classList.contains('expanded')) return;
+      if (wrap.contains(e.target)) return;
+      closeDropdown(toggleId, menuId);
+    });
+  });
+
+  // Each tool lives on its own page — CURRENT_TOOL says which one this page is, so
+  // selecting a different tool from the dropdown navigates instead of toggling in place.
+  // Kept in sync with the matching block in budget.html/email.html/cal.html.
+  const CURRENT_TOOL = 'scratch';
+  const TOOL_PAGES = { budget: 'budget.html', email: 'email.html', calendar: 'cal.html', scratch: 'scratch.html' };
+  const TOOL_LABELS = { budget: 'Budget Planner', email: 'E-Mail', calendar: 'Calendar', scratch: 'Scratch' };
+
+  function setActiveTool(tool) {
+    if (!TOOL_PAGES[tool]) tool = CURRENT_TOOL;
+    if (tool !== CURRENT_TOOL) {
+      window.location.href = TOOL_PAGES[tool];
+      return;
+    }
+    syncToolMenu(tool);
+    closeToolMenu();
+  }
+
+  function syncToolMenu(tool) {
+    const label = TOOL_LABELS[tool] || TOOL_LABELS[CURRENT_TOOL];
+    const toggleLabel = document.getElementById('tool-dropdown-label');
+    if (toggleLabel) toggleLabel.textContent = label;
+    const toggleLabelShort = document.getElementById('tool-dropdown-label-short');
+    if (toggleLabelShort) toggleLabelShort.textContent = label.charAt(0);
+    updateDropdownLabelFit();
+    document.querySelectorAll('#tool-menu .tool-dropdown-item').forEach(function (item) {
+      const isActive = item.dataset.value === tool;
+      item.classList.toggle('active', isActive);
+      item.setAttribute('aria-checked', isActive ? 'true' : 'false');
+    });
+  }
+
+  function currentAppearance() {
+    let appearance;
+    try { appearance = localStorage.getItem('munny_appearance'); } catch (e) {}
+    if (appearance === 'light' || appearance === 'dark') return appearance;
+    let theme;
+    try { theme = localStorage.getItem('munny_theme'); } catch (e) {}
+    return theme === 'light' ? 'light' : 'dark';
+  }
+
+  /* ================= Google sign-in + Drive sync (shared session with every tool
+     page via the same localStorage token — kept in sync with the same module in
+     budget.html/email.html/cal.html). Requests the full cross-tool scope union even
+     though this page only ever needs drive.file — no per-tool "reconnect" prompts
+     later, since signing in from any tool covers every other tool too. ================= */
+  const GoogleDriveSync = (function () {
+    const CLIENT_ID = '575902569700-4l05lkmf0kbrgq5kdr58canigcvafv3j.apps.googleusercontent.com';
+    const SCOPE = 'https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/userinfo.email https://www.googleapis.com/auth/gmail.readonly https://www.googleapis.com/auth/gmail.send https://www.googleapis.com/auth/gmail.modify https://www.googleapis.com/auth/calendar.events';
+    const FILE_NAME = 'munny-data.json';
+    const FILE_ID_KEY = 'munny_drive_file_id';
+    const TOKEN_KEY = 'munny_google_token';
+
+    let tokenClient = null;
+    let accessToken = null;
+    let refreshTimer = null;
+
+    function getCachedFileId() {
+      try { return localStorage.getItem(FILE_ID_KEY) || ''; } catch (e) { return ''; }
+    }
+    function setCachedFileId(id) {
+      try {
+        if (id) localStorage.setItem(FILE_ID_KEY, id);
+        else localStorage.removeItem(FILE_ID_KEY);
+      } catch (e) {}
+    }
+
+    // Re-arms itself every time a token is (re)persisted, a few minutes ahead of that
+    // token's real expiry, so an open tab silently refreshes itself via trySilentSignIn
+    // well before anything actually 401s.
+    function scheduleProactiveRefresh(expiresInSeconds) {
+      if (refreshTimer) { clearTimeout(refreshTimer); refreshTimer = null; }
+      const bufferMs = 5 * 60 * 1000;
+      const delay = Math.max((expiresInSeconds || 3600) * 1000 - bufferMs, 30000);
+      refreshTimer = setTimeout(() => { trySilentSignIn(); }, delay);
+    }
+
+    function persistToken(token, expiresInSeconds) {
+      try {
+        localStorage.setItem(TOKEN_KEY, JSON.stringify({
+          access_token: token,
+          expires_at: Date.now() + (expiresInSeconds || 3600) * 1000
+        }));
+      } catch (e) {}
+      scheduleProactiveRefresh(expiresInSeconds);
+    }
+    function clearPersistedToken() {
+      try { localStorage.removeItem(TOKEN_KEY); } catch (e) {}
+    }
+    function restoreSession() {
+      let stored;
+      try { stored = JSON.parse(localStorage.getItem(TOKEN_KEY) || 'null'); } catch (e) { stored = null; }
+      if (!stored || !stored.access_token || !stored.expires_at) return false;
+      if (Date.now() > stored.expires_at - 60000) { clearPersistedToken(); return false; }
+      accessToken = stored.access_token;
+      scheduleProactiveRefresh((stored.expires_at - Date.now()) / 1000);
+      return true;
+    }
+
+    function isSignedIn() {
+      return !!accessToken;
+    }
+
+    function signIn() {
+      return new Promise((resolve, reject) => {
+        if (!window.google || !google.accounts || !google.accounts.oauth2) {
+          reject(new Error('Google sign-in script hasn\'t loaded yet — try again in a moment.'));
+          return;
+        }
+        if (!tokenClient) {
+          tokenClient = google.accounts.oauth2.initTokenClient({
+            client_id: CLIENT_ID,
+            scope: SCOPE,
+            callback: () => {} // replaced per-request below
+          });
+        }
+        let settled = false;
+        const timer = setTimeout(() => {
+          if (settled) return;
+          settled = true;
+          reject(new Error('Sign-in timed out — the popup may have been closed or blocked. Try again.'));
+        }, 60000);
+        tokenClient.callback = (resp) => {
+          if (settled) return;
+          settled = true;
+          clearTimeout(timer);
+          if (resp.error) { reject(new Error(resp.error)); return; }
+          accessToken = resp.access_token;
+          persistToken(accessToken, resp.expires_in);
+          resolve(accessToken);
+        };
+        tokenClient.requestAccessToken({ prompt: 'consent' });
+      });
+    }
+
+    // Like signIn(), but prompt:'' instead of prompt:'consent' — a silent, invisible
+    // reauth attempt relying on the browser still having an active Google session plus
+    // this app's prior consent on file. Resolves false (never rejects) on any failure.
+    function trySilentSignIn() {
+      return new Promise((resolve) => {
+        if (!window.google || !google.accounts || !google.accounts.oauth2) { resolve(false); return; }
+        if (!tokenClient) {
+          tokenClient = google.accounts.oauth2.initTokenClient({
+            client_id: CLIENT_ID,
+            scope: SCOPE,
+            callback: () => {}
+          });
+        }
+        let settled = false;
+        const timer = setTimeout(() => {
+          if (settled) return;
+          settled = true;
+          resolve(false);
+        }, 8000);
+        tokenClient.callback = (resp) => {
+          if (settled) return;
+          settled = true;
+          clearTimeout(timer);
+          if (resp.error) { resolve(false); return; }
+          accessToken = resp.access_token;
+          persistToken(accessToken, resp.expires_in);
+          resolve(true);
+        };
+        try {
+          tokenClient.requestAccessToken({ prompt: '' });
+        } catch (e) {
+          settled = true;
+          clearTimeout(timer);
+          resolve(false);
+        }
+      });
+    }
+
+    async function api(url, options) {
+      if (!accessToken) throw new Error('not signed in');
+      const headers = Object.assign({ 'Authorization': 'Bearer ' + accessToken }, (options && options.headers) || {});
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), 15000);
+      let resp;
+      try {
+        resp = await fetch(url, Object.assign({ cache: 'no-store' }, options, { headers, signal: controller.signal }));
+      } catch (e) {
+        if (e.name === 'AbortError') throw new Error('Google Drive request timed out — check your connection and try again.');
+        throw new Error('Network error talking to Google Drive: ' + e.message);
+      } finally {
+        clearTimeout(timer);
+      }
+      if (resp.status === 401) { accessToken = null; clearPersistedToken(); }
+      return resp;
+    }
+
+    async function findFileId() {
+      const cached = getCachedFileId();
+      if (cached) return cached;
+      const q = encodeURIComponent("name='" + FILE_NAME + "' and trashed=false");
+      const resp = await api('https://www.googleapis.com/drive/v3/files?q=' + q + '&fields=files(id,name)&spaces=drive');
+      if (!resp.ok) throw new Error('HTTP ' + resp.status);
+      const json = await resp.json();
+      if (json.files && json.files.length) {
+        setCachedFileId(json.files[0].id);
+        return json.files[0].id;
+      }
+      return null;
+    }
+
+    async function createFile(dataObj) {
+      const metadata = { name: FILE_NAME, mimeType: 'application/json' };
+      const boundary = 'munnyboundary' + Date.now();
+      const body =
+        '--' + boundary + '\r\n' +
+        'Content-Type: application/json; charset=UTF-8\r\n\r\n' +
+        JSON.stringify(metadata) + '\r\n' +
+        '--' + boundary + '\r\n' +
+        'Content-Type: application/json\r\n\r\n' +
+        JSON.stringify(dataObj, null, 2) + '\r\n' +
+        '--' + boundary + '--';
+      const resp = await api('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id', {
+        method: 'POST',
+        headers: { 'Content-Type': 'multipart/related; boundary=' + boundary },
+        body
+      });
+      if (!resp.ok) throw new Error('HTTP ' + resp.status);
+      const json = await resp.json();
+      setCachedFileId(json.id);
+      return json.id;
+    }
+
+    async function load() {
+      if (!accessToken) return null;
+      const fileId = await findFileId();
+      if (!fileId) return null;
+      const resp = await api('https://www.googleapis.com/drive/v3/files/' + fileId + '?alt=media');
+      if (resp.status === 404) {
+        setCachedFileId('');
+        return null;
+      }
+      if (!resp.ok) throw new Error('HTTP ' + resp.status);
+      return resp.json();
+    }
+
+    async function save(dataObj) {
+      if (!accessToken) throw new Error('not signed in');
+      let fileId = getCachedFileId() || await findFileId();
+      if (!fileId) {
+        await createFile(dataObj);
+        return true;
+      }
+      const resp = await api('https://www.googleapis.com/upload/drive/v3/files/' + fileId + '?uploadType=media', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(dataObj, null, 2)
+      });
+      if (resp.status === 404) {
+        setCachedFileId('');
+        await createFile(dataObj);
+        return true;
+      }
+      if (!resp.ok) throw new Error('HTTP ' + resp.status);
+      return true;
+    }
+
+    async function getUserEmail() {
+      const resp = await api('https://www.googleapis.com/oauth2/v3/userinfo');
+      if (!resp.ok) throw new Error('HTTP ' + resp.status);
+      const json = await resp.json();
+      return json.email || '';
+    }
+
+    return { isSignedIn, signIn, trySilentSignIn, load, save, getUserEmail, restoreSession };
+  })();
+
+  /* ================= combined save / load — all tools share one Drive file (one
+     sign-in, one Google account), each keeping its own slice under `tools[CURRENT_TOOL]`
+     so saving from one tool's page never touches another tool's data. Kept in sync
+     with the same helpers in every other tool page. ================= */
+  function withToolsWrapper(remote) {
+    if (!remote) return {};
+    if (remote.tools) return Object.assign({}, remote.tools);
+    return { budget: remote }; // pre-multi-tool saves have no `tools` wrapper — Budget Planner was the only tool back then
+  }
+
+  function extractOwnToolData(remote) {
+    return withToolsWrapper(remote)[CURRENT_TOOL] || null;
+  }
+
+  async function mergeAndSave(toolData) {
+    const remote = await GoogleDriveSync.load();
+    const tools = withToolsWrapper(remote);
+    tools[CURRENT_TOOL] = toolData;
+    await GoogleDriveSync.save({ tools: tools });
+  }
+
+  function setGoogleSignedInUi(signedIn) {
+    const signinBtn = document.getElementById('google-signin-btn');
+    if (signinBtn) signinBtn.hidden = signedIn;
+    updateDropdownLabelFit();
+  }
+
+  async function showSignedInBanner() {
+    const banner = document.getElementById('signed-in-banner');
+    if (!banner) return;
+    try {
+      const email = await GoogleDriveSync.getUserEmail();
+      banner.textContent = email || 'Signed in to Google Drive';
+    } catch (e) {
+      banner.textContent = 'Signed in to Google Drive';
+    }
+  }
+
+  async function handleGoogleSignIn() {
+    const status = document.getElementById('save-status');
+    status.style.color = 'var(--gold)';
+    status.textContent = 'Signing in to Google…';
+    try {
+      await GoogleDriveSync.signIn();
+      setGoogleSignedInUi(true);
+      status.textContent = 'Loading your notes from Drive…';
+      suppressAutoSave = true;
+      const remote = await GoogleDriveSync.load();
+      applyLoadedData(extractOwnToolData(remote));
+      suppressAutoSave = false;
+      status.textContent = '';
+      await showSignedInBanner();
+    } catch (e) {
+      suppressAutoSave = false;
+      status.style.color = 'var(--expense)';
+      status.textContent = 'Google sign-in failed: ' + e.message;
+    }
+  }
+
+  /* ================= Scratch (namespaced) — one long note, split into separate
+     boxes wherever three or more blank lines in a row appear. Stored as a single
+     string (sections joined back together with "\n\n\n") rather than an array in
+     the saved JSON, since that's the simplest possible shape and reconstructs the
+     exact same boxes on load either way. ================= */
+  let sections = [''];
+  let autoSaveTimer = null;
+  let suppressAutoSave = true;
+
+  function autoGrow(el) {
+    el.style.height = 'auto';
+    el.style.height = el.scrollHeight + 'px';
+  }
+
+  function focusBoxEnd(index) {
+    const boxesEl = document.getElementById('scratch-boxes');
+    const box = boxesEl && boxesEl.children[index];
+    const textarea = box && box.querySelector('textarea');
+    if (!textarea) return;
+    textarea.focus();
+    const pos = textarea.value.length;
+    textarea.setSelectionRange(pos, pos);
+  }
+
+  // Only called when a box's content actually needs a new box splitting out of it —
+  // ordinary typing just updates sections[index] and grows that one textarea in place,
+  // never touching the DOM, so a normal keystroke can't cost focus or scroll position.
+  function renderBoxes() {
+    const boxesEl = document.getElementById('scratch-boxes');
+    if (!boxesEl) return;
+    boxesEl.innerHTML = '';
+    sections.forEach(function (text, i) {
+      const box = document.createElement('div');
+      box.className = 'scratch-box';
+      const textarea = document.createElement('textarea');
+      textarea.value = text;
+      textarea.spellcheck = false;
+      if (i === 0) textarea.placeholder = 'Start typing…';
+      textarea.addEventListener('input', function () { handleBoxInput(i, textarea); });
+      box.appendChild(textarea);
+      boxesEl.appendChild(box);
+      autoGrow(textarea);
+    });
+  }
+
+  // Typing (or pasting) three or more newlines in a row breaks everything from that
+  // point on into a new box below — looped so a paste containing several such breaks
+  // splits into all of its boxes at once, not just the first.
+  function handleBoxInput(index, textarea) {
+    sections[index] = textarea.value;
+    let didSplit = false;
+    let i = index;
+    while (true) {
+      const match = sections[i].match(/\n{3,}/);
+      if (!match) break;
+      const before = sections[i].slice(0, match.index).replace(/\n+$/, '');
+      const after = sections[i].slice(match.index + match[0].length).replace(/^\n+/, '');
+      sections[i] = before;
+      sections.splice(i + 1, 0, after);
+      didSplit = true;
+      i++;
+    }
+    if (didSplit) {
+      renderBoxes();
+      focusBoxEnd(i);
+    } else {
+      autoGrow(textarea);
+    }
+    queueAutoSave();
+  }
+
+  let boxResizeTimer = null;
+  window.addEventListener('resize', function () {
+    clearTimeout(boxResizeTimer);
+    boxResizeTimer = setTimeout(function () {
+      document.querySelectorAll('.scratch-box textarea').forEach(autoGrow);
+    }, 100);
+  });
+
+  function applyLoadedData(saved) {
+    const text = (saved && typeof saved.text === 'string') ? saved.text : '';
+    sections = text ? text.split(/\n{3,}/) : [''];
+    if (!sections.length) sections = [''];
+    renderBoxes();
+  }
+
+  function queueAutoSave() {
+    if (suppressAutoSave || !GoogleDriveSync.isSignedIn()) return;
+    clearTimeout(autoSaveTimer);
+    autoSaveTimer = setTimeout(runAutoSave, 1500);
+  }
+
+  async function runAutoSave() {
+    const status = document.getElementById('save-status');
+    if (status) { status.style.color = 'var(--gold)'; status.textContent = 'Saving…'; }
+    try {
+      await mergeAndSave({ text: sections.join('\n\n\n') });
+      if (status) {
+        status.style.color = 'var(--income)';
+        status.textContent = 'Saved';
+        setTimeout(() => { if (status.textContent === 'Saved') status.textContent = ''; }, 2000);
+      }
+    } catch (e) {
+      if (status) { status.style.color = 'var(--expense)'; status.textContent = 'Auto-save failed: ' + e.message; }
+    }
+  }
+
+  async function loadApp() {
+    applyLoadedData(null);
+    setGoogleSignedInUi(false);
+    setAppearance(currentAppearance());
+    syncToolMenu(CURRENT_TOOL);
+    updateTabLabelFit();
+
+    let signedIn = GoogleDriveSync.restoreSession();
+    if (!signedIn) signedIn = await GoogleDriveSync.trySilentSignIn();
+    if (signedIn) {
+      setGoogleSignedInUi(true);
+      const status = document.getElementById('save-status');
+      status.style.color = 'var(--gold)';
+      status.textContent = 'Loading your notes from Drive…';
+      try {
+        const remote = await GoogleDriveSync.load();
+        applyLoadedData(extractOwnToolData(remote));
+        status.textContent = '';
+        await showSignedInBanner();
+      } catch (e) {
+        status.style.color = 'var(--expense)';
+        status.textContent = 'Google Drive load failed: ' + e.message;
+        setGoogleSignedInUi(false);
+      }
+    }
+    // Everything up to here was restoring/initializing state, not a real edit —
+    // auto-save only makes sense for whatever the user types from this point on.
+    suppressAutoSave = false;
+  }
+
+  loadApp();
+</script>
+
+</body></html>
