@@ -61,7 +61,10 @@
     z-index: 100;
     background: var(--paper);
     padding-top: 10px;
-    padding-bottom: 1px;
+    /* Bigger than budget.html/email.html's 1px — the Upcoming box (see .cal-upcoming)
+       lives inside this sticky header too now, so it needs real breathing room below
+       it before the border, not just under .save-bar. */
+    padding-bottom: 14px;
     width: 100vw;
     margin-left: 50%;
     transform: translateX(-50%);
@@ -208,9 +211,6 @@
     border: 1.5px solid var(--ink);
   }
   .save-btn.export-btn:hover { opacity: 1; background: var(--paper-line); }
-  /* Sits under the signed-in email in .brand-block — a little more breathing room
-     than that block's own 2px gap (tight by design for the dropdown/email pairing). */
-  #cal-add-event-btn { margin-top: 6px; }
   .save-status { font-size: 13px; color: var(--income); min-height: 16px; }
   .signed-in-banner {
     font-size: 12px;
@@ -231,8 +231,11 @@
   .cal-status-row { min-height: 18px; margin-bottom: 8px; }
   .cal-status { font-size: 13px; color: var(--gold); }
   .cal-status.error { color: var(--expense); }
-  .cal-upcoming { border: 1.5px solid var(--ink); border-radius: 10px; padding: 14px 16px; margin-bottom: 14px; }
+  /* Lives inside .app-header-sticky (not .cal-app) as of 2026-09-21, so it stays
+     pinned in view with the rest of the header instead of scrolling away. */
+  .cal-upcoming { border: 1.5px solid var(--ink); border-radius: 10px; padding: 14px 16px; }
   .cal-upcoming[hidden] { display: none; }
+  .cal-upcoming-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 10px; }
   .cal-upcoming-title {
     font-family: var(--font-body);
     font-weight: 600;
@@ -240,7 +243,7 @@
     text-transform: uppercase;
     letter-spacing: 0.04em;
     color: var(--ink-soft);
-    margin: 0 0 10px;
+    margin: 0;
   }
   .cal-upcoming-list { display: flex; flex-direction: column; gap: 10px; }
   /* Compound selector so this beats .cal-agenda-time's --gold regardless of source
@@ -474,7 +477,6 @@
         </div>
       </div>
       <div class="signed-in-banner" id="signed-in-banner"></div>
-      <button type="button" class="save-btn" id="cal-add-event-btn" onclick="CalendarApp.openCompose()" hidden="">+ Add event</button>
     </div>
     <div class="tool-controls" id="tool-controls">
       <button class="save-btn export-btn" id="google-signin-btn" onclick="handleGoogleSignIn()">Google Sign-In</button>
@@ -486,16 +488,19 @@
       <svg class="theme-toggle-icon moon" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>
     </button>
   </div>
+  <div class="cal-upcoming" id="cal-upcoming" hidden="">
+    <div class="cal-upcoming-head">
+      <h2 class="cal-upcoming-title" id="cal-upcoming-title">Upcoming</h2>
+      <button type="button" class="save-btn" id="cal-add-event-btn" onclick="CalendarApp.openCompose()">+ Add event</button>
+    </div>
+    <div class="cal-upcoming-list" id="cal-upcoming-list"></div>
+  </div>
   </div>
   </div>
 
   <div id="app-content">
   <div class="cal-app" id="cal-app">
     <div class="cal-status-row"><span class="cal-status" id="cal-status"></span></div>
-    <div class="cal-upcoming" id="cal-upcoming" hidden="">
-      <h2 class="cal-upcoming-title" id="cal-upcoming-title">Upcoming</h2>
-      <div class="cal-upcoming-list" id="cal-upcoming-list"></div>
-    </div>
     <div class="cal-scroll-box" id="cal-scroll-box">
       <div class="cal-weekday-row">
         <span>Sun</span><span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span>
