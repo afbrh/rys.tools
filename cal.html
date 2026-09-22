@@ -478,7 +478,7 @@
   <div class="cal-upcoming" id="cal-upcoming" hidden="">
     <div class="cal-upcoming-head">
       <h2 class="cal-upcoming-title" id="cal-upcoming-title">Upcoming</h2>
-      <button type="button" class="save-btn" id="cal-add-event-btn" onclick="CalendarApp.openCompose()">+ Add event</button>
+      <button type="button" class="save-btn" id="cal-add-event-btn" onclick="CalendarApp.openCompose()" hidden="">+ Add event</button>
     </div>
     <div class="cal-upcoming-list" id="cal-upcoming-list"></div>
   </div>
@@ -909,6 +909,7 @@
     let editingEventId = null; // set while the compose overlay is editing an existing event, instead of creating a new one
     let editingOriginalDate = null; // that event's Date before editing — lets saveEvent refetch its old month too if editing moved it to a different one
     let editingReadOnly = false; // true when the open event isn't yours to edit (see isEventEditable) — form fields disabled, Save hidden
+    let calendarReady = false; // signed in AND has the Calendar scope — kept alongside selectedDate to gate "+ Add event"'s visibility (see updateAddEventVisibility)
     let monthsInitialized = false;
     let monthEntries = []; // [{year, month}], ascending chronological order — what's currently loaded into #cal-months
     let isPrepending = false;
@@ -997,12 +998,21 @@
       refreshView();
     }
 
-    function refreshView() {
+    // "+ Add event" only ever makes sense once a specific day is selected (that day
+    // becomes the new event's date, with no date picker in the compose form — see
+    // openCompose) — so it stays hidden both while signed out/not ready AND while
+    // nothing's selected, not just the old ready-only gate.
+    function updateAddEventVisibility() {
       const addBtn = document.getElementById('cal-add-event-btn');
+      if (addBtn) addBtn.hidden = !calendarReady || !selectedDate;
+    }
+
+    function refreshView() {
       const upcomingBox = document.getElementById('cal-upcoming');
       const signedIn = GoogleDriveSync.isSignedIn();
       const ready = signedIn && GoogleDriveSync.hasCalendarScope();
-      if (addBtn) addBtn.hidden = !ready;
+      calendarReady = ready;
+      updateAddEventVisibility();
       if (upcomingBox) upcomingBox.hidden = !ready;
 
       if (!monthsInitialized) initMonths();
@@ -1378,10 +1388,12 @@
         el.classList.toggle('has-selected', el.dataset.date === key);
       });
       renderSelectedDay(key);
+      updateAddEventVisibility();
     }
 
     function clearSelection() {
       selectedDate = null;
+      updateAddEventVisibility();
       document.querySelectorAll('.cal-day').forEach(function (el) { el.classList.remove('has-selected'); });
       const titleEl = document.getElementById('cal-upcoming-title');
       if (titleEl) titleEl.textContent = 'Upcoming';
@@ -1462,12 +1474,14 @@
       el.classList.toggle('error', !!isError);
     }
 
-    // With no argument: a blank form defaulting to whichever day is currently selected
-    // in the agenda, or today if none — whichever the person was just looking at is the
-    // most likely day they want to add something to. With an event (the same normalized
-    // shape eventsByDate stores — {id, title, location, isAllDay, start, end}, a Date
-    // object per start/end), it prefills the form and switches the heading/button/save
-    // behavior to editing that event instead of creating a new one.
+    // With no argument: a blank form for the currently selected day — "+ Add event" only
+    // ever shows once a day is selected (see updateAddEventVisibility), so the date field
+    // is locked to it rather than offering a picker (falls back to today if somehow
+    // called with nothing selected). With an event (the same normalized shape
+    // eventsByDate stores — {id, title, location, isAllDay, start, end}, a Date object
+    // per start/end), it prefills the form and switches the heading/button/save behavior
+    // to editing that event instead — and there the date field stays choosable, since
+    // moving an existing event to a different day is still allowed.
     const COMPOSE_FIELD_IDS = ['cal-compose-title', 'cal-compose-date', 'cal-compose-allday', 'cal-compose-start-time', 'cal-compose-end-time', 'cal-compose-location'];
 
     function openCompose(ev) {
@@ -1495,6 +1509,10 @@
         const el = document.getElementById(id);
         if (el) el.disabled = editingReadOnly;
       });
+      // A brand-new event's date is always whichever day was already selected — no
+      // picker for it, since "+ Add event" only ever shows once a day is selected (see
+      // updateAddEventVisibility). Editing an existing event still lets you move it.
+      document.getElementById('cal-compose-date').disabled = editingReadOnly || !ev;
       setComposeStatus(editingReadOnly ? "You're invited to this event — only the organizer can edit it." : '');
       onAllDayToggle();
       overlay.classList.add('open');
