@@ -325,7 +325,20 @@
      next 3 events (renderUpcoming) or a tapped day's events (renderSelectedDay), which
      share this same box now instead of a separate box below the scroll grid. */
   .cal-agenda-empty { color: var(--ink-soft); font-size: 14px; }
-  .cal-agenda-item { display: flex; flex-direction: column; gap: 4px; }
+  /* Every item in both the Upcoming and single-day views opens that event for
+     editing on click — the negative margin lets the hover background bleed past
+     the text without shifting the surrounding layout. */
+  .cal-agenda-item {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    cursor: pointer;
+    border-radius: 6px;
+    padding: 4px 6px;
+    margin: -4px -6px;
+    transition: background .12s ease;
+  }
+  .cal-agenda-item:hover { background: var(--paper-line); }
   /* The next-3-events view spans several different days, so each item is one line:
      date, then time, then title, left to right (.cal-agenda-row) — no location.
      renderSelectedDay's items (already scoped to one day via the box's own title) skip
@@ -481,7 +494,7 @@
   <div class="cal-compose-overlay" id="cal-compose-overlay" onclick="if (event.target === this) CalendarApp.closeCompose()">
     <div class="cal-compose-panel">
       <div class="cal-compose-head">
-        <h2>New event</h2>
+        <h2 id="cal-compose-heading">New event</h2>
         <button type="button" class="cal-compose-close" onclick="CalendarApp.closeCompose()" aria-label="Close">&times;</button>
       </div>
       <label class="cal-compose-field">
@@ -512,7 +525,7 @@
       </label>
       <div class="cal-compose-actions">
         <span class="cal-compose-status" id="cal-compose-status"></span>
-        <button type="button" class="save-btn" id="cal-compose-save-btn" onclick="CalendarApp.createEvent()">Save</button>
+        <button type="button" class="save-btn" id="cal-compose-save-btn" onclick="CalendarApp.saveEvent()">Save</button>
       </div>
     </div>
   </div>
@@ -865,7 +878,20 @@
       return json.items || [];
     }
 
-    return { isSignedIn, signIn, restoreSession, getUserEmail, hasCalendarScope, gcalListEvents, gcalCreateEvent, gcalListUpcoming };
+    // PATCH only overwrites the fields present in eventResource — same body shape as
+    // gcalCreateEvent, built fresh by the caller from the edit form each time rather
+    // than diffed against the original, so this stays a thin wrapper like the others.
+    async function gcalUpdateEvent(eventId, eventResource) {
+      const resp = await api('https://www.googleapis.com/calendar/v3/calendars/primary/events/' + encodeURIComponent(eventId), {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(eventResource)
+      });
+      if (!resp.ok) throw new Error(await errorFromResponse(resp));
+      return resp.json();
+    }
+
+    return { isSignedIn, signIn, restoreSession, getUserEmail, hasCalendarScope, gcalListEvents, gcalCreateEvent, gcalUpdateEvent, gcalListUpcoming };
   })();
 
   /* ================= Calendar app (namespaced) ================= */
@@ -875,6 +901,8 @@
 
     let eventsByDate = {}; // 'YYYY-MM-DD' -> sorted array of events
     let selectedDate = null;
+    let editingEventId = null; // set while the compose overlay is editing an existing event, instead of creating a new one
+    let editingOriginalDate = null; // that event's Date before editing — lets saveEvent refetch its old month too if editing moved it to a different one
     let monthsInitialized = false;
     let monthEntries = []; // [{year, month}], ascending chronological order — what's currently loaded into #cal-months
     let isPrepending = false;
@@ -913,6 +941,12 @@
       h = h % 12;
       if (h === 0) h = 12;
       return h + (m ? ':' + pad2(m) : '') + ampm;
+    }
+
+    // 24-hour "HH:MM" — what an <input type="time"> element's value needs, unlike
+    // formatTime's 12-hour display string.
+    function timeInputValue(d) {
+      return pad2(d.getHours()) + ':' + pad2(d.getMinutes());
     }
 
     function setStatus(text, isError) {
@@ -1030,6 +1064,15 @@
         row.appendChild(title);
         item.appendChild(row);
 
+        attachEditHandlers(item, {
+          id: ev.id,
+          title: ev.summary || '(No title)',
+          location: ev.location || '',
+          isAllDay: isAllDay,
+          start: start,
+          end: end
+        });
+
         listEl.appendChild(item);
       });
     }
@@ -1140,13 +1183,17 @@
           if (!startStr) return;
           const isAllDay = !!ev.start.date;
           const startDate = isAllDay ? new Date(startStr + 'T00:00:00') : new Date(startStr);
+          const endStr = ev.end && (ev.end.date || ev.end.dateTime);
+          const endDate = endStr ? (isAllDay ? new Date(endStr + 'T00:00:00') : new Date(endStr)) : null;
           const key = dateKey(startDate);
           if (!eventsByDate[key]) eventsByDate[key] = [];
           eventsByDate[key].push({
+            id: ev.id,
             title: ev.summary || '(No title)',
             location: ev.location || '',
             isAllDay: isAllDay,
-            start: startDate
+            start: startDate,
+            end: endDate
           });
         });
         Object.keys(eventsByDate).forEach(function (key) {
@@ -1345,7 +1392,23 @@
         row.appendChild(title);
         item.appendChild(row);
 
+        // ev is already the normalized shape (from eventsByDate) attachEditHandlers
+        // expects, so it's passed straight through.
+        attachEditHandlers(item, ev);
+
         listEl.appendChild(item);
+      });
+    }
+
+    // Opens the compose overlay pre-filled for editing when this item is activated —
+    // used by both renderUpcoming and renderSelectedDay's items. ev is the normalized
+    // shape eventsByDate stores: {id, title, location, isAllDay, start, end}.
+    function attachEditHandlers(item, ev) {
+      item.setAttribute('role', 'button');
+      item.setAttribute('tabindex', '0');
+      item.addEventListener('click', function () { openCompose(ev); });
+      item.addEventListener('keydown', function (e) {
+        if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openCompose(ev); }
       });
     }
 
@@ -1356,18 +1419,29 @@
       el.classList.toggle('error', !!isError);
     }
 
-    // Defaults to whichever day is currently selected in the agenda, or today if none —
-    // whichever the person was just looking at is the most likely day they want to add
-    // something to.
-    function openCompose() {
+    // With no argument: a blank form defaulting to whichever day is currently selected
+    // in the agenda, or today if none — whichever the person was just looking at is the
+    // most likely day they want to add something to. With an event (the same normalized
+    // shape eventsByDate stores — {id, title, location, isAllDay, start, end}, a Date
+    // object per start/end), it prefills the form and switches the heading/button/save
+    // behavior to editing that event instead of creating a new one.
+    function openCompose(ev) {
       const overlay = document.getElementById('cal-compose-overlay');
       if (!overlay) return;
-      document.getElementById('cal-compose-title').value = '';
-      document.getElementById('cal-compose-location').value = '';
-      document.getElementById('cal-compose-allday').checked = false;
-      document.getElementById('cal-compose-start-time').value = '09:00';
-      document.getElementById('cal-compose-end-time').value = '10:00';
-      document.getElementById('cal-compose-date').value = selectedDate || dateKey(new Date());
+      editingEventId = ev ? ev.id : null;
+      editingOriginalDate = ev ? ev.start : null;
+
+      const headingEl = document.getElementById('cal-compose-heading');
+      if (headingEl) headingEl.textContent = ev ? 'Edit event' : 'New event';
+      const saveBtn = document.getElementById('cal-compose-save-btn');
+      if (saveBtn) saveBtn.textContent = ev ? 'Save changes' : 'Save';
+
+      document.getElementById('cal-compose-title').value = ev ? ev.title : '';
+      document.getElementById('cal-compose-location').value = ev ? ev.location : '';
+      document.getElementById('cal-compose-allday').checked = ev ? ev.isAllDay : false;
+      document.getElementById('cal-compose-start-time').value = (ev && !ev.isAllDay) ? timeInputValue(ev.start) : '09:00';
+      document.getElementById('cal-compose-end-time').value = (ev && !ev.isAllDay && ev.end) ? timeInputValue(ev.end) : '10:00';
+      document.getElementById('cal-compose-date').value = ev ? dateKey(ev.start) : (selectedDate || dateKey(new Date()));
       setComposeStatus('');
       onAllDayToggle();
       overlay.classList.add('open');
@@ -1377,6 +1451,8 @@
     function closeCompose() {
       const overlay = document.getElementById('cal-compose-overlay');
       if (overlay) overlay.classList.remove('open');
+      editingEventId = null;
+      editingOriginalDate = null;
     }
 
     function onAllDayToggle() {
@@ -1385,7 +1461,7 @@
       if (timeRow) timeRow.hidden = !!(allDayInput && allDayInput.checked);
     }
 
-    async function createEvent() {
+    async function saveEvent() {
       const title = document.getElementById('cal-compose-title').value.trim();
       const date = document.getElementById('cal-compose-date').value;
       const isAllDay = document.getElementById('cal-compose-allday').checked;
@@ -1396,7 +1472,10 @@
       if (!date) { setComposeStatus('Date is required.', true); return; }
 
       const eventResource = { summary: title };
-      if (location) eventResource.location = location;
+      // Sent unconditionally, even empty — a PATCH only touches fields present in the
+      // body, so clearing this field out during an edit needs an explicit '' to
+      // actually clear it server-side rather than silently leaving the old value.
+      eventResource.location = location;
 
       if (isAllDay) {
         // The Calendar API's end.date is exclusive, so a one-day all-day event still
@@ -1413,12 +1492,19 @@
         eventResource.end = { dateTime: date + 'T' + endTime + ':00', timeZone: timeZone };
       }
 
+      const editingId = editingEventId;
+      const originalDate = editingOriginalDate;
+
       if (saveBtn) saveBtn.disabled = true;
       setComposeStatus('Saving…');
       try {
-        await GoogleDriveSync.gcalCreateEvent(eventResource);
+        if (editingId) {
+          await GoogleDriveSync.gcalUpdateEvent(editingId, eventResource);
+        } else {
+          await GoogleDriveSync.gcalCreateEvent(eventResource);
+        }
         closeCompose();
-        // Jump to the new event's month/day and refresh so it shows up right away —
+        // Jump to the event's month/day and refresh so it shows up right away —
         // loading in any months between the current range and it if it's further out
         // than what's currently in the scroll box. applySelection (not selectDate) so
         // this always shows the day regardless of what was already selected, instead
@@ -1427,6 +1513,12 @@
         ensureMonthLoaded(d.getFullYear(), d.getMonth());
         applySelection(date);
         loadEventsForMonth(d.getFullYear(), d.getMonth());
+        // Editing can move an event to a different month — refetch its old month too,
+        // otherwise a stale copy lingers there until that month happens to refetch
+        // on its own for some unrelated reason.
+        if (editingId && originalDate && (originalDate.getFullYear() !== d.getFullYear() || originalDate.getMonth() !== d.getMonth())) {
+          loadEventsForMonth(originalDate.getFullYear(), originalDate.getMonth());
+        }
         const dayEl = document.querySelector('.cal-day[data-date="' + date + '"]');
         if (dayEl) dayEl.scrollIntoView({ block: 'center' });
       } catch (e) {
@@ -1436,7 +1528,7 @@
       }
     }
 
-    return { render, openCompose, closeCompose, onAllDayToggle, createEvent };
+    return { render, openCompose, closeCompose, onAllDayToggle, saveEvent };
   })();
 
   function setGoogleSignedInUi(signedIn) {
