@@ -408,10 +408,6 @@
     cursor: pointer;
   }
   .cal-compose-field { display: flex; flex-direction: column; gap: 4px; font-size: 12px; color: var(--ink-soft); margin-bottom: 12px; }
-  /* Author display:flex above otherwise beats the [hidden] attribute's UA display:none
-     (same gotcha documented in the deployment memory) — .cal-compose-checkbox needs the
-     same override just below. */
-  .cal-compose-field[hidden] { display: none; }
   .cal-compose-field input {
     font-family: var(--font-body);
     font-size: 14px;
@@ -422,20 +418,7 @@
     padding: 8px 10px;
   }
   .cal-compose-field input:focus { outline: none; border-color: var(--ink); }
-  .cal-compose-field input:disabled, .cal-compose-checkbox input:disabled { opacity: 0.55; cursor: not-allowed; }
-  .cal-compose-checkbox {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    font-size: 13px;
-    color: var(--ink);
-    margin-bottom: 12px;
-    cursor: pointer;
-  }
-  .cal-compose-checkbox[hidden] { display: none; }
-  .cal-compose-time-row { display: flex; gap: 12px; }
-  .cal-compose-time-row[hidden] { display: none; }
-  .cal-compose-time-row .cal-compose-field { flex: 1; }
+  .cal-compose-field input:disabled { opacity: 0.55; cursor: not-allowed; }
   /* Delete sits on the far left (its own flex item, default flex-start) opposite
      status+Save on the far right (.cal-compose-actions-right, pinned via its own
      margin-left: auto — not justify-content: space-between on the parent, since that
@@ -518,24 +501,10 @@
         <span>Title</span>
         <input type="text" id="cal-compose-title">
       </label>
-      <label class="cal-compose-field" id="cal-compose-date-field">
-        <span>Date</span>
-        <input type="date" id="cal-compose-date">
+      <label class="cal-compose-field">
+        <span>Start time (leave blank for all-day)</span>
+        <input type="time" id="cal-compose-start-time">
       </label>
-      <label class="cal-compose-checkbox" id="cal-compose-allday-field">
-        <input type="checkbox" id="cal-compose-allday" onchange="CalendarApp.onAllDayToggle()">
-        <span>All day</span>
-      </label>
-      <div class="cal-compose-time-row" id="cal-compose-time-row">
-        <label class="cal-compose-field">
-          <span id="cal-compose-start-time-label">Start time</span>
-          <input type="time" id="cal-compose-start-time">
-        </label>
-        <label class="cal-compose-field" id="cal-compose-end-time-field">
-          <span>End time</span>
-          <input type="time" id="cal-compose-end-time">
-        </label>
-      </div>
       <label class="cal-compose-field">
         <span>Location (optional)</span>
         <input type="text" id="cal-compose-location">
@@ -931,9 +900,10 @@
     let eventsByDate = {}; // 'YYYY-MM-DD' -> sorted array of events
     let selectedDate = null;
     let editingEventId = null; // set while the compose overlay is editing an existing event, instead of creating a new one
-    let editingOriginalDate = null; // that event's Date before editing — lets saveEvent refetch its old month too if editing moved it to a different one
+    let editingOriginalDate = null; // the event being edited/deleted's Date — deleteEvent uses it to know which month to refetch afterward (editing can no longer move an event to a different date, so saveEvent has no use for this any more)
     let editingReadOnly = false; // true when the open event isn't yours to edit (see isEventEditable) — form fields disabled, Save hidden
     let calendarReady = false; // signed in AND has the Calendar scope — kept alongside selectedDate to gate "+ Add event"'s visibility (see updateAddEventVisibility)
+    let composeDate = null; // 'YYYY-MM-DD' — the open compose form's fixed date, tracked here instead of a (removed) date input field
     let monthsInitialized = false;
     let monthEntries = []; // [{year, month}], ascending chronological order — what's currently loaded into #cal-months
     let isPrepending = false;
@@ -1498,17 +1468,18 @@
       el.classList.toggle('error', !!isError);
     }
 
-    // With no argument: a stripped-down blank form for the currently selected day —
-    // "+ Add event" only ever shows once a day is selected (see updateAddEventVisibility),
-    // so there's no date picker at all (the day is fixed), no "All day" checkbox (leaving
-    // Start time blank means all-day instead), and no End time (a created event is always
-    // 15 minutes long — see saveEvent). With an event (the same normalized shape
-    // eventsByDate stores — {id, title, location, isAllDay, start, end}, a Date object
-    // per start/end), it prefills the fuller form and switches to editing that event
-    // instead, where the date, All-day checkbox and End time all come back, since editing
-    // an existing event still allows moving/reshaping it however creating a new one
-    // doesn't need to.
-    const COMPOSE_FIELD_IDS = ['cal-compose-title', 'cal-compose-date', 'cal-compose-allday', 'cal-compose-start-time', 'cal-compose-end-time', 'cal-compose-location'];
+    // Same form either way — Title, Start time (blank means all-day), Location — so
+    // creating and editing look almost identical. With no argument: a blank form for
+    // whichever day is currently selected ("+ Add event" only ever shows once one is —
+    // see updateAddEventVisibility), which becomes the new event's fixed date (no picker
+    // for it, tracked in composeDate rather than a form field at all). With an event
+    // (the same normalized shape eventsByDate stores — {id, title, location, isAllDay,
+    // start, end}, a Date object per start/end), it prefills the form and switches to
+    // editing that event instead — the only visible difference is the Delete button.
+    // Its date is likewise fixed (composeDate = its existing date, not editable), so
+    // editing can no longer move an event to a different day — a deliberate loss of
+    // that capability in exchange for the two forms actually looking the same.
+    const COMPOSE_FIELD_IDS = ['cal-compose-title', 'cal-compose-start-time', 'cal-compose-location'];
 
     function openCompose(ev) {
       const overlay = document.getElementById('cal-compose-overlay');
@@ -1517,6 +1488,7 @@
       editingEventId = ev ? ev.id : null;
       editingOriginalDate = ev ? ev.start : null;
       editingReadOnly = !!(ev && ev.editable === false);
+      composeDate = ev ? dateKey(ev.start) : (selectedDate || dateKey(new Date()));
 
       const headingEl = document.getElementById('cal-compose-heading');
       if (headingEl) headingEl.textContent = editingReadOnly ? 'Invited event' : (ev ? 'Edit event' : 'New event');
@@ -1532,27 +1504,15 @@
 
       document.getElementById('cal-compose-title').value = ev ? ev.title : '';
       document.getElementById('cal-compose-location').value = ev ? ev.location : '';
-      document.getElementById('cal-compose-allday').checked = ev ? ev.isAllDay : false;
-      document.getElementById('cal-compose-start-time').value = ev ? (!ev.isAllDay ? timeInputValue(ev.start) : '09:00') : '';
-      document.getElementById('cal-compose-end-time').value = (ev && !ev.isAllDay && ev.end) ? timeInputValue(ev.end) : '10:00';
-      document.getElementById('cal-compose-date').value = ev ? dateKey(ev.start) : (selectedDate || dateKey(new Date()));
-
-      // No date/All-day/End-time fields at all when creating — only editing shows them.
-      document.getElementById('cal-compose-date-field').hidden = isCreating;
-      document.getElementById('cal-compose-allday-field').hidden = isCreating;
-      document.getElementById('cal-compose-end-time-field').hidden = isCreating;
-      document.getElementById('cal-compose-start-time-label').textContent = isCreating ? 'Start time (leave blank for all-day)' : 'Start time';
+      // Blank means all-day for both creating and editing — a currently-all-day event
+      // opens with this blank too, exactly like a new event does by default.
+      document.getElementById('cal-compose-start-time').value = (ev && !ev.isAllDay) ? timeInputValue(ev.start) : '';
 
       COMPOSE_FIELD_IDS.forEach(function (id) {
         const el = document.getElementById(id);
         if (el) el.disabled = editingReadOnly;
       });
-      // A brand-new event's date is always whichever day was already selected — no
-      // picker for it, since "+ Add event" only ever shows once a day is selected (see
-      // updateAddEventVisibility). Editing an existing event still lets you move it.
-      document.getElementById('cal-compose-date').disabled = editingReadOnly || isCreating;
       setComposeStatus(editingReadOnly ? "You're invited to this event — only the organizer can edit it." : '');
-      onAllDayToggle();
       overlay.classList.add('open');
       if (!editingReadOnly) document.getElementById('cal-compose-title').focus();
     }
@@ -1563,6 +1523,7 @@
       editingEventId = null;
       editingOriginalDate = null;
       editingReadOnly = false;
+      composeDate = null;
       // Undo the read-only lockout unconditionally, so a future "+ Add event" (or
       // editing an event that IS yours) doesn't inherit disabled fields from whatever
       // was open last.
@@ -1570,12 +1531,6 @@
         const el = document.getElementById(id);
         if (el) el.disabled = false;
       });
-    }
-
-    function onAllDayToggle() {
-      const allDayInput = document.getElementById('cal-compose-allday');
-      const timeRow = document.getElementById('cal-compose-time-row');
-      if (timeRow) timeRow.hidden = !!(allDayInput && allDayInput.checked);
     }
 
     async function saveEvent() {
@@ -1586,13 +1541,11 @@
       if (editingReadOnly) return;
 
       const title = document.getElementById('cal-compose-title').value.trim();
-      const date = document.getElementById('cal-compose-date').value;
+      const date = composeDate;
       const location = document.getElementById('cal-compose-location').value.trim();
       const saveBtn = document.getElementById('cal-compose-save-btn');
 
       const editingId = editingEventId;
-      const originalDate = editingOriginalDate;
-      const isCreating = !editingId;
 
       if (!title) { setComposeStatus('Title is required.', true); return; }
       if (!date) { setComposeStatus('Date is required.', true); return; }
@@ -1603,12 +1556,11 @@
       // actually clear it server-side rather than silently leaving the old value.
       eventResource.location = location;
 
-      // Creating has no "All day" checkbox — a blank Start time *is* the all-day signal
-      // instead — and no End time field, since a created event is always fixed at 15
-      // minutes long. Editing keeps the fuller, explicit controls for both.
-      const isAllDay = isCreating
-        ? !document.getElementById('cal-compose-start-time').value
-        : document.getElementById('cal-compose-allday').checked;
+      // Same rule for creating and editing: a blank Start time means all-day. A timed
+      // event is always fixed at 15 minutes long, computed from the start rather than
+      // a separate End time field — there's only ever one time field in this form.
+      const startTimeVal = document.getElementById('cal-compose-start-time').value;
+      const isAllDay = !startTimeVal;
 
       if (isAllDay) {
         // The Calendar API's end.date is exclusive, so a one-day all-day event still
@@ -1617,10 +1569,9 @@
         endDate.setDate(endDate.getDate() + 1);
         eventResource.start = { date: date };
         eventResource.end = { date: dateKey(endDate) };
-      } else if (isCreating) {
+      } else {
         const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
-        const startTime = document.getElementById('cal-compose-start-time').value;
-        const startStr = localDateTimeString(date, startTime);
+        const startStr = localDateTimeString(date, startTimeVal);
         // Computed from the start, not read from a field — 15 minutes is fixed, and
         // this recomputes the date too (via dateKey), not just the time, in case a
         // start right before midnight pushes the end into the next day.
@@ -1628,12 +1579,6 @@
         endDateObj.setMinutes(endDateObj.getMinutes() + 15);
         eventResource.start = { dateTime: startStr, timeZone: timeZone };
         eventResource.end = { dateTime: localDateTimeString(dateKey(endDateObj), timeInputValue(endDateObj)), timeZone: timeZone };
-      } else {
-        const startTime = document.getElementById('cal-compose-start-time').value || '09:00';
-        const endTime = document.getElementById('cal-compose-end-time').value || '10:00';
-        const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
-        eventResource.start = { dateTime: localDateTimeString(date, startTime), timeZone: timeZone };
-        eventResource.end = { dateTime: localDateTimeString(date, endTime), timeZone: timeZone };
       }
 
       if (saveBtn) saveBtn.disabled = true;
@@ -1645,21 +1590,15 @@
           await GoogleDriveSync.gcalCreateEvent(eventResource);
         }
         closeCompose();
-        // Jump to the event's month/day and refresh so it shows up right away —
-        // loading in any months between the current range and it if it's further out
-        // than what's currently loaded. applySelection (not selectDate) so this always
-        // shows the day regardless of what was already selected, instead of toggling
-        // it off if that day happened to be selected already.
+        // Jump to the event's day and refresh so it shows up right away —
+        // ensureMonthLoaded/applySelection are effectively no-ops in practice here,
+        // since this date was always already-visible (it's either the day that was
+        // already selected, or an existing event's own unchangeable date), but stay
+        // cheap and harmless as a defensive fallback.
         const d = new Date(date + 'T00:00:00');
         ensureMonthLoaded(d.getFullYear(), d.getMonth());
         applySelection(date);
         loadEventsForMonth(d.getFullYear(), d.getMonth());
-        // Editing can move an event to a different month — refetch its old month too,
-        // otherwise a stale copy lingers there until that month happens to refetch
-        // on its own for some unrelated reason.
-        if (editingId && originalDate && (originalDate.getFullYear() !== d.getFullYear() || originalDate.getMonth() !== d.getMonth())) {
-          loadEventsForMonth(originalDate.getFullYear(), originalDate.getMonth());
-        }
         const dayEl = document.querySelector('.cal-day[data-date="' + date + '"]');
         if (dayEl) dayEl.scrollIntoView({ block: 'center' });
       } catch (e) {
@@ -1700,7 +1639,7 @@
       }
     }
 
-    return { render, openCompose, closeCompose, onAllDayToggle, saveEvent, deleteEvent };
+    return { render, openCompose, closeCompose, saveEvent, deleteEvent };
   })();
 
   function setGoogleSignedInUi(signedIn) {
