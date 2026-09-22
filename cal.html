@@ -327,8 +327,10 @@
   .cal-agenda-empty { color: var(--ink-soft); font-size: 14px; }
   .cal-agenda-item { display: flex; flex-direction: column; gap: 4px; }
   /* The next-3-events view spans several different days, so each item gets its own
-     date line, left-justified and above the time — renderSelectedDay's items (already
-     scoped to one day via the box's own title) skip this line entirely. */
+     date, left-justified with the time directly to its right (.cal-agenda-row) —
+     renderSelectedDay's items (already scoped to one day via the box's own title) skip
+     the date and just show the time on its own. */
+  .cal-agenda-row { display: flex; align-items: baseline; gap: 8px; }
   .cal-agenda-date {
     font-size: 11px;
     font-weight: 600;
@@ -336,9 +338,7 @@
     letter-spacing: 0.03em;
     color: var(--ink-soft);
   }
-  .cal-agenda-row { display: flex; gap: 12px; align-items: baseline; }
-  .cal-agenda-time { flex-shrink: 0; width: 76px; font-family: var(--font-mono); font-size: 12px; color: var(--gold); }
-  .cal-agenda-body { flex: 1; }
+  .cal-agenda-time { font-family: var(--font-mono); font-size: 12px; color: var(--gold); }
   .cal-agenda-title { font-weight: 600; font-size: 14px; color: var(--ink); }
   .cal-agenda-location { font-size: 12.5px; color: var(--ink-soft); margin-top: 1px; }
 
@@ -413,7 +413,6 @@
     .cal-day { height: 72px; padding: 4px; gap: 2px; }
     .cal-day-num { font-size: 12px; }
     .cal-event-chip { font-size: 9px; padding: 1px 4px; }
-    .cal-agenda-time { width: 60px; }
     /* Anything under 16px makes iOS Safari zoom the whole page in on focus. */
     .cal-compose-field input { font-size: 16px; }
   }
@@ -1005,34 +1004,29 @@
         const item = document.createElement('div');
         item.className = 'cal-agenda-item';
 
+        const row = document.createElement('div');
+        row.className = 'cal-agenda-row';
         const dateLine = document.createElement('div');
         dateLine.className = 'cal-agenda-date';
         dateLine.textContent = relativeDayLabel(start);
-        item.appendChild(dateLine);
-
-        const row = document.createElement('div');
-        row.className = 'cal-agenda-row';
-
+        row.appendChild(dateLine);
         const time = document.createElement('div');
         time.className = 'cal-agenda-time' + (isHappeningNow ? ' cal-upcoming-now' : '');
         time.textContent = isHappeningNow ? 'Now' : (isAllDay ? 'All day' : formatTime(start));
+        row.appendChild(time);
+        item.appendChild(row);
 
-        const body = document.createElement('div');
-        body.className = 'cal-agenda-body';
         const title = document.createElement('div');
         title.className = 'cal-agenda-title';
         title.textContent = ev.summary || '(No title)';
-        body.appendChild(title);
+        item.appendChild(title);
         if (ev.location) {
           const loc = document.createElement('div');
           loc.className = 'cal-agenda-location';
           loc.textContent = ev.location;
-          body.appendChild(loc);
+          item.appendChild(loc);
         }
 
-        row.appendChild(time);
-        row.appendChild(body);
-        item.appendChild(row);
         listEl.appendChild(item);
       });
     }
@@ -1333,31 +1327,25 @@
         const item = document.createElement('div');
         item.className = 'cal-agenda-item';
 
-        // No .cal-agenda-date line here — every item in this view is already the same
-        // day, which the box's own title (set above) already says.
-        const row = document.createElement('div');
-        row.className = 'cal-agenda-row';
-
+        // No date line (and so no .cal-agenda-row pairing it with the time) here —
+        // every item in this view is already the same day, which the box's own title
+        // (set above) already says, so the time just stands on its own.
         const time = document.createElement('div');
         time.className = 'cal-agenda-time';
         time.textContent = ev.isAllDay ? 'All day' : formatTime(ev.start);
+        item.appendChild(time);
 
-        const body = document.createElement('div');
-        body.className = 'cal-agenda-body';
         const title = document.createElement('div');
         title.className = 'cal-agenda-title';
         title.textContent = ev.title;
-        body.appendChild(title);
+        item.appendChild(title);
         if (ev.location) {
           const loc = document.createElement('div');
           loc.className = 'cal-agenda-location';
           loc.textContent = ev.location;
-          body.appendChild(loc);
+          item.appendChild(loc);
         }
 
-        row.appendChild(time);
-        row.appendChild(body);
-        item.appendChild(row);
         listEl.appendChild(item);
       });
     }
