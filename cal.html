@@ -362,6 +362,20 @@
   }
   .cal-agenda-time { font-family: var(--font-mono); font-size: 12px; color: var(--gold); }
   .cal-agenda-title { font-weight: 600; font-size: 14px; color: var(--ink); }
+  /* Flags an event you were invited to rather than created yourself — only the
+     organizer (or a guest with guestsCanModify) can edit one of these, so opening it
+     shows a read-only view instead of the normal editable form (see isEventEditable). */
+  .cal-agenda-badge {
+    flex-shrink: 0;
+    font-size: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    color: var(--ink-soft);
+    border: 1px solid var(--paper-line);
+    border-radius: 4px;
+    padding: 1px 5px;
+  }
 
   .cal-compose-overlay {
     display: none;
@@ -414,6 +428,7 @@
     padding: 8px 10px;
   }
   .cal-compose-field input:focus { outline: none; border-color: var(--ink); }
+  .cal-compose-field input:disabled, .cal-compose-checkbox input:disabled { opacity: 0.55; cursor: not-allowed; }
   .cal-compose-checkbox {
     display: flex;
     align-items: center;
@@ -903,6 +918,7 @@
     let selectedDate = null;
     let editingEventId = null; // set while the compose overlay is editing an existing event, instead of creating a new one
     let editingOriginalDate = null; // that event's Date before editing — lets saveEvent refetch its old month too if editing moved it to a different one
+    let editingReadOnly = false; // true when the open event isn't yours to edit (see isEventEditable) — form fields disabled, Save hidden
     let monthsInitialized = false;
     let monthEntries = []; // [{year, month}], ascending chronological order — what's currently loaded into #cal-months
     let isPrepending = false;
@@ -914,6 +930,17 @@
 
     function pad2(n) { return n < 10 ? '0' + n : '' + n; }
     function dateKey(d) { return d.getFullYear() + '-' + pad2(d.getMonth() + 1) + '-' + pad2(d.getDate()); }
+
+    // Only the organizer (or a guest explicitly allowed to via guestsCanModify) can
+    // change an event's time/details — trying to PATCH one you were just invited to is
+    // exactly what produced the confusing "Invalid start time." error (Google's generic
+    // rejection for a field you don't have permission to change). Defaults to editable
+    // unless there's positive evidence otherwise, so a missing/unexpected organizer
+    // shape never wrongly locks out an event that's actually yours.
+    function isEventEditable(rawEvent) {
+      if (rawEvent.organizer && rawEvent.organizer.self === false && !rawEvent.guestsCanModify) return false;
+      return true;
+    }
 
     // The topmost date the scroll box will ever show — the Sunday that starts "last
     // week" (7 days ago, backed up to that week's Sunday). Computed once and cached
@@ -1055,6 +1082,7 @@
         const start = isAllDay ? new Date(startStr + 'T00:00:00') : new Date(startStr);
         const end = endStr ? (isAllDay ? new Date(endStr + 'T00:00:00') : new Date(endStr)) : null;
         const isHappeningNow = !!end && start <= now && now < end;
+        const editable = isEventEditable(ev);
 
         const item = document.createElement('div');
         item.className = 'cal-agenda-item';
@@ -1075,6 +1103,7 @@
         title.className = 'cal-agenda-title';
         title.textContent = ev.summary || '(No title)';
         row.appendChild(title);
+        if (!editable) row.appendChild(buildInvitedBadge());
         item.appendChild(row);
 
         attachEditHandlers(item, {
@@ -1083,7 +1112,8 @@
           location: ev.location || '',
           isAllDay: isAllDay,
           start: start,
-          end: end
+          end: end,
+          editable: editable
         });
 
         listEl.appendChild(item);
@@ -1206,7 +1236,8 @@
             location: ev.location || '',
             isAllDay: isAllDay,
             start: startDate,
-            end: endDate
+            end: endDate,
+            editable: isEventEditable(ev)
           });
         });
         Object.keys(eventsByDate).forEach(function (key) {
@@ -1403,6 +1434,7 @@
         title.className = 'cal-agenda-title';
         title.textContent = ev.title;
         row.appendChild(title);
+        if (ev.editable === false) row.appendChild(buildInvitedBadge());
         item.appendChild(row);
 
         // ev is already the normalized shape (from eventsByDate) attachEditHandlers
@@ -1416,6 +1448,13 @@
     // Opens the compose overlay pre-filled for editing when this item is activated —
     // used by both renderUpcoming and renderSelectedDay's items. ev is the normalized
     // shape eventsByDate stores: {id, title, location, isAllDay, start, end}.
+    function buildInvitedBadge() {
+      const badge = document.createElement('span');
+      badge.className = 'cal-agenda-badge';
+      badge.textContent = 'Invited';
+      return badge;
+    }
+
     function attachEditHandlers(item, ev) {
       item.setAttribute('role', 'button');
       item.setAttribute('tabindex', '0');
@@ -1438,16 +1477,22 @@
     // shape eventsByDate stores — {id, title, location, isAllDay, start, end}, a Date
     // object per start/end), it prefills the form and switches the heading/button/save
     // behavior to editing that event instead of creating a new one.
+    const COMPOSE_FIELD_IDS = ['cal-compose-title', 'cal-compose-date', 'cal-compose-allday', 'cal-compose-start-time', 'cal-compose-end-time', 'cal-compose-location'];
+
     function openCompose(ev) {
       const overlay = document.getElementById('cal-compose-overlay');
       if (!overlay) return;
       editingEventId = ev ? ev.id : null;
       editingOriginalDate = ev ? ev.start : null;
+      editingReadOnly = !!(ev && ev.editable === false);
 
       const headingEl = document.getElementById('cal-compose-heading');
-      if (headingEl) headingEl.textContent = ev ? 'Edit event' : 'New event';
+      if (headingEl) headingEl.textContent = editingReadOnly ? 'Invited event' : (ev ? 'Edit event' : 'New event');
       const saveBtn = document.getElementById('cal-compose-save-btn');
-      if (saveBtn) saveBtn.textContent = ev ? 'Save changes' : 'Save';
+      if (saveBtn) {
+        saveBtn.textContent = ev ? 'Save changes' : 'Save';
+        saveBtn.hidden = editingReadOnly;
+      }
 
       document.getElementById('cal-compose-title').value = ev ? ev.title : '';
       document.getElementById('cal-compose-location').value = ev ? ev.location : '';
@@ -1455,10 +1500,14 @@
       document.getElementById('cal-compose-start-time').value = (ev && !ev.isAllDay) ? timeInputValue(ev.start) : '09:00';
       document.getElementById('cal-compose-end-time').value = (ev && !ev.isAllDay && ev.end) ? timeInputValue(ev.end) : '10:00';
       document.getElementById('cal-compose-date').value = ev ? dateKey(ev.start) : (selectedDate || dateKey(new Date()));
-      setComposeStatus('');
+      COMPOSE_FIELD_IDS.forEach(function (id) {
+        const el = document.getElementById(id);
+        if (el) el.disabled = editingReadOnly;
+      });
+      setComposeStatus(editingReadOnly ? "You're invited to this event — only the organizer can edit it." : '');
       onAllDayToggle();
       overlay.classList.add('open');
-      document.getElementById('cal-compose-title').focus();
+      if (!editingReadOnly) document.getElementById('cal-compose-title').focus();
     }
 
     function closeCompose() {
@@ -1466,6 +1515,14 @@
       if (overlay) overlay.classList.remove('open');
       editingEventId = null;
       editingOriginalDate = null;
+      editingReadOnly = false;
+      // Undo the read-only lockout unconditionally, so a future "+ Add event" (or
+      // editing an event that IS yours) doesn't inherit disabled fields from whatever
+      // was open last.
+      COMPOSE_FIELD_IDS.forEach(function (id) {
+        const el = document.getElementById(id);
+        if (el) el.disabled = false;
+      });
     }
 
     function onAllDayToggle() {
@@ -1475,6 +1532,12 @@
     }
 
     async function saveEvent() {
+      // Belt-and-suspenders — the Save button is hidden for a read-only (invited)
+      // event, so this shouldn't be reachable, but a PATCH attempt here would just
+      // reproduce the confusing "Invalid start time." error this whole thing exists
+      // to avoid.
+      if (editingReadOnly) return;
+
       const title = document.getElementById('cal-compose-title').value.trim();
       const date = document.getElementById('cal-compose-date').value;
       const isAllDay = document.getElementById('cal-compose-allday').checked;
