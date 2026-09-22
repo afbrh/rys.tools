@@ -756,6 +756,7 @@
 
     let tokenClient = null;
     let accessToken = null;
+    let refreshTimer = null;
 
     function getCachedFileId() {
       try { return localStorage.getItem(FILE_ID_KEY) || ''; } catch (e) { return ''; }
@@ -767,6 +768,17 @@
       } catch (e) {}
     }
 
+    // Re-arms itself every time a token is (re)persisted, a few minutes ahead of that
+    // token's real expiry, so an open tab silently refreshes itself via trySilentSignIn
+    // well before anything actually 401s — the "indefinite" feel comes from this timer,
+    // not just from restoreSession() at page load.
+    function scheduleProactiveRefresh(expiresInSeconds) {
+      if (refreshTimer) { clearTimeout(refreshTimer); refreshTimer = null; }
+      const bufferMs = 5 * 60 * 1000;
+      const delay = Math.max((expiresInSeconds || 3600) * 1000 - bufferMs, 30000);
+      refreshTimer = setTimeout(function () { trySilentSignIn(); }, delay);
+    }
+
     function persistToken(token, expiresInSeconds, scope) {
       try {
         localStorage.setItem(TOKEN_KEY, JSON.stringify({
@@ -775,19 +787,22 @@
           scope: scope || ''
         }));
       } catch (e) {}
+      scheduleProactiveRefresh(expiresInSeconds);
     }
     function clearPersistedToken() {
       try { localStorage.removeItem(TOKEN_KEY); } catch (e) {}
     }
     // Google's token client never restores a session on its own after a reload — a
     // still-valid access token has to be saved and re-hydrated by hand. Once the real
-    // expiry passes (usually ~1hr), the next Drive request 401s and clears it.
+    // expiry passes (usually ~1hr), the next Drive request 401s and clears it — though
+    // in practice scheduleProactiveRefresh should silently renew it well before then.
     function restoreSession() {
       let stored;
       try { stored = JSON.parse(localStorage.getItem(TOKEN_KEY) || 'null'); } catch (e) { stored = null; }
       if (!stored || !stored.access_token || !stored.expires_at) return false;
       if (Date.now() > stored.expires_at - 60000) { clearPersistedToken(); return false; }
       accessToken = stored.access_token;
+      scheduleProactiveRefresh((stored.expires_at - Date.now()) / 1000);
       return true;
     }
 
@@ -842,7 +857,54 @@
         // seems to open the popup, fail to complete quietly, and close itself before you
         // can interact with it. Forcing consent every time is a little more friction but
         // actually shows the real interactive screen instead of a flash-and-close window.
+        // (trySilentSignIn below uses prompt:'' anyway, for the automatic — not clicked —
+        // reauth path, where there's no interactive screen to lose in the first place.)
         tokenClient.requestAccessToken({ prompt: 'consent' });
+      });
+    }
+
+    // Like signIn(), but prompt:'' instead of prompt:'consent' — a silent, invisible
+    // reauth attempt that relies on the browser still having an active Google session
+    // plus this app's prior consent on file. Called automatically (not from a click), on
+    // page load when there's no valid cached session and proactively before the current
+    // one expires (see scheduleProactiveRefresh), so a browser that's still logged into
+    // Google never needs an explicit re-sign-in click, the same way Gmail itself doesn't.
+    // Resolves to false instead of rejecting on any failure (no existing Google session,
+    // consent revoked, popup blocked since this isn't a real click, timeout, script not
+    // loaded yet) — every one of those just means falling back to the ordinary "click
+    // Google Sign-In" experience, not a real error worth surfacing.
+    function trySilentSignIn() {
+      return new Promise((resolve) => {
+        if (!window.google || !google.accounts || !google.accounts.oauth2) { resolve(false); return; }
+        if (!tokenClient) {
+          tokenClient = google.accounts.oauth2.initTokenClient({
+            client_id: CLIENT_ID,
+            scope: SCOPE,
+            callback: () => {}
+          });
+        }
+        let settled = false;
+        const timer = setTimeout(() => {
+          if (settled) return;
+          settled = true;
+          resolve(false);
+        }, 8000);
+        tokenClient.callback = (resp) => {
+          if (settled) return;
+          settled = true;
+          clearTimeout(timer);
+          if (resp.error) { resolve(false); return; }
+          accessToken = resp.access_token;
+          persistToken(accessToken, resp.expires_in, resp.scope);
+          resolve(true);
+        };
+        try {
+          tokenClient.requestAccessToken({ prompt: '' });
+        } catch (e) {
+          settled = true;
+          clearTimeout(timer);
+          resolve(false);
+        }
       });
     }
 
@@ -1041,7 +1103,7 @@
       return resp.json();
     }
 
-    return { isSignedIn, signIn, load, save, getUserEmail, restoreSession, hasGmailScope, gmailListInbox, gmailGetMessage, gmailGetThread, gmailSend, gmailArchive, gmailUnarchive, gmailMarkRead, gmailMarkUnread, gmailSearch };
+    return { isSignedIn, signIn, trySilentSignIn, load, save, getUserEmail, restoreSession, hasGmailScope, gmailListInbox, gmailGetMessage, gmailGetThread, gmailSend, gmailArchive, gmailUnarchive, gmailMarkRead, gmailMarkUnread, gmailSearch };
   })();
 
   /* ================= Mail app (namespaced) ================= */
@@ -2156,17 +2218,21 @@
   }
 
   async function loadApp() {
-    // Google's sign-in popup needs a real click, so a brand-new sign-in can't happen
-    // automatically on page load. But a still-valid access token from an earlier sign-in
-    // (saved in localStorage) can be restored without any popup — so a refresh doesn't
-    // force signing in again until that token actually expires (usually ~1hr).
+    // A still-valid access token from an earlier sign-in (saved in localStorage) can be
+    // restored without any popup — so a refresh doesn't force signing in again until that
+    // token actually expires. If it already has, trySilentSignIn attempts a silent,
+    // invisible reauth before falling back to requiring an explicit "Google Sign-In"
+    // click — so a browser that's still logged into Google (and has granted this app
+    // access before) stays signed in indefinitely, same as Gmail itself.
     setGoogleSignedInUi(false);
     setAppearance(currentAppearance());
     syncToolMenu(CURRENT_TOOL);
     updateMailHeaderToolbarVisibility();
     updateTabLabelFit();
 
-    if (GoogleDriveSync.restoreSession()) {
+    let signedIn = GoogleDriveSync.restoreSession();
+    if (!signedIn) signedIn = await GoogleDriveSync.trySilentSignIn();
+    if (signedIn) {
       setGoogleSignedInUi(true);
       const status = document.getElementById('save-status');
       status.style.color = 'var(--gold)';
