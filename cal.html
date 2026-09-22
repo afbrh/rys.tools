@@ -325,7 +325,18 @@
      next 3 events (renderUpcoming) or a tapped day's events (renderSelectedDay), which
      share this same box now instead of a separate box below the scroll grid. */
   .cal-agenda-empty { color: var(--ink-soft); font-size: 14px; }
-  .cal-agenda-item { display: flex; gap: 12px; align-items: baseline; }
+  .cal-agenda-item { display: flex; flex-direction: column; gap: 4px; }
+  /* The next-3-events view spans several different days, so each item gets its own
+     date line, left-justified and above the time — renderSelectedDay's items (already
+     scoped to one day via the box's own title) skip this line entirely. */
+  .cal-agenda-date {
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    color: var(--ink-soft);
+  }
+  .cal-agenda-row { display: flex; gap: 12px; align-items: baseline; }
   .cal-agenda-time { flex-shrink: 0; width: 76px; font-family: var(--font-mono); font-size: 12px; color: var(--gold); }
   .cal-agenda-body { flex: 1; }
   .cal-agenda-title { font-weight: 600; font-size: 14px; color: var(--ink); }
@@ -929,8 +940,11 @@
         setStatus('');
         // Re-fetch every month currently loaded into the scroll box — cheap (usually
         // just 3 months), and covers the case where this runs right after connecting.
+        // Each of those refetches already re-renders the selected day if there is one
+        // (see loadEventsForMonth), so only fall back to the next-3-events view when
+        // nothing's selected — otherwise this would stomp over a day someone tapped.
         monthEntries.forEach(function (entry) { loadEventsForMonth(entry.year, entry.month); });
-        loadUpcoming();
+        if (!selectedDate) loadUpcoming();
       } else {
         eventsByDate = {};
         renderGridEvents();
@@ -991,6 +1005,14 @@
         const item = document.createElement('div');
         item.className = 'cal-agenda-item';
 
+        const dateLine = document.createElement('div');
+        dateLine.className = 'cal-agenda-date';
+        dateLine.textContent = relativeDayLabel(start);
+        item.appendChild(dateLine);
+
+        const row = document.createElement('div');
+        row.className = 'cal-agenda-row';
+
         const time = document.createElement('div');
         time.className = 'cal-agenda-time' + (isHappeningNow ? ' cal-upcoming-now' : '');
         time.textContent = isHappeningNow ? 'Now' : (isAllDay ? 'All day' : formatTime(start));
@@ -1001,10 +1023,6 @@
         title.className = 'cal-agenda-title';
         title.textContent = ev.summary || '(No title)';
         body.appendChild(title);
-        const when = document.createElement('div');
-        when.className = 'cal-agenda-location';
-        when.textContent = relativeDayLabel(start);
-        body.appendChild(when);
         if (ev.location) {
           const loc = document.createElement('div');
           loc.className = 'cal-agenda-location';
@@ -1012,8 +1030,9 @@
           body.appendChild(loc);
         }
 
-        item.appendChild(time);
-        item.appendChild(body);
+        row.appendChild(time);
+        row.appendChild(body);
+        item.appendChild(row);
         listEl.appendChild(item);
       });
     }
@@ -1314,6 +1333,11 @@
         const item = document.createElement('div');
         item.className = 'cal-agenda-item';
 
+        // No .cal-agenda-date line here — every item in this view is already the same
+        // day, which the box's own title (set above) already says.
+        const row = document.createElement('div');
+        row.className = 'cal-agenda-row';
+
         const time = document.createElement('div');
         time.className = 'cal-agenda-time';
         time.textContent = ev.isAllDay ? 'All day' : formatTime(ev.start);
@@ -1331,8 +1355,9 @@
           body.appendChild(loc);
         }
 
-        item.appendChild(time);
-        item.appendChild(body);
+        row.appendChild(time);
+        row.appendChild(body);
+        item.appendChild(row);
         listEl.appendChild(item);
       });
     }
