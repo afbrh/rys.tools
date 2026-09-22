@@ -250,28 +250,15 @@
      order — a currently-in-progress event gets the same green used for income
      figures elsewhere, instead of the plain gold used for a future start time. */
   .cal-agenda-time.cal-upcoming-now { color: var(--income); font-weight: 700; }
-  /* The month grid lives inside its own bordered, scrollable box instead of the page —
-     scrolling it up/down is how you move between months now (see .cal-month-section),
-     there's no more prev/next/Today control. The weekday row is sticky *within* this
-     box (not the page) so it stays pinned to the top as month sections scroll under it. */
-  .cal-scroll-box {
-    border: 1.5px solid var(--ink);
-    border-radius: 10px;
-    aspect-ratio: 1 / 1;
-    overflow-y: auto;
-    overflow-x: hidden;
-    padding: 0 10px 10px;
-  }
+  /* No bordered/height-constrained box any more — the month grid is just part of the
+     normal page flow, and scrolling the page itself up/down is how you move between
+     months (see .cal-month-section), growing one more month at a time as you near
+     either edge (see attachInfiniteScroll). There's no prev/next/Today control. */
   .cal-weekday-row {
     display: grid;
     grid-template-columns: repeat(7, 1fr);
     gap: 4px;
     margin-bottom: 6px;
-    position: sticky;
-    top: 0;
-    background: var(--paper);
-    z-index: 2;
-    padding-top: 10px;
   }
   .cal-weekday-row span {
     text-align: center;
@@ -501,12 +488,10 @@
   <div id="app-content">
   <div class="cal-app" id="cal-app">
     <div class="cal-status-row"><span class="cal-status" id="cal-status"></span></div>
-    <div class="cal-scroll-box" id="cal-scroll-box">
-      <div class="cal-weekday-row">
-        <span>Sun</span><span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span>
-      </div>
-      <div id="cal-months"></div>
+    <div class="cal-weekday-row">
+      <span>Sun</span><span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span>
     </div>
+    <div id="cal-months"></div>
   </div>
   </div>
   <p class="app-footnote">Ry's Tools</p>
@@ -947,7 +932,7 @@
       return true;
     }
 
-    // The topmost date the scroll box will ever show — the Sunday that starts "last
+    // The topmost date the page will ever load — the Sunday that starts "last
     // week" (7 days ago, backed up to that week's Sunday). Computed once and cached
     // so the floor stays put for the rest of the session instead of creeping forward
     // as real time passes while the page is open.
@@ -1024,7 +1009,7 @@
 
       if (ready) {
         setStatus('');
-        // Re-fetch every month currently loaded into the scroll box — cheap (usually
+        // Re-fetch every month currently loaded on the page — cheap (usually
         // just 3 months), and covers the case where this runs right after connecting.
         // Each of those refetches already re-renders the selected day if there is one
         // (see loadEventsForMonth), so only fall back to the next-3-events view when
@@ -1125,9 +1110,9 @@
       });
     }
 
-    // Starts at the floor (see getMinDate — "last week", the topmost date the box will
-    // ever show) and loads every month through next month, then grows forward one month
-    // at a time as the scroll box nears its bottom edge (see attachInfiniteScroll) — it
+    // Starts at the floor (see getMinDate — "last week", the topmost date the page will
+    // ever load) and loads every month through next month, then grows forward one month
+    // at a time as the page nears its bottom edge (see attachInfiniteScroll) — it
     // never grows past the floor at the top. Runs once per page load.
     function initMonths() {
       monthsInitialized = true;
@@ -1258,16 +1243,18 @@
       });
     }
 
-    // Scrolling near either edge of the box loads one more month there — this is the
-    // whole "navigation" model now, replacing the old prev/next/Today buttons.
+    // Scrolling the page itself near either edge of the loaded range loads one more
+    // month there — this is the whole "navigation" model now, replacing the old
+    // prev/next/Today buttons. No bordered box any more — this watches the page's own
+    // scroll position, not an internal scrollable element.
     function attachInfiniteScroll() {
-      const box = document.getElementById('cal-scroll-box');
-      if (!box) return;
       const TRIGGER_PX = 300;
-      box.addEventListener('scroll', function () {
-        if (box.scrollTop < TRIGGER_PX) {
+      window.addEventListener('scroll', function () {
+        const scrollTop = window.scrollY || document.documentElement.scrollTop;
+        const scrollHeight = document.documentElement.scrollHeight;
+        if (scrollTop < TRIGGER_PX) {
           prependMonth();
-        } else if (box.scrollHeight - box.scrollTop - box.clientHeight < TRIGGER_PX) {
+        } else if (scrollHeight - scrollTop - window.innerHeight < TRIGGER_PX) {
           appendMonth();
         }
       });
@@ -1285,16 +1272,15 @@
       if (monthEntries.length >= MAX_MONTHS_RANGE) return;
 
       isPrepending = true;
-      const box = document.getElementById('cal-scroll-box');
       const monthsEl = document.getElementById('cal-months');
-      const prevScrollHeight = box.scrollHeight;
+      const prevScrollHeight = document.documentElement.scrollHeight;
       monthsEl.insertBefore(buildMonthSection(year, month), monthsEl.firstChild);
       monthEntries.unshift({ year: year, month: month });
       loadEventsForMonth(year, month);
       // Keep the currently-visible content pinned in place instead of jumping down
       // when new content is inserted above it.
       requestAnimationFrame(function () {
-        box.scrollTop += (box.scrollHeight - prevScrollHeight);
+        window.scrollBy(0, document.documentElement.scrollHeight - prevScrollHeight);
         isPrepending = false;
       });
     }
@@ -1316,9 +1302,9 @@
 
     // Extends the loaded range (in either direction, bounded by MAX_MONTHS_RANGE going
     // forward and by the floor going backward) until it covers the given month — used
-    // when creating an event further out than what's currently in the scroll box, so
-    // jumping to it doesn't need a missing day cell. A target month earlier than the
-    // floor just clamps to the floor — that date's day cell was never meant to exist.
+    // when creating an event further out than what's currently loaded, so jumping to it
+    // doesn't need a missing day cell. A target month earlier than the floor just
+    // clamps to the floor — that date's day cell was never meant to exist.
     function ensureMonthLoaded(year, month) {
       if (monthEntries.length === 0) return;
       const targetIndex = Math.max(year * 12 + month, minDateIndex());
@@ -1587,9 +1573,9 @@
         closeCompose();
         // Jump to the event's month/day and refresh so it shows up right away —
         // loading in any months between the current range and it if it's further out
-        // than what's currently in the scroll box. applySelection (not selectDate) so
-        // this always shows the day regardless of what was already selected, instead
-        // of toggling it off if that day happened to be selected already.
+        // than what's currently loaded. applySelection (not selectDate) so this always
+        // shows the day regardless of what was already selected, instead of toggling
+        // it off if that day happened to be selected already.
         const d = new Date(date + 'T00:00:00');
         ensureMonthLoaded(d.getFullYear(), d.getMonth());
         applySelection(date);
