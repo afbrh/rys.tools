@@ -208,6 +208,9 @@
     border: 1.5px solid var(--ink);
   }
   .save-btn.export-btn:hover { opacity: 1; background: var(--paper-line); }
+  /* Sits under the signed-in email in .brand-block — a little more breathing room
+     than that block's own 2px gap (tight by design for the dropdown/email pairing). */
+  #cal-add-event-btn { margin-top: 6px; }
   .save-status { font-size: 13px; color: var(--income); min-height: 16px; }
   .signed-in-banner {
     font-size: 12px;
@@ -425,10 +428,10 @@
         </div>
       </div>
       <div class="signed-in-banner" id="signed-in-banner"></div>
+      <button type="button" class="save-btn" id="cal-add-event-btn" onclick="CalendarApp.openCompose()" hidden="">+ Add event</button>
     </div>
     <div class="tool-controls" id="tool-controls">
       <button class="save-btn export-btn" id="google-signin-btn" onclick="handleGoogleSignIn()">Google Sign-In</button>
-      <button type="button" class="save-btn" id="cal-add-event-btn" onclick="CalendarApp.openCompose()" hidden="">+ Add event</button>
       <span class="save-status" id="save-status"></span>
     </div>
     <button type="button" class="theme-toggle-btn" id="theme-toggle-btn" onclick="toggleAppearance()" aria-label="Switch to light mode">
