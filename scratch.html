@@ -736,19 +736,27 @@
     el.style.height = el.scrollHeight + 'px';
   }
 
-  function focusBoxEnd(index) {
+  function focusBoxAt(index, pos) {
     const boxesEl = document.getElementById('scratch-boxes');
     const box = boxesEl && boxesEl.children[index];
     const textarea = box && box.querySelector('textarea');
     if (!textarea) return;
     textarea.focus();
-    const pos = textarea.value.length;
     textarea.setSelectionRange(pos, pos);
   }
 
-  // Only called when a box's content actually needs a new box splitting out of it —
-  // ordinary typing just updates sections[index] and grows that one textarea in place,
-  // never touching the DOM, so a normal keystroke can't cost focus or scroll position.
+  function focusBoxEnd(index) {
+    const boxesEl = document.getElementById('scratch-boxes');
+    const box = boxesEl && boxesEl.children[index];
+    const textarea = box && box.querySelector('textarea');
+    if (!textarea) return;
+    focusBoxAt(index, textarea.value.length);
+  }
+
+  // Only called when a box's content actually needs a new box splitting out of it, or
+  // a box is merging into the one above — ordinary typing just updates sections[index]
+  // and grows that one textarea in place, never touching the DOM, so a normal keystroke
+  // can't cost focus or scroll position.
   function renderBoxes() {
     const boxesEl = document.getElementById('scratch-boxes');
     if (!boxesEl) return;
@@ -761,10 +769,31 @@
       textarea.spellcheck = false;
       if (i === 0) textarea.placeholder = 'Start typing…';
       textarea.addEventListener('input', function () { handleBoxInput(i, textarea); });
+      textarea.addEventListener('keydown', function (e) { handleBoxKeydown(i, textarea, e); });
       box.appendChild(textarea);
       boxesEl.appendChild(box);
       autoGrow(textarea);
     });
+  }
+
+  // Backspace with the cursor collapsed at the very start of a box (nothing selected,
+  // position 0) merges it straight into the end of the box above — the mirror image of
+  // typing three newlines to split one apart. Concatenates directly with no separator
+  // inserted, cursor landing exactly at the old join point, so repeated split/merge
+  // cycles don't pile up stray blank lines. The first box has nothing above it to merge
+  // into, so this is a no-op there — an ordinary Backspace at its own start already does
+  // nothing anyway (nothing before position 0 to delete).
+  function handleBoxKeydown(index, textarea, e) {
+    if (e.key !== 'Backspace') return;
+    if (textarea.selectionStart !== 0 || textarea.selectionEnd !== 0) return;
+    if (index === 0) return;
+    e.preventDefault();
+    const joinPos = sections[index - 1].length;
+    sections[index - 1] = sections[index - 1] + sections[index];
+    sections.splice(index, 1);
+    renderBoxes();
+    focusBoxAt(index - 1, joinPos);
+    queueAutoSave();
   }
 
   // Typing (or pasting) three or more newlines in a row breaks everything from that
