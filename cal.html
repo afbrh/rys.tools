@@ -349,7 +349,6 @@
   }
   .cal-agenda-time { font-family: var(--font-mono); font-size: 12px; color: var(--gold); }
   .cal-agenda-title { font-weight: 600; font-size: 14px; color: var(--ink); }
-  .cal-agenda-location { font-size: 12.5px; color: var(--ink-soft); margin-top: 1px; }
 
   .cal-compose-overlay {
     display: none;
@@ -1331,24 +1330,20 @@
         const item = document.createElement('div');
         item.className = 'cal-agenda-item';
 
-        // No date line (and so no .cal-agenda-row pairing it with the time) here —
-        // every item in this view is already the same day, which the box's own title
-        // (set above) already says, so the time just stands on its own.
+        // Same single-line layout as renderUpcoming's items (time + title, no
+        // location) — just without a .cal-agenda-date, since every item here is
+        // already the same day, which the box's own title (set above) already says.
+        const row = document.createElement('div');
+        row.className = 'cal-agenda-row';
         const time = document.createElement('div');
         time.className = 'cal-agenda-time';
         time.textContent = ev.isAllDay ? 'All day' : formatTime(ev.start);
-        item.appendChild(time);
-
+        row.appendChild(time);
         const title = document.createElement('div');
         title.className = 'cal-agenda-title';
         title.textContent = ev.title;
-        item.appendChild(title);
-        if (ev.location) {
-          const loc = document.createElement('div');
-          loc.className = 'cal-agenda-location';
-          loc.textContent = ev.location;
-          item.appendChild(loc);
-        }
+        row.appendChild(title);
+        item.appendChild(row);
 
         listEl.appendChild(item);
       });
