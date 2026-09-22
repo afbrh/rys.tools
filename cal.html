@@ -456,6 +456,7 @@
           <button type="button" class="tool-dropdown-item" data-value="budget" role="menuitemradio" onclick="setActiveTool('budget')">Budget Planner</button>
           <button type="button" class="tool-dropdown-item" data-value="email" role="menuitemradio" onclick="setActiveTool('email')">E-Mail</button>
           <button type="button" class="tool-dropdown-item" data-value="calendar" role="menuitemradio" onclick="setActiveTool('calendar')">Calendar</button>
+          <button type="button" class="tool-dropdown-item" data-value="scratch" role="menuitemradio" onclick="setActiveTool('scratch')">Scratch</button>
         </div>
       </div>
       <div class="signed-in-banner" id="signed-in-banner"></div>
@@ -645,8 +646,8 @@
   // selecting a different tool from the dropdown navigates instead of toggling in place.
   // Kept in sync with the matching block in budget.html/email.html.
   const CURRENT_TOOL = 'calendar';
-  const TOOL_PAGES = { budget: 'budget.html', email: 'email.html', calendar: 'cal.html' };
-  const TOOL_LABELS = { budget: 'Budget Planner', email: 'E-Mail', calendar: 'Calendar' };
+  const TOOL_PAGES = { budget: 'budget.html', email: 'email.html', calendar: 'cal.html', scratch: 'scratch.html' };
+  const TOOL_LABELS = { budget: 'Budget Planner', email: 'E-Mail', calendar: 'Calendar', scratch: 'Scratch' };
 
   function setActiveTool(tool) {
     if (!TOOL_PAGES[tool]) tool = CURRENT_TOOL;
