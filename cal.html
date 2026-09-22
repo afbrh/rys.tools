@@ -326,11 +326,20 @@
      share this same box now instead of a separate box below the scroll grid. */
   .cal-agenda-empty { color: var(--ink-soft); font-size: 14px; }
   .cal-agenda-item { display: flex; flex-direction: column; gap: 4px; }
-  /* The next-3-events view spans several different days, so each item gets its own
-     date, left-justified with the time directly to its right (.cal-agenda-row) —
+  /* The next-3-events view spans several different days, so each item is one line:
+     date, then time, then title, left to right (.cal-agenda-row) — no location.
      renderSelectedDay's items (already scoped to one day via the box's own title) skip
-     the date and just show the time on its own. */
+     the date/row entirely and just show the time on its own line above the title. */
   .cal-agenda-row { display: flex; align-items: baseline; gap: 8px; }
+  .cal-agenda-row .cal-agenda-date,
+  .cal-agenda-row .cal-agenda-time { flex-shrink: 0; }
+  .cal-agenda-row .cal-agenda-title {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
   .cal-agenda-date {
     font-size: 11px;
     font-weight: 600;
@@ -1004,6 +1013,8 @@
         const item = document.createElement('div');
         item.className = 'cal-agenda-item';
 
+        // Date, time and title all on one line here — no location, unlike
+        // renderSelectedDay's fuller per-event layout below.
         const row = document.createElement('div');
         row.className = 'cal-agenda-row';
         const dateLine = document.createElement('div');
@@ -1014,18 +1025,11 @@
         time.className = 'cal-agenda-time' + (isHappeningNow ? ' cal-upcoming-now' : '');
         time.textContent = isHappeningNow ? 'Now' : (isAllDay ? 'All day' : formatTime(start));
         row.appendChild(time);
-        item.appendChild(row);
-
         const title = document.createElement('div');
         title.className = 'cal-agenda-title';
         title.textContent = ev.summary || '(No title)';
-        item.appendChild(title);
-        if (ev.location) {
-          const loc = document.createElement('div');
-          loc.className = 'cal-agenda-location';
-          loc.textContent = ev.location;
-          item.appendChild(loc);
-        }
+        row.appendChild(title);
+        item.appendChild(row);
 
         listEl.appendChild(item);
       });
