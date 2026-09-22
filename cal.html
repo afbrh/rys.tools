@@ -436,9 +436,16 @@
   .cal-compose-time-row { display: flex; gap: 12px; }
   .cal-compose-time-row[hidden] { display: none; }
   .cal-compose-time-row .cal-compose-field { flex: 1; }
-  .cal-compose-actions { display: flex; align-items: center; justify-content: flex-end; gap: 12px; margin-top: 4px; }
+  /* Delete sits on the far left (its own flex item, default flex-start) opposite
+     status+Save on the far right (.cal-compose-actions-right, pinned via its own
+     margin-left: auto — not justify-content: space-between on the parent, since that
+     would misplace the right group when Delete is hidden and it's the only item left). */
+  .cal-compose-actions { display: flex; align-items: center; gap: 12px; margin-top: 4px; }
+  .cal-compose-actions-right { display: flex; align-items: center; gap: 12px; margin-left: auto; }
   .cal-compose-status { font-size: 13px; color: var(--gold); }
   .cal-compose-status.error { color: var(--expense); }
+  .save-btn.cal-delete-btn { background: none; color: var(--expense); border: 1.5px solid var(--expense); }
+  .save-btn.cal-delete-btn:hover { background: var(--expense); color: var(--paper); }
 
   @media (max-width: 680px) {
     .cal-day { height: 72px; padding: 4px; gap: 2px; }
@@ -534,8 +541,11 @@
         <input type="text" id="cal-compose-location">
       </label>
       <div class="cal-compose-actions">
-        <span class="cal-compose-status" id="cal-compose-status"></span>
-        <button type="button" class="save-btn" id="cal-compose-save-btn" onclick="CalendarApp.saveEvent()">Save</button>
+        <button type="button" class="save-btn cal-delete-btn" id="cal-compose-delete-btn" onclick="CalendarApp.deleteEvent()" hidden="">Delete</button>
+        <div class="cal-compose-actions-right">
+          <span class="cal-compose-status" id="cal-compose-status"></span>
+          <button type="button" class="save-btn" id="cal-compose-save-btn" onclick="CalendarApp.saveEvent()">Save</button>
+        </div>
       </div>
     </div>
   </div>
@@ -901,7 +911,16 @@
       return resp.json();
     }
 
-    return { isSignedIn, signIn, restoreSession, getUserEmail, hasCalendarScope, gcalListEvents, gcalCreateEvent, gcalUpdateEvent, gcalListUpcoming };
+    // A successful delete responds 204 No Content — no body to parse, so nothing to
+    // return, just resolve/throw.
+    async function gcalDeleteEvent(eventId) {
+      const resp = await api('https://www.googleapis.com/calendar/v3/calendars/primary/events/' + encodeURIComponent(eventId), {
+        method: 'DELETE'
+      });
+      if (!resp.ok) throw new Error(await errorFromResponse(resp));
+    }
+
+    return { isSignedIn, signIn, restoreSession, getUserEmail, hasCalendarScope, gcalListEvents, gcalCreateEvent, gcalUpdateEvent, gcalDeleteEvent, gcalListUpcoming };
   })();
 
   /* ================= Calendar app (namespaced) ================= */
@@ -1506,6 +1525,10 @@
         saveBtn.textContent = ev ? 'Save changes' : 'Save';
         saveBtn.hidden = editingReadOnly;
       }
+      // Only for an existing event that's actually yours to edit — nothing to delete
+      // when creating, and no delete action offered on someone else's invited event.
+      const deleteBtn = document.getElementById('cal-compose-delete-btn');
+      if (deleteBtn) deleteBtn.hidden = isCreating || editingReadOnly;
 
       document.getElementById('cal-compose-title').value = ev ? ev.title : '';
       document.getElementById('cal-compose-location').value = ev ? ev.location : '';
@@ -1646,7 +1669,38 @@
       }
     }
 
-    return { render, openCompose, closeCompose, onAllDayToggle, saveEvent };
+    async function deleteEvent() {
+      // Same belt-and-suspenders reasoning as saveEvent's guard — the button is hidden
+      // for read-only/new-event states, this just makes sure a stray call can't do
+      // anything even if it somehow gets through.
+      if (!editingEventId || editingReadOnly) return;
+
+      const title = document.getElementById('cal-compose-title').value.trim() || 'this event';
+      if (!window.confirm('Delete "' + title + '"? This can\'t be undone.')) return;
+
+      const eventId = editingEventId;
+      const eventDate = editingOriginalDate;
+      const deleteBtn = document.getElementById('cal-compose-delete-btn');
+
+      if (deleteBtn) deleteBtn.disabled = true;
+      setComposeStatus('Deleting…');
+      try {
+        await GoogleDriveSync.gcalDeleteEvent(eventId);
+        closeCompose();
+        // loadEventsForMonth's own callback already re-renders the selected day (if
+        // there is one) once the refetch resolves — only need the explicit Upcoming
+        // refresh for the case this event was reached from that list instead, with no
+        // day selected (see the same pattern/reasoning in refreshView).
+        if (eventDate) loadEventsForMonth(eventDate.getFullYear(), eventDate.getMonth());
+        if (!selectedDate) loadUpcoming();
+      } catch (e) {
+        setComposeStatus("Couldn't delete event: " + e.message, true);
+      } finally {
+        if (deleteBtn) deleteBtn.disabled = false;
+      }
+    }
+
+    return { render, openCompose, closeCompose, onAllDayToggle, saveEvent, deleteEvent };
   })();
 
   function setGoogleSignedInUi(signedIn) {
