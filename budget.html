@@ -335,66 +335,33 @@
     margin: 0 0 28px;
     letter-spacing: var(--letter-spacing-header);
   }
-  #tab-budget .section { margin-bottom: 28px; }
-  #tab-budget .section-head {
-    display: flex;
-    justify-content: space-between;
-    align-items: baseline;
-    border-bottom: 2px solid var(--ink);
-    padding-bottom: 8px;
-    margin-bottom: 4px;
-  }
-  #tab-budget .section-head h2 { font-family: var(--font-header); font-size: 16px; font-weight: 600; margin: 0; }
-  #tab-budget .section.income .section-head h2 { color: var(--income); }
-  #tab-budget .section.expense .section-head h2 { color: var(--expense); }
-  #tab-budget .section-total { font-family: var(--font-mono); font-size: 15px; font-weight: 500; }
-  #tab-budget .row {
+  /* The lone income row (Income has no scenarios, so it isn't part of the grid below)
+     stands in for a section header, so it's styled like one rather than a locked chip. */
+  #tab-budget .section.income .row.locked {
     display: flex;
     align-items: center;
     flex-wrap: wrap;
     row-gap: 6px;
     gap: 10px;
-    padding: 9px 0;
-    border-bottom: 1px solid var(--paper-line);
+    padding: 0 0 8px;
+    margin: 0 0 24px;
+    border-bottom: 2px solid var(--ink);
   }
-  #tab-budget .row-main { display: flex; align-items: center; gap: 8px; flex: 1 1 200px; min-width: 0; }
-  #tab-budget .row-actions { display: flex; align-items: center; gap: 8px; flex: 0 0 auto; }
-  #tab-budget .row input[type="text"] {
+  #tab-budget .section.income .row-main { display: flex; align-items: center; gap: 8px; flex: 1 1 200px; min-width: 0; }
+  #tab-budget .section.income .row-actions { display: flex; align-items: center; gap: 8px; flex: 0 0 auto; }
+  #tab-budget .section.income input[type="text"] {
     flex: 1;
     border: none;
     background: transparent;
-    font-family: var(--font-body);
-    font-size: 15px;
-    color: var(--ink);
-    padding: 4px 2px;
-  }
-  #tab-budget .row input[type="text"]:focus { outline: none; border-bottom: 1px solid var(--ink-soft); }
-  #tab-budget .row.locked { background: var(--gold-bg); border-radius: 6px; padding: 9px 8px; margin: 0 -8px; border-bottom-color: transparent; }
-  #tab-budget .row.locked input[type="text"] { color: var(--gold); font-weight: 600; cursor: pointer; border-radius: 3px; }
-  #tab-budget .row.locked input[type="text"]:hover { border-bottom: 1px solid var(--gold); }
-  #tab-budget .row.locked input[type="number"] { color: var(--gold); cursor: pointer; border-radius: 3px; }
-  #tab-budget .row.locked input[type="number"]:hover { border-bottom: 1px solid var(--gold); }
-  /* The lone income row stands in for the section header (no separate "Income" label above
-     it), so it's styled like one instead of like a locked expense chip. */
-  #tab-budget .section.income .row.locked {
-    background: none;
-    border-radius: 0;
-    padding: 0 0 8px;
-    margin: 0 0 4px;
-    border-bottom: 2px solid var(--ink);
-  }
-  #tab-budget .section.income .row.locked input[type="text"] {
     font-family: var(--font-header);
     font-size: 16px;
     color: var(--income);
+    cursor: pointer;
+    padding: 4px 2px;
   }
-  #tab-budget .section.income .row.locked input[type="number"] { font-size: 15px; font-weight: 500; color: var(--income); }
-  #tab-budget .section.income .row.locked .amount-wrap span { color: var(--income); }
-  #tab-budget .section.income .row.locked input[type="text"]:hover,
-  #tab-budget .section.income .row.locked input[type="number"]:hover { border-bottom-color: transparent; }
-  #tab-budget .amount-wrap { display: flex; align-items: center; justify-content: flex-end; font-family: var(--font-mono); font-size: 15px; }
-  #tab-budget .amount-wrap span { color: var(--ink-soft); margin-right: 1px; }
-  #tab-budget .row input[type="number"] {
+  #tab-budget .section.income .amount-wrap { display: flex; align-items: center; justify-content: flex-end; font-family: var(--font-mono); font-size: 15px; }
+  #tab-budget .section.income .amount-wrap span { color: var(--income); margin-right: 1px; }
+  #tab-budget .section.income input[type="number"] {
     width: 4ch;
     min-width: 0;
     text-align: right;
@@ -402,20 +369,101 @@
     background: transparent;
     font-family: var(--font-mono);
     font-size: 15px;
-    color: var(--ink);
+    font-weight: 500;
+    color: var(--income);
+    cursor: pointer;
     padding: 4px 0;
     -moz-appearance: textfield;
   }
-  #tab-budget .row input[type="number"]::-webkit-outer-spin-button,
-  #tab-budget .row input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
-  #tab-budget .row input[type="number"]:focus { outline: none; border-bottom: 1px solid var(--ink-soft); }
-  #tab-budget .remove-btn {
-    background: none; border: none; color: var(--ink-soft);
-    font-size: 18px; line-height: 1; cursor: pointer; padding: 2px 4px; border-radius: 4px;
+  #tab-budget input[type="number"]::-webkit-outer-spin-button,
+  #tab-budget input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+
+  /* Scenario grid — the Expenses section below, one column per shared scenario. */
+  #tab-budget .page { max-width: 900px; margin: 0 auto; }
+  #tab-budget .table-scroll { overflow-x: auto; padding-bottom: 4px; }
+  #tab-budget .add-btn {
+    flex-shrink: 0;
+    align-self: center;
+    background: none;
+    border: 1px dashed var(--ink-soft);
+    color: var(--ink-soft);
+    font-family: var(--font-body);
+    font-size: 13px;
+    font-weight: 600;
+    padding: 8px 16px;
+    border-radius: 6px;
+    cursor: pointer;
+    white-space: nowrap;
   }
-  #tab-budget .remove-btn:hover { color: var(--danger); background: var(--expense-bg); }
+  #tab-budget .add-btn:hover { border-color: var(--expense); color: var(--expense); }
+  #tab-budget .flex-row { display: flex; align-items: center; min-width: max-content; }
+  #tab-budget .row-label { width: 190px; flex: 0 0 190px; padding-right: 10px; display: flex; align-items: center; gap: 4px; }
+  #tab-budget .row-label .field-label { font-size: 14px; color: var(--ink); }
+  #tab-budget .row-values { display: flex; gap: 34px; }
+  #tab-budget .value-cell { width: 118px; flex: 0 0 118px; }
+  #tab-budget .col-head-row { padding-bottom: 12px; margin-bottom: 6px; border-bottom: 2px solid var(--ink); }
+  #tab-budget .col-head-cell { position: relative; text-align: right; }
+  #tab-budget .col-head-cell .name-row { display: flex; align-items: center; justify-content: flex-end; gap: 6px; }
+  #tab-budget .col-head-cell input.name {
+    font-family: var(--font-header);
+    font-weight: 600;
+    font-size: 14px;
+    border: none;
+    background: transparent;
+    color: var(--ink);
+    text-align: right;
+    flex: 1 1 auto;
+    min-width: 0;
+    padding: 2px 0;
+  }
+  #tab-budget .col-head-cell input.name:focus { outline: none; border-bottom: 1px solid var(--ink-soft); }
+  #tab-budget .col-head-cell .remove-btn {
+    display: block; margin: 3px 0 0 auto; background: none; border: none;
+    color: var(--ink-soft); font-size: 12px; cursor: pointer; padding: 0;
+  }
+  #tab-budget .col-head-cell .remove-btn:hover { color: var(--expense); }
+  #tab-budget .section { margin-bottom: 26px; }
+  #tab-budget .section-head { border-bottom: 2px solid var(--ink); padding-bottom: 6px; margin-bottom: 2px; }
+  #tab-budget .section-head h2 { font-family: var(--font-header); font-size: 15px; font-weight: 600; margin: 0; color: var(--expense); }
+  #tab-budget .row { padding: 11px 0; border-bottom: 1px solid var(--paper-line); }
+  #tab-budget .row.locked { background: var(--gold-bg); border-radius: 6px; padding: 9px 8px; margin: 2px -8px; border-bottom-color: transparent; }
+  #tab-budget .row.locked .row-label input.row-name { color: var(--gold); font-weight: 600; cursor: pointer; }
+  #tab-budget .row.locked .value-text { color: var(--gold); cursor: pointer; }
+  #tab-budget .row-label input.row-name {
+    flex: 1 1 auto;
+    min-width: 0;
+    font-family: var(--font-body);
+    font-size: 14px;
+    color: var(--ink);
+    border: none;
+    background: transparent;
+    padding: 2px 0;
+  }
+  #tab-budget .row-label input.row-name[readonly] { cursor: pointer; }
+  #tab-budget .row-label input.row-name::placeholder { color: var(--ink-soft); }
+  #tab-budget .row-label input.row-name:focus { outline: none; border-bottom: 1px solid var(--ink-soft); }
+  #tab-budget .row-label .row-remove-btn {
+    flex-shrink: 0;
+    background: none; border: none; color: var(--ink-soft);
+    font-size: 16px; line-height: 1; cursor: pointer; padding: 2px 4px; border-radius: 4px;
+  }
+  #tab-budget .row-label .row-remove-btn:hover { color: var(--danger); background: var(--expense-bg); }
+  #tab-budget .field { display: flex; align-items: center; justify-content: flex-end; font-family: var(--font-mono); font-size: 14px; }
+  #tab-budget .field span { color: var(--ink-soft); margin: 0 1px; }
+  #tab-budget .field input[type="number"] {
+    width: 4ch;
+    min-width: 0;
+    text-align: right;
+    border: none;
+    background: transparent;
+    font-family: var(--font-mono);
+    font-size: 14px;
+    color: var(--ink);
+    padding: 4px 0;
+  }
+  #tab-budget .field input:focus { outline: none; border-bottom: 1px solid var(--ink-soft); }
   #tab-budget .add-row-btn {
-    margin-top: 10px;
+    margin-top: 12px;
     background: none;
     border: 1px dashed var(--ink-soft);
     color: var(--ink-soft);
@@ -425,31 +473,12 @@
     border-radius: 6px;
     cursor: pointer;
   }
-  #tab-budget .section.income .add-row-btn:hover { border-color: var(--income); color: var(--income); }
-  #tab-budget .section.expense .add-row-btn:hover { border-color: var(--expense); color: var(--expense); }
-  #tab-budget .summary { margin-top: 36px; padding-top: 20px; border-top: 2px solid var(--ink); }
-  #tab-budget .summary-line { display: flex; flex-wrap: wrap; row-gap: 2px; justify-content: space-between; font-size: 15px; padding: 6px 0; }
-  #tab-budget .summary-line .label { color: var(--ink-soft); }
-  #tab-budget .summary-line .value { font-family: var(--font-mono); font-weight: 500; }
-  #tab-budget .summary-line.income .value { color: var(--income); }
-  #tab-budget .summary-line.expense .value { color: var(--expense); }
-  #tab-budget .net-line {
-    display: flex;
-    flex-wrap: wrap;
-    row-gap: 4px;
-    column-gap: 10px;
-    justify-content: space-between;
-    align-items: center;
-    margin-top: 14px;
-    padding: 16px 18px;
-    border-radius: 8px;
-    background: var(--gold-bg);
-  }
-  #tab-budget .net-line .label { font-family: var(--font-header); font-weight: 600; font-size: 16px; color: var(--gold); }
-  #tab-budget .net-line .value { font-family: var(--font-mono); font-weight: 500; font-size: 22px; color: var(--gold); }
-  #tab-budget .net-line.negative { background: var(--expense-bg); }
-  #tab-budget .net-line.negative .label,
-  #tab-budget .net-line.negative .value { color: var(--expense); }
+  #tab-budget .add-row-btn:hover { border-color: var(--expense); color: var(--expense); }
+  #tab-budget .summary-block { margin-top: 18px; padding-top: 12px; border-top: 2px solid var(--ink); }
+  #tab-budget .value-text { font-family: var(--font-mono); font-weight: 500; text-align: right; font-size: 14px; display: block; }
+  #tab-budget .payment-row { padding: 16px 18px; border-radius: 8px; background: var(--gold-bg); margin-bottom: 6px; }
+  #tab-budget .payment-row .field-label { font-family: var(--font-header); font-weight: 600; font-size: 14px; color: var(--gold); }
+  #tab-budget .payment-row .value-text { font-size: 17px; }
   #tab-budget .footnote { margin-top: 14px; font-size: 12px; color: var(--ink-soft); text-align: center; }
 
   /* ================= Income tab (scoped) ================= */
@@ -625,7 +654,6 @@
   #tab-subscriptions .col-head-row { padding-bottom: 12px; margin-bottom: 6px; border-bottom: 2px solid var(--ink); }
   #tab-subscriptions .col-head-cell { position: relative; text-align: right; }
   #tab-subscriptions .col-head-cell .name-row { display: flex; align-items: center; justify-content: flex-end; gap: 6px; }
-  #tab-subscriptions .col-head-cell .name-row input[type="radio"] { margin: 0; cursor: pointer; accent-color: var(--gold); flex-shrink: 0; }
   #tab-subscriptions .col-head-cell input.name {
     font-family: var(--font-header);
     font-weight: 600;
@@ -644,7 +672,6 @@
     color: var(--ink-soft); font-size: 12px; cursor: pointer; padding: 0;
   }
   #tab-subscriptions .col-head-cell .remove-btn:hover { color: var(--expense); }
-  #tab-subscriptions .col-head-cell.is-primary { background: var(--gold-bg); border-radius: 6px; padding: 4px 6px; margin: -4px -6px; }
   #tab-subscriptions .section { margin-bottom: 26px; }
   #tab-subscriptions .section-head { border-bottom: 2px solid var(--ink); padding-bottom: 6px; margin-bottom: 2px; }
   #tab-subscriptions .section-head h2 { font-family: var(--font-header); font-size: 15px; font-weight: 600; margin: 0; color: var(--expense); }
@@ -721,7 +748,6 @@
   #tab-mortgage .col-head-row { padding-bottom: 12px; margin-bottom: 6px; border-bottom: 2px solid var(--ink); }
   #tab-mortgage .col-head-cell { position: relative; text-align: right; }
   #tab-mortgage .col-head-cell .name-row { display: flex; align-items: center; justify-content: flex-end; gap: 6px; }
-  #tab-mortgage .col-head-cell .name-row input[type="radio"] { margin: 0; cursor: pointer; accent-color: var(--gold); flex-shrink: 0; }
   #tab-mortgage .col-head-cell input.name {
     font-family: var(--font-header);
     font-weight: 600;
@@ -740,7 +766,6 @@
     color: var(--ink-soft); font-size: 12px; cursor: pointer; padding: 0;
   }
   #tab-mortgage .col-head-cell .remove-btn:hover { color: var(--expense); }
-  #tab-mortgage .col-head-cell.is-primary { background: var(--gold-bg); border-radius: 6px; padding: 4px 6px; margin: -4px -6px; }
   #tab-mortgage .section { margin-bottom: 26px; }
   #tab-mortgage .section-head { border-bottom: 2px solid var(--ink); padding-bottom: 6px; margin-bottom: 2px; }
   #tab-mortgage .section-head h2 { font-family: var(--font-header); font-size: 15px; font-weight: 600; margin: 0; }
@@ -820,7 +845,6 @@
   #tab-food .col-head-row { padding-bottom: 12px; margin-bottom: 6px; border-bottom: 2px solid var(--ink); }
   #tab-food .col-head-cell { position: relative; text-align: right; }
   #tab-food .col-head-cell .name-row { display: flex; align-items: center; justify-content: flex-end; gap: 6px; }
-  #tab-food .col-head-cell .name-row input[type="radio"] { margin: 0; cursor: pointer; accent-color: var(--gold); flex-shrink: 0; }
   #tab-food .col-head-cell input.name {
     font-family: var(--font-header);
     font-weight: 600;
@@ -839,7 +863,6 @@
     color: var(--ink-soft); font-size: 12px; cursor: pointer; padding: 0;
   }
   #tab-food .col-head-cell .remove-btn:hover { color: var(--expense); }
-  #tab-food .col-head-cell.is-primary { background: var(--gold-bg); border-radius: 6px; padding: 4px 6px; margin: -4px -6px; }
   #tab-food .section { margin-bottom: 26px; }
   #tab-food .section-head { border-bottom: 2px solid var(--ink); padding-bottom: 6px; margin-bottom: 2px; }
   #tab-food .section-head h2 { font-family: var(--font-header); font-size: 15px; font-weight: 600; margin: 0; color: var(--expense); }
@@ -904,7 +927,6 @@
   #tab-car .col-head-row { padding-bottom: 12px; margin-bottom: 6px; border-bottom: 2px solid var(--ink); }
   #tab-car .col-head-cell { position: relative; text-align: right; }
   #tab-car .col-head-cell .name-row { display: flex; align-items: center; justify-content: flex-end; gap: 6px; }
-  #tab-car .col-head-cell .name-row input[type="radio"] { margin: 0; cursor: pointer; accent-color: var(--gold); flex-shrink: 0; }
   #tab-car .col-head-cell input.name {
     font-family: var(--font-header);
     font-weight: 600;
@@ -923,7 +945,6 @@
     color: var(--ink-soft); font-size: 12px; cursor: pointer; padding: 0;
   }
   #tab-car .col-head-cell .remove-btn:hover { color: var(--expense); }
-  #tab-car .col-head-cell.is-primary { background: var(--gold-bg); border-radius: 6px; padding: 4px 6px; margin: -4px -6px; }
   #tab-car .section { margin-bottom: 26px; }
   #tab-car .section-head { border-bottom: 2px solid var(--ink); padding-bottom: 6px; margin-bottom: 2px; }
   #tab-car .section-head h2 { font-family: var(--font-header); font-size: 15px; font-weight: 600; margin: 0; color: var(--expense); }
@@ -987,7 +1008,6 @@
   #tab-utilities .col-head-row { padding-bottom: 12px; margin-bottom: 6px; border-bottom: 2px solid var(--ink); }
   #tab-utilities .col-head-cell { position: relative; text-align: right; }
   #tab-utilities .col-head-cell .name-row { display: flex; align-items: center; justify-content: flex-end; gap: 6px; }
-  #tab-utilities .col-head-cell .name-row input[type="radio"] { margin: 0; cursor: pointer; accent-color: var(--gold); flex-shrink: 0; }
   #tab-utilities .col-head-cell input.name {
     font-family: var(--font-header);
     font-weight: 600;
@@ -1006,7 +1026,6 @@
     color: var(--ink-soft); font-size: 12px; cursor: pointer; padding: 0;
   }
   #tab-utilities .col-head-cell .remove-btn:hover { color: var(--expense); }
-  #tab-utilities .col-head-cell.is-primary { background: var(--gold-bg); border-radius: 6px; padding: 4px 6px; margin: -4px -6px; }
   #tab-utilities .section { margin-bottom: 26px; }
   #tab-utilities .section-head { border-bottom: 2px solid var(--ink); padding-bottom: 6px; margin-bottom: 2px; }
   #tab-utilities .section-head h2 { font-family: var(--font-header); font-size: 15px; font-weight: 600; margin: 0; color: var(--expense); }
@@ -1071,7 +1090,6 @@
   #tab-savings .col-head-row { padding-bottom: 12px; margin-bottom: 6px; border-bottom: 2px solid var(--ink); }
   #tab-savings .col-head-cell { position: relative; text-align: right; }
   #tab-savings .col-head-cell .name-row { display: flex; align-items: center; justify-content: flex-end; gap: 6px; }
-  #tab-savings .col-head-cell .name-row input[type="radio"] { margin: 0; cursor: pointer; accent-color: var(--gold); flex-shrink: 0; }
   #tab-savings .col-head-cell input.name {
     font-family: var(--font-header);
     font-weight: 600;
@@ -1090,7 +1108,6 @@
     color: var(--ink-soft); font-size: 12px; cursor: pointer; padding: 0;
   }
   #tab-savings .col-head-cell .remove-btn:hover { color: var(--expense); }
-  #tab-savings .col-head-cell.is-primary { background: var(--gold-bg); border-radius: 6px; padding: 4px 6px; margin: -4px -6px; }
   #tab-savings .section { margin-bottom: 26px; }
   #tab-savings .section-head { border-bottom: 2px solid var(--ink); padding-bottom: 6px; margin-bottom: 2px; }
   #tab-savings .section-head h2 { font-family: var(--font-header); font-size: 15px; font-weight: 600; margin: 0; color: var(--income); }
@@ -1188,29 +1205,11 @@
       <div class="section income" id="income-section">
         <div id="income-rows"></div>
       </div>
+    </div>
 
-      <div class="section expense" id="expense-section">
-        <div class="section-head">
-          <h2>Expenses</h2>
-          <span class="section-total" id="expense-total">$6,300.15</span>
-        </div>
-        <div id="expense-rows"></div>
-        <button class="add-row-btn" onclick="BudgetApp.addRow('expense')">+ Add expense</button>
-      </div>
-
-      <div class="summary">
-        <div class="summary-line income">
-          <span class="label">Total income</span>
-          <span class="value" id="summary-income">$10,374.00</span>
-        </div>
-        <div class="summary-line expense">
-          <span class="label">Total expenses</span>
-          <span class="value" id="summary-expense">$6,300.15</span>
-        </div>
-        <div class="net-line" id="net-line">
-          <span class="label">Net for the month</span>
-          <span class="value" id="net-value">$4,073.85</span>
-        </div>
+    <div class="page">
+      <div class="table-scroll">
+        <div id="budget-table-root"></div>
       </div>
       <p class="footnote">"Save" (top right) writes all tabs' numbers directly into this HTML file, so reopening it later shows them again.</p>
     </div>
@@ -1382,13 +1381,63 @@
     return TAB_NAMES.indexOf(tab) !== -1 ? tab : 'budget';
   }
 
+  /* ================= Shared scenario registry ================= */
+  // A single, synced list of scenario names shared by every expense tab (Housing, Food, Car,
+  // Utilities, Savings, Subscriptions) — adding, removing, or renaming a scenario in any one
+  // tab does the same everywhere else. Each tab keeps only its own per-scenario dollar values,
+  // keyed by these shared ids. Renames don't call notify(): the input that's being typed into
+  // stays the visible source of truth for its own tab, and every tab reads the name fresh from
+  // here whenever it next renders, so no re-render fights the user's cursor mid-keystroke.
+  const ScenarioRegistry = (function () {
+    let scenarios = [{ id: 'sc1', name: 'Scenario A' }];
+    let nextLetter = 66; // 'B'
+    const listeners = [];
+
+    function list() { return scenarios; }
+
+    function subscribe(fn) { listeners.push(fn); }
+
+    function notify() { listeners.forEach(fn => fn()); }
+
+    function add() {
+      const id = 'sc' + Date.now();
+      scenarios.push({ id, name: 'Scenario ' + String.fromCharCode(nextLetter) });
+      nextLetter++;
+      notify();
+      return id;
+    }
+
+    function remove(id) {
+      if (scenarios.length <= 1) return;
+      scenarios = scenarios.filter(s => s.id !== id);
+      notify();
+    }
+
+    function rename(id, name) {
+      const s = scenarios.find(s => s.id === id);
+      if (s) s.name = name;
+    }
+
+    function getState() {
+      return { scenarios: JSON.parse(JSON.stringify(scenarios)), nextLetter };
+    }
+
+    function setState(state) {
+      if (state && Array.isArray(state.scenarios) && state.scenarios.length) {
+        scenarios = state.scenarios.map(s => ({ id: s.id, name: s.name }));
+        nextLetter = state.nextLetter || nextLetter;
+      } else {
+        scenarios = [{ id: 'sc1', name: 'Scenario A' }];
+        nextLetter = 66;
+      }
+      notify();
+    }
+
+    return { list, subscribe, add, remove, rename, getState, setState };
+  })();
+
   /* ================= Budget app (namespaced) ================= */
   const BudgetApp = (function () {
-    let rowCounter = 0;
-    const defaults = {
-      expense: ['Transportation']
-    };
-
     // Locked rows are driven entirely from another tab and can't be typed into here.
     const LOCKED_FIELDS = [
       { key: 'house-payment', label: 'Housing', tabName: 'mortgage', legacy: /^rent.*mortgage$/i },
@@ -1398,146 +1447,303 @@
       { key: 'savings', label: 'Savings', tabName: 'savings', legacy: /^savings$/i },
       { key: 'subscriptions', label: 'Subscriptions', tabName: 'subscriptions', legacy: /^subscriptions$/i }
     ];
-    const INCOME_LOCKED = { key: 'income', label: 'Income', tabName: 'income' };
 
-    function addRow(type, label, amount, lockKey) {
-      rowCounter++;
-      const id = 'row-' + rowCounter;
-      const container = document.getElementById(type + '-rows');
-      const row = document.createElement('div');
-      row.className = 'row' + (lockKey ? ' locked' : '');
-      row.id = id;
-      row.dataset.lockKey = lockKey || '';
-      if (lockKey) {
-        const meta = (lockKey === 'income' ? INCOME_LOCKED : LOCKED_FIELDS.find(f => f.key === lockKey)) || { label: label, tabName: 'budget' };
-        row.innerHTML =
-          '<div class="row-main">' +
-            '<input type="text" value="' + (label || meta.label) + '" readonly title="Open ' + meta.label + '" onclick="switchTab(\'' + meta.tabName + '\')" onkeydown="if(event.key===\'Enter\'){switchTab(\'' + meta.tabName + '\')}">' +
-          '</div>' +
-          '<div class="row-actions">' +
-            '<div class="amount-wrap"><span>$</span><input type="number" value="' + (amount !== undefined ? amount : '') + '" readonly tabindex="-1" title="Open ' + meta.label + '" onclick="switchTab(\'' + meta.tabName + '\')"></div>' +
-          '</div>';
-      } else {
-        row.innerHTML =
-          '<div class="row-main">' +
-            '<input type="text" placeholder="' + (type === 'income' ? 'Source of income' : 'Expense name') + '" value="' + (label || '') + '">' +
-          '</div>' +
-          '<div class="row-actions">' +
-            '<div class="amount-wrap"><span>$</span><input type="number" placeholder="0.00" step="0.01" min="0" value="' + (amount !== undefined ? amount : '') + '" oninput="BudgetApp.recalculate()"></div>' +
-            '<button class="remove-btn" onclick="BudgetApp.removeRow(\'' + id + '\')" aria-label="Remove row">&times;</button>' +
-          '</div>';
-      }
-      container.appendChild(row);
-    }
-
-    function removeRow(id) {
-      const el = document.getElementById(id);
-      if (el) el.remove();
-      recalculate();
-    }
+    let nextCustomRowId = 1;
+    let incomeAmount = 0;
+    // lockedAmounts[key][scenarioId] = amount, fed in by each expense tab.
+    let lockedAmounts = {};
+    LOCKED_FIELDS.forEach(f => { lockedAmounts[f.key] = {}; });
+    // Ad-hoc expenses entered directly on this tab, each carrying its own amount per
+    // scenario column (e.g. a one-off cost that only applies under "Scenario B").
+    let customRows = []; // { id, label, values: { scenarioId: amountString } }
 
     function currency(n) {
       return '$' + n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
     }
 
-    function sumSection(type) {
-      const container = document.getElementById(type + '-rows');
-      const inputs = container.querySelectorAll('input[type="number"]');
-      let total = 0;
-      inputs.forEach(i => { total += parseFloat(i.value) || 0; });
-      return total;
+    function el(tag, cls, html) {
+      const e = document.createElement('div');
+      e.className = cls || '';
+      if (html !== undefined) e.innerHTML = html;
+      return e;
     }
 
-    // Sizes each amount input to fit its own digits, so the "$" sits snug against the
-    // number instead of floating at the far left of an oversized, right-aligned box.
-    function sizeAmountInputs() {
-      document.querySelectorAll('#tab-budget input[type="number"]').forEach(input => {
-        const len = Math.max(String(input.value || '').length, String(input.placeholder || '').length, 1);
-        input.style.width = len + 'ch';
+    // Income has no scenarios, so it's rendered once, outside the scenario grid.
+    function renderIncomeRow() {
+      const container = document.getElementById('income-rows');
+      container.innerHTML =
+        '<div class="row locked">' +
+          '<div class="row-main">' +
+            '<input type="text" value="Income" readonly title="Open Income" onclick="switchTab(\'income\')" onkeydown="if(event.key===\'Enter\'){switchTab(\'income\')}">' +
+          '</div>' +
+          '<div class="row-actions">' +
+            '<div class="amount-wrap"><span>$</span><input type="number" value="' + incomeAmount.toFixed(2) + '" readonly tabindex="-1" title="Open Income" onclick="switchTab(\'income\')"></div>' +
+          '</div>' +
+        '</div>';
+    }
+
+    function setIncomeAmount(amount) {
+      incomeAmount = parseFloat(amount) || 0;
+      renderIncomeRow();
+      recalculateAll();
+    }
+
+    // Keeps every locked/custom row's per-scenario values in step with the shared
+    // registry whenever a scenario is added or removed elsewhere.
+    function ensureScenarioColumns() {
+      const ids = ScenarioRegistry.list().map(s => s.id);
+      customRows.forEach(row => {
+        ids.forEach(id => { if (!(id in row.values)) row.values[id] = ''; });
+        Object.keys(row.values).forEach(id => { if (ids.indexOf(id) === -1) delete row.values[id]; });
+      });
+      LOCKED_FIELDS.forEach(f => {
+        const amounts = lockedAmounts[f.key];
+        Object.keys(amounts).forEach(id => { if (ids.indexOf(id) === -1) delete amounts[id]; });
       });
     }
 
-    function recalculate() {
-      const incomeTotal = sumSection('income');
-      const expenseTotal = sumSection('expense');
-      const net = incomeTotal - expenseTotal;
+    function setLockedAmount(key, scenarioId, amount) {
+      if (!lockedAmounts[key]) lockedAmounts[key] = {};
+      lockedAmounts[key][scenarioId] = parseFloat(amount) || 0;
+      recalculateAll();
+    }
 
-      document.getElementById('expense-total').textContent = currency(expenseTotal);
-      document.getElementById('summary-income').textContent = currency(incomeTotal);
-      document.getElementById('summary-expense').textContent = currency(expenseTotal);
+    function addCustomRow(label) {
+      const id = 'exp' + (nextCustomRowId++);
+      const values = {};
+      ScenarioRegistry.list().forEach(s => { values[s.id] = ''; });
+      customRows.push({ id, label: label || '', values });
+      render();
+    }
 
-      const netLine = document.getElementById('net-line');
-      const netValue = document.getElementById('net-value');
-      netValue.textContent = (net < 0 ? '-' : '') + currency(Math.abs(net));
-      netLine.classList.toggle('negative', net < 0);
+    function removeCustomRow(id) {
+      customRows = customRows.filter(r => r.id !== id);
+      render();
+    }
 
-      sizeAmountInputs();
+    function updateCustomValue(rowId, scenarioId, raw) {
+      const row = customRows.find(r => r.id === rowId);
+      if (!row) return;
+      row.values[scenarioId] = raw;
+      recalculateAll();
+    }
+
+    function buildHeaderRow() {
+      const row = el('div', 'flex-row col-head-row');
+      row.appendChild(el('div', 'row-label'));
+      const values = el('div', 'row-values');
+      const scenarios = ScenarioRegistry.list();
+      scenarios.forEach(scenario => {
+        const cell = el('div', 'value-cell col-head-cell');
+        const nameRow = el('div', 'name-row');
+        const input = document.createElement('input');
+        input.className = 'name';
+        input.value = scenario.name;
+        input.addEventListener('input', e => ScenarioRegistry.rename(scenario.id, e.target.value));
+        nameRow.appendChild(input);
+        cell.appendChild(nameRow);
+
+        if (scenarios.length > 1) {
+          const removeBtn = document.createElement('button');
+          removeBtn.className = 'remove-btn';
+          removeBtn.textContent = 'Remove';
+          removeBtn.onclick = () => ScenarioRegistry.remove(scenario.id);
+          cell.appendChild(removeBtn);
+        }
+        values.appendChild(cell);
+      });
+      const addBtn = document.createElement('button');
+      addBtn.className = 'add-btn';
+      addBtn.textContent = '+ Add scenario';
+      addBtn.onclick = () => ScenarioRegistry.add();
+      values.appendChild(addBtn);
+      row.appendChild(values);
+      return row;
+    }
+
+    function buildLockedRow(field) {
+      const row = el('div', 'row flex-row locked');
+      const label = el('div', 'row-label');
+      const labelInput = document.createElement('input');
+      labelInput.type = 'text';
+      labelInput.className = 'row-name';
+      labelInput.value = field.label;
+      labelInput.readOnly = true;
+      labelInput.title = 'Open ' + field.label;
+      labelInput.onclick = () => switchTab(field.tabName);
+      label.appendChild(labelInput);
+      row.appendChild(label);
+
+      const values = el('div', 'row-values');
+      ScenarioRegistry.list().forEach(scenario => {
+        const cell = el('div', 'value-cell');
+        const span = document.createElement('span');
+        span.className = 'value-text locked-amount';
+        span.id = 'locked-' + field.key + '-' + scenario.id;
+        span.title = 'Open ' + field.label;
+        span.textContent = '$0.00';
+        span.onclick = () => switchTab(field.tabName);
+        cell.appendChild(span);
+        values.appendChild(cell);
+      });
+      row.appendChild(values);
+      return row;
+    }
+
+    function buildCustomRow(rowData) {
+      const row = el('div', 'row flex-row');
+      const label = el('div', 'row-label');
+      const labelInput = document.createElement('input');
+      labelInput.className = 'row-name';
+      labelInput.type = 'text';
+      labelInput.placeholder = 'Expense name';
+      labelInput.value = rowData.label || '';
+      labelInput.addEventListener('input', e => { rowData.label = e.target.value; });
+      label.appendChild(labelInput);
+
+      const removeRowBtn = document.createElement('button');
+      removeRowBtn.className = 'row-remove-btn';
+      removeRowBtn.innerHTML = '&times;';
+      removeRowBtn.setAttribute('aria-label', 'Remove expense');
+      removeRowBtn.onclick = () => removeCustomRow(rowData.id);
+      label.appendChild(removeRowBtn);
+      row.appendChild(label);
+
+      const values = el('div', 'row-values');
+      ScenarioRegistry.list().forEach(scenario => {
+        const cell = el('div', 'value-cell');
+        const wrap = el('div', 'field');
+        const dollar = document.createElement('span');
+        dollar.textContent = '$';
+        wrap.appendChild(dollar);
+        const input = document.createElement('input');
+        input.type = 'number';
+        input.min = '0';
+        input.step = '0.01';
+        input.value = rowData.values[scenario.id] !== undefined ? rowData.values[scenario.id] : '';
+        input.addEventListener('input', e => updateCustomValue(rowData.id, scenario.id, e.target.value));
+        wrap.appendChild(input);
+        cell.appendChild(wrap);
+        values.appendChild(cell);
+      });
+      row.appendChild(values);
+      return row;
+    }
+
+    function buildNetRow() {
+      const row = el('div', 'flex-row payment-row');
+      row.appendChild(el('div', 'row-label', '<span class="field-label">Net for the month</span>'));
+      const values = el('div', 'row-values');
+      ScenarioRegistry.list().forEach(scenario => {
+        const cell = el('div', 'value-cell');
+        const span = document.createElement('span');
+        span.className = 'value-text';
+        span.id = 'net-' + scenario.id;
+        span.textContent = '$0.00';
+        cell.appendChild(span);
+        values.appendChild(cell);
+      });
+      row.appendChild(values);
+      return row;
+    }
+
+    function render() {
+      ensureScenarioColumns();
+      const root = document.getElementById('budget-table-root');
+      root.innerHTML = '';
+      root.appendChild(buildHeaderRow());
+
+      const section = el('div', 'section');
+      section.appendChild(el('div', 'section-head', '<h2>Expenses</h2>'));
+      LOCKED_FIELDS.forEach(f => section.appendChild(buildLockedRow(f)));
+      customRows.forEach(r => section.appendChild(buildCustomRow(r)));
+      root.appendChild(section);
+
+      const addRowBtn = document.createElement('button');
+      addRowBtn.className = 'add-row-btn';
+      addRowBtn.textContent = '+ Add expense';
+      addRowBtn.onclick = () => addCustomRow();
+      root.appendChild(addRowBtn);
+
+      const totalsBlock = el('div', 'summary-block');
+      totalsBlock.appendChild(buildNetRow());
+      root.appendChild(totalsBlock);
+
+      recalculateAll();
+      sizeAllCurrencyInputs();
+    }
+
+    function recalculateAll() {
+      LOCKED_FIELDS.forEach(field => {
+        ScenarioRegistry.list().forEach(scenario => {
+          const amount = (lockedAmounts[field.key] && lockedAmounts[field.key][scenario.id]) || 0;
+          const elx = document.getElementById('locked-' + field.key + '-' + scenario.id);
+          if (elx) elx.textContent = currency(amount);
+        });
+      });
+
+      ScenarioRegistry.list().forEach(scenario => {
+        let expenseTotal = 0;
+        LOCKED_FIELDS.forEach(field => {
+          expenseTotal += (lockedAmounts[field.key] && lockedAmounts[field.key][scenario.id]) || 0;
+        });
+        customRows.forEach(row => {
+          expenseTotal += parseFloat(row.values[scenario.id]) || 0;
+        });
+        const net = incomeAmount - expenseTotal;
+        const netEl = document.getElementById('net-' + scenario.id);
+        if (netEl) {
+          netEl.textContent = (net < 0 ? '-' : '') + currency(Math.abs(net));
+          netEl.style.color = net < 0 ? 'var(--expense)' : 'var(--gold)';
+        }
+      });
+
+      sizeAllCurrencyInputs();
       queueAutoSave();
     }
 
-    function collectData() {
-      function rowsFor(type) {
-        const rows = document.querySelectorAll('#' + type + '-rows .row');
-        const data = [];
-        rows.forEach(row => {
-          const label = row.querySelector('input[type="text"]').value;
-          const amount = row.querySelector('input[type="number"]').value;
-          const lockKey = row.dataset.lockKey || '';
-          data.push(lockKey ? { label, amount, locked: lockKey } : { label, amount });
-        });
-        return data;
-      }
-      return { income: rowsFor('income'), expense: rowsFor('expense') };
-    }
-
     function getState() {
-      return collectData();
+      return {
+        customRows: customRows.map(r => ({ id: r.id, label: r.label, values: Object.assign({}, r.values) })),
+        nextCustomRowId,
+        lockedAmounts: JSON.parse(JSON.stringify(lockedAmounts))
+      };
     }
 
     function setState(state) {
-      document.getElementById('income-rows').innerHTML = '';
-      document.getElementById('expense-rows').innerHTML = '';
-      rowCounter = 0;
-
-      // Income is now entirely driven by the Income tab — a single locked, synced row.
-      const incomeRow = state && Array.isArray(state.income)
-        ? (state.income.find(item => item.locked === 'income') || state.income[0])
-        : null;
-      addRow('income', 'Income', incomeRow ? incomeRow.amount : '', 'income');
-
-      const hasExpenseState = state && state.expense && state.expense.length;
-      let expenseItems = hasExpenseState ? state.expense.slice() : defaults.expense.map(label => ({ label }));
-
-      // Pull each locked row (matched by key, or by legacy label for older saved files) out of the list,
-      // so they can always be rendered first, in a fixed order, regardless of where they were saved.
-      const lockedRows = {};
-      LOCKED_FIELDS.forEach(field => {
-        let idx = expenseItems.findIndex(item => item.locked === field.key);
-        if (idx === -1) idx = expenseItems.findIndex(item => item.locked === true && field.key === 'house-payment'); // legacy boolean flag
-        if (idx === -1) idx = expenseItems.findIndex(item => field.legacy.test((item.label || '').trim()));
-        if (idx !== -1) lockedRows[field.key] = expenseItems.splice(idx, 1)[0];
-      });
-
-      LOCKED_FIELDS.forEach(field => {
-        const row = lockedRows[field.key];
-        addRow('expense', (row && row.label) || field.label, row ? row.amount : '', field.key);
-      });
-      expenseItems.forEach(item => addRow('expense', item.label, item.amount));
-
-      recalculate();
-    }
-
-    function setLockedAmount(key, amount) {
-      const input = document.querySelector('#tab-budget .row.locked[data-lock-key="' + key + '"] input[type="number"]');
-      if (!input) return;
-      const val = (parseFloat(amount) || 0).toFixed(2);
-      if (input.value !== val) {
-        input.value = val;
-        recalculate();
+      if (state && Array.isArray(state.customRows)) {
+        // Current format: rows already carry their own per-scenario values.
+        customRows = state.customRows.map(r => ({ id: r.id, label: r.label, values: Object.assign({}, r.values) }));
+        nextCustomRowId = state.nextCustomRowId || 1;
+        LOCKED_FIELDS.forEach(f => { lockedAmounts[f.key] = (state.lockedAmounts && state.lockedAmounts[f.key]) || {}; });
+      } else if (state && Array.isArray(state.expense) && state.expense.length) {
+        // Migrate the older single-column format — only the un-locked ad-hoc rows carry
+        // real data worth keeping, and the same amount is applied to every scenario column
+        // since the old format never varied these by scenario. Locked amounts are left
+        // empty; each expense tab overwrites them moments later, in this same load pass,
+        // with its own real per-scenario totals.
+        customRows = [];
+        LOCKED_FIELDS.forEach(f => { lockedAmounts[f.key] = {}; });
+        const scenarioIds = ScenarioRegistry.list().map(s => s.id);
+        state.expense.filter(item => !item.locked).forEach(item => {
+          const values = {};
+          scenarioIds.forEach(sid => { values[sid] = item.amount; });
+          customRows.push({ id: 'exp' + (nextCustomRowId++), label: item.label, values });
+        });
+      } else {
+        // Brand-new file — seed the same example row the old Budget tab used to.
+        LOCKED_FIELDS.forEach(f => { lockedAmounts[f.key] = {}; });
+        const values = {};
+        ScenarioRegistry.list().forEach(s => { values[s.id] = ''; });
+        customRows = [{ id: 'exp' + (nextCustomRowId++), label: 'Transportation', values }];
       }
+      renderIncomeRow();
+      render();
     }
 
-    return { addRow, removeRow, recalculate, getState, setState, setLockedAmount };
+    ScenarioRegistry.subscribe(() => { render(); });
+
+    return { addCustomRow, removeCustomRow, getState, setState, setLockedAmount, setIncomeAmount };
   })();
 
   /* ================= Income app (namespaced) ================= */
@@ -1648,7 +1854,7 @@
       });
       document.getElementById('income-sources-total').textContent = currency(total);
       document.getElementById('income-total-value').textContent = currency(total);
-      BudgetApp.setLockedAmount('income', total);
+      BudgetApp.setIncomeAmount(total);
       sizeAllCurrencyInputs();
       queueAutoSave();
     }
@@ -1693,17 +1899,13 @@
     const DEFAULTS = { loanAmount: 0, rate: 0, term: '30', tax: 0, insurance: 0, rent: 0, rentersInsurance: 0 };
     const TERM_OPTIONS = [30, 20, 15, 10];
 
-    let scenarios = [
-      { id: 's1', name: 'Scenario A', values: Object.assign({}, DEFAULTS) },
-      { id: 's2', name: 'Scenario B', values: Object.assign({}, DEFAULTS, { term: '15' }) }
-    ];
-    let nextLetter = 67;
-    let primaryId = 's1';
+    // valuesByScenario[scenarioId] = this tab's own field values for that shared scenario.
+    let valuesByScenario = {};
 
-    function selectPrimary(id) {
-      if (!scenarios.some(s => s.id === id)) return;
-      primaryId = id;
-      render();
+    function ensureValues() {
+      ScenarioRegistry.list().forEach(s => {
+        if (!valuesByScenario[s.id]) valuesByScenario[s.id] = Object.assign({}, DEFAULTS);
+      });
     }
 
     function currency(n, decimals) {
@@ -1718,25 +1920,10 @@
     }
 
     function updateValue(scenarioId, key, raw) {
-      const scenario = scenarios.find(s => s.id === scenarioId);
-      if (!scenario) return;
-      scenario.values[key] = raw;
+      const values = valuesByScenario[scenarioId];
+      if (!values) return;
+      values[key] = raw;
       recalculateAll();
-    }
-
-    function removeScenario(id) {
-      if (scenarios.length <= 1) return;
-      scenarios = scenarios.filter(s => s.id !== id);
-      if (primaryId === id) primaryId = scenarios[0].id;
-      render();
-    }
-
-    function addScenario() {
-      const id = 's' + Date.now();
-      const name = 'Scenario ' + String.fromCharCode(nextLetter);
-      nextLetter++;
-      scenarios.push({ id, name, values: Object.assign({}, DEFAULTS) });
-      render();
     }
 
     // "Fill" reads mortgage-rates.json, a same-origin file that a scheduled GitHub Actions
@@ -1771,9 +1958,10 @@
           '15': rate15,
           '10': rate15 - slopePerFiveYears
         };
-        scenarios.forEach(scenario => {
-          const rate = ratesByTerm[String(scenario.values.term)];
-          if (rate !== undefined) scenario.values.rate = Math.round(rate * 100) / 100;
+        ScenarioRegistry.list().forEach(scenario => {
+          const values = valuesByScenario[scenario.id];
+          const rate = ratesByTerm[String(values.term)];
+          if (rate !== undefined) values.rate = Math.round(rate * 100) / 100;
         });
         render();
 
@@ -1803,22 +1991,14 @@
       const row = el('div', 'flex-row col-head-row');
       row.appendChild(el('div', 'row-label'));
       const values = el('div', 'row-values');
+      const scenarios = ScenarioRegistry.list();
       scenarios.forEach(scenario => {
-        const isPrimary = primaryId === scenario.id;
-        const cell = el('div', 'value-cell col-head-cell' + (isPrimary ? ' is-primary' : ''));
+        const cell = el('div', 'value-cell col-head-cell');
         const nameRow = el('div', 'name-row');
-        const checkbox = document.createElement('input');
-        checkbox.type = 'radio';
-        checkbox.name = 'mortgage-primary-scenario';
-        checkbox.checked = isPrimary;
-        checkbox.title = 'Use this scenario\'s monthly payment for the Monthly Budget "Housing" amount';
-        checkbox.setAttribute('aria-label', 'Use this scenario\'s monthly payment for the Monthly Budget "Housing" amount');
-        checkbox.addEventListener('change', () => selectPrimary(scenario.id));
-        nameRow.appendChild(checkbox);
         const input = document.createElement('input');
         input.className = 'name';
         input.value = scenario.name;
-        input.addEventListener('input', e => { scenario.name = e.target.value; });
+        input.addEventListener('input', e => ScenarioRegistry.rename(scenario.id, e.target.value));
         nameRow.appendChild(input);
         cell.appendChild(nameRow);
 
@@ -1826,7 +2006,7 @@
           const removeBtn = document.createElement('button');
           removeBtn.className = 'remove-btn';
           removeBtn.textContent = 'Remove';
-          removeBtn.onclick = () => removeScenario(scenario.id);
+          removeBtn.onclick = () => ScenarioRegistry.remove(scenario.id);
           cell.appendChild(removeBtn);
         }
         values.appendChild(cell);
@@ -1834,7 +2014,7 @@
       const addBtn = document.createElement('button');
       addBtn.className = 'add-btn';
       addBtn.textContent = '+ Add scenario';
-      addBtn.onclick = () => addScenario();
+      addBtn.onclick = () => ScenarioRegistry.add();
       values.appendChild(addBtn);
       row.appendChild(values);
       return row;
@@ -1848,9 +2028,10 @@
       row.appendChild(label);
 
       const values = el('div', 'row-values');
-      scenarios.forEach(scenario => {
+      ScenarioRegistry.list().forEach(scenario => {
         const cell = el('div', 'value-cell');
         const wrap = el('div', 'field');
+        const v = valuesByScenario[scenario.id];
 
         if (field.type === 'select') {
           const select = document.createElement('select');
@@ -1858,7 +2039,7 @@
             const opt = document.createElement('option');
             opt.value = String(y);
             opt.textContent = y + ' years';
-            if (String(scenario.values.term) === String(y)) opt.selected = true;
+            if (String(v.term) === String(y)) opt.selected = true;
             select.appendChild(opt);
           });
           select.addEventListener('change', e => updateValue(scenario.id, 'term', e.target.value));
@@ -1873,7 +2054,7 @@
           input.type = 'number';
           input.min = '0';
           input.step = field.type === 'percent' ? '0.05' : '50';
-          input.value = scenario.values[field.key];
+          input.value = v[field.key];
           input.dataset.scenario = scenario.id;
           input.dataset.field = field.key;
           input.addEventListener('input', e => updateValue(scenario.id, field.key, parseFloat(e.target.value) || 0));
@@ -1906,7 +2087,7 @@
       const lbl = el('div', 'row-label', '<span class="field-label">' + label + '</span>');
       row.appendChild(lbl);
       const values = el('div', 'row-values');
-      scenarios.forEach(scenario => {
+      ScenarioRegistry.list().forEach(scenario => {
         const cell = el('div', 'value-cell');
         const span = document.createElement('span');
         span.className = 'value-text';
@@ -1924,7 +2105,7 @@
       const lbl = el('div', 'row-label', '<span class="field-label">Monthly payment</span>');
       row.appendChild(lbl);
       const values = el('div', 'row-values');
-      scenarios.forEach(scenario => {
+      ScenarioRegistry.list().forEach(scenario => {
         const cell = el('div', 'value-cell');
         const span = document.createElement('span');
         span.className = 'value-text';
@@ -1976,9 +2157,8 @@
     }
 
     function recalculateAll() {
-      let budgetTotal = 0;
-      scenarios.forEach(scenario => {
-        const v = scenario.values;
+      ScenarioRegistry.list().forEach(scenario => {
+        const v = valuesByScenario[scenario.id];
         const loanAmount = parseFloat(v.loanAmount) || 0;
         const annualRate = parseFloat(v.rate) || 0;
         const years = parseInt(v.term, 10) || 30;
@@ -2021,37 +2201,24 @@
         setText('renters-insurance-monthly', currency(rentersInsuranceMonthly));
         setText('monthly-payment', currency(totalMonthly));
 
-        if (scenario.id === primaryId) {
-          budgetTotal = totalMonthly;
-        }
+        BudgetApp.setLockedAmount('house-payment', scenario.id, totalMonthly);
       });
-      BudgetApp.setLockedAmount('house-payment', budgetTotal);
       queueAutoSave();
     }
 
     function getState() {
-      return { scenarios: JSON.parse(JSON.stringify(scenarios)), nextLetter, primaryId };
+      return { valuesByScenario: JSON.parse(JSON.stringify(valuesByScenario)) };
     }
 
     function setState(state) {
-      if (state && state.scenarios && state.scenarios.length) {
-        scenarios = state.scenarios;
-        nextLetter = state.nextLetter || nextLetter;
-        if (typeof state.primaryId === 'string' && scenarios.some(s => s.id === state.primaryId)) {
-          primaryId = state.primaryId;
-        } else if (Array.isArray(state.primaryIds) && state.primaryIds.length) {
-          const validIds = state.primaryIds.filter(id => scenarios.some(s => s.id === id));
-          primaryId = validIds.length ? validIds[0] : scenarios[0].id;
-        } else {
-          primaryId = scenarios[0].id;
-        }
-      } else {
-        primaryId = scenarios[0].id;
-      }
+      valuesByScenario = (state && state.valuesByScenario) ? state.valuesByScenario : {};
+      ensureValues();
       render();
     }
 
-    return { addScenario, getState, setState, selectPrimary };
+    ScenarioRegistry.subscribe(() => { ensureValues(); render(); });
+
+    return { getState, setState };
   })();
 
   /* ================= Food app (namespaced) ================= */
@@ -2062,11 +2229,14 @@
     ];
     const DEFAULTS = { groceries: 0, eatingOut: 0 };
 
-    let scenarios = [
-      { id: 'f1', name: 'Scenario A', values: Object.assign({}, DEFAULTS) }
-    ];
-    let nextLetter = 66; // 'B'
-    let primaryId = 'f1';
+    // valuesByScenario[scenarioId] = this tab's own field values for that shared scenario.
+    let valuesByScenario = {};
+
+    function ensureValues() {
+      ScenarioRegistry.list().forEach(s => {
+        if (!valuesByScenario[s.id]) valuesByScenario[s.id] = Object.assign({}, DEFAULTS);
+      });
+    }
 
     function currency(n) {
       return '$' + n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -2079,54 +2249,25 @@
       return e;
     }
 
-    function selectPrimary(id) {
-      if (!scenarios.some(s => s.id === id)) return;
-      primaryId = id;
-      render();
-    }
-
     function updateValue(scenarioId, key, raw) {
-      const scenario = scenarios.find(s => s.id === scenarioId);
-      if (!scenario) return;
-      scenario.values[key] = raw;
+      const values = valuesByScenario[scenarioId];
+      if (!values) return;
+      values[key] = raw;
       recalculateAll();
-    }
-
-    function removeScenario(id) {
-      if (scenarios.length <= 1) return;
-      scenarios = scenarios.filter(s => s.id !== id);
-      if (primaryId === id) primaryId = scenarios[0].id;
-      render();
-    }
-
-    function addScenario() {
-      const id = 'f' + Date.now();
-      const name = 'Scenario ' + String.fromCharCode(nextLetter);
-      nextLetter++;
-      scenarios.push({ id, name, values: Object.assign({}, DEFAULTS) });
-      render();
     }
 
     function buildHeaderRow() {
       const row = el('div', 'flex-row col-head-row');
       row.appendChild(el('div', 'row-label'));
       const values = el('div', 'row-values');
+      const scenarios = ScenarioRegistry.list();
       scenarios.forEach(scenario => {
-        const isPrimary = primaryId === scenario.id;
-        const cell = el('div', 'value-cell col-head-cell' + (isPrimary ? ' is-primary' : ''));
+        const cell = el('div', 'value-cell col-head-cell');
         const nameRow = el('div', 'name-row');
-        const checkbox = document.createElement('input');
-        checkbox.type = 'radio';
-        checkbox.name = 'food-primary-scenario';
-        checkbox.checked = isPrimary;
-        checkbox.title = 'Use this scenario\'s total for the Monthly Budget "Food" amount';
-        checkbox.setAttribute('aria-label', 'Use this scenario\'s total for the Monthly Budget "Food" amount');
-        checkbox.addEventListener('change', () => selectPrimary(scenario.id));
-        nameRow.appendChild(checkbox);
         const input = document.createElement('input');
         input.className = 'name';
         input.value = scenario.name;
-        input.addEventListener('input', e => { scenario.name = e.target.value; });
+        input.addEventListener('input', e => ScenarioRegistry.rename(scenario.id, e.target.value));
         nameRow.appendChild(input);
         cell.appendChild(nameRow);
 
@@ -2134,7 +2275,7 @@
           const removeBtn = document.createElement('button');
           removeBtn.className = 'remove-btn';
           removeBtn.textContent = 'Remove';
-          removeBtn.onclick = () => removeScenario(scenario.id);
+          removeBtn.onclick = () => ScenarioRegistry.remove(scenario.id);
           cell.appendChild(removeBtn);
         }
         values.appendChild(cell);
@@ -2142,7 +2283,7 @@
       const addBtn = document.createElement('button');
       addBtn.className = 'add-btn';
       addBtn.textContent = '+ Add scenario';
-      addBtn.onclick = () => addScenario();
+      addBtn.onclick = () => ScenarioRegistry.add();
       values.appendChild(addBtn);
       row.appendChild(values);
       return row;
@@ -2153,7 +2294,7 @@
       row.appendChild(el('div', 'row-label', '<span class="field-label">' + field.label + '</span>'));
 
       const values = el('div', 'row-values');
-      scenarios.forEach(scenario => {
+      ScenarioRegistry.list().forEach(scenario => {
         const cell = el('div', 'value-cell');
         const wrap = el('div', 'field');
         const dollar = document.createElement('span');
@@ -2163,7 +2304,7 @@
         input.type = 'number';
         input.min = '0';
         input.step = '1';
-        input.value = scenario.values[field.key];
+        input.value = valuesByScenario[scenario.id][field.key];
         input.addEventListener('input', e => updateValue(scenario.id, field.key, parseFloat(e.target.value) || 0));
         wrap.appendChild(input);
         cell.appendChild(wrap);
@@ -2177,7 +2318,7 @@
       const row = el('div', 'flex-row payment-row');
       row.appendChild(el('div', 'row-label', '<span class="field-label">Total food expense</span>'));
       const values = el('div', 'row-values');
-      scenarios.forEach(scenario => {
+      ScenarioRegistry.list().forEach(scenario => {
         const cell = el('div', 'value-cell');
         const span = document.createElement('span');
         span.className = 'value-text';
@@ -2209,9 +2350,8 @@
     }
 
     function recalculateAll() {
-      let budgetTotal = 0;
-      scenarios.forEach(scenario => {
-        const v = scenario.values;
+      ScenarioRegistry.list().forEach(scenario => {
+        const v = valuesByScenario[scenario.id];
         const groceries = parseFloat(v.groceries) || 0;
         const eatingOut = parseFloat(v.eatingOut) || 0;
         const total = groceries + eatingOut;
@@ -2219,46 +2359,33 @@
         const totalEl = document.getElementById('food-total-' + scenario.id);
         if (totalEl) totalEl.textContent = currency(total);
 
-        if (scenario.id === primaryId) {
-          budgetTotal = total;
-        }
+        BudgetApp.setLockedAmount('food', scenario.id, total);
       });
-      BudgetApp.setLockedAmount('food', budgetTotal);
       queueAutoSave();
     }
 
     function getState() {
-      return { scenarios: JSON.parse(JSON.stringify(scenarios)), nextLetter, primaryId };
+      return { valuesByScenario: JSON.parse(JSON.stringify(valuesByScenario)) };
     }
 
     function setState(state) {
-      if (state && state.scenarios && state.scenarios.length) {
-        scenarios = state.scenarios;
-        nextLetter = state.nextLetter || nextLetter;
-        if (typeof state.primaryId === 'string' && scenarios.some(s => s.id === state.primaryId)) {
-          primaryId = state.primaryId;
-        } else if (Array.isArray(state.primaryIds) && state.primaryIds.length) {
-          const validIds = state.primaryIds.filter(id => scenarios.some(s => s.id === id));
-          primaryId = validIds.length ? validIds[0] : scenarios[0].id;
-        } else {
-          primaryId = scenarios[0].id;
-        }
+      if (state && state.valuesByScenario) {
+        valuesByScenario = state.valuesByScenario;
       } else if (state && (state.groceries !== undefined || state.eatingOut !== undefined)) {
-        // Migrate the older single-scenario format.
-        scenarios = [{
-          id: 'f1',
-          name: 'Scenario A',
-          values: { groceries: parseFloat(state.groceries) || 0, eatingOut: parseFloat(state.eatingOut) || 0 }
-        }];
-        primaryId = 'f1';
+        // Ancient single-scenario format, from before Food had scenarios at all.
+        const id = ScenarioRegistry.list()[0].id;
+        valuesByScenario = {};
+        valuesByScenario[id] = { groceries: parseFloat(state.groceries) || 0, eatingOut: parseFloat(state.eatingOut) || 0 };
       } else {
-        scenarios = [{ id: 'f1', name: 'Scenario A', values: Object.assign({}, DEFAULTS) }];
-        primaryId = 'f1';
+        valuesByScenario = {};
       }
+      ensureValues();
       render();
     }
 
-    return { addScenario, getState, setState, selectPrimary };
+    ScenarioRegistry.subscribe(() => { ensureValues(); render(); });
+
+    return { getState, setState };
   })();
 
   /* ================= Car app (namespaced) ================= */
@@ -2272,11 +2399,14 @@
     ];
     const DEFAULTS = { loan: 0, gas: 0, insurance: 0, maintenance: 0, registration: 0 };
 
-    let scenarios = [
-      { id: 'c1', name: 'Scenario A', values: Object.assign({}, DEFAULTS) }
-    ];
-    let nextLetter = 66; // 'B'
-    let primaryId = 'c1';
+    // valuesByScenario[scenarioId] = this tab's own field values for that shared scenario.
+    let valuesByScenario = {};
+
+    function ensureValues() {
+      ScenarioRegistry.list().forEach(s => {
+        if (!valuesByScenario[s.id]) valuesByScenario[s.id] = Object.assign({}, DEFAULTS);
+      });
+    }
 
     function currency(n) {
       return '$' + n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -2289,54 +2419,25 @@
       return e;
     }
 
-    function selectPrimary(id) {
-      if (!scenarios.some(s => s.id === id)) return;
-      primaryId = id;
-      render();
-    }
-
     function updateValue(scenarioId, key, raw) {
-      const scenario = scenarios.find(s => s.id === scenarioId);
-      if (!scenario) return;
-      scenario.values[key] = raw;
+      const values = valuesByScenario[scenarioId];
+      if (!values) return;
+      values[key] = raw;
       recalculateAll();
-    }
-
-    function removeScenario(id) {
-      if (scenarios.length <= 1) return;
-      scenarios = scenarios.filter(s => s.id !== id);
-      if (primaryId === id) primaryId = scenarios[0].id;
-      render();
-    }
-
-    function addScenario() {
-      const id = 'c' + Date.now();
-      const name = 'Scenario ' + String.fromCharCode(nextLetter);
-      nextLetter++;
-      scenarios.push({ id, name, values: Object.assign({}, DEFAULTS) });
-      render();
     }
 
     function buildHeaderRow() {
       const row = el('div', 'flex-row col-head-row');
       row.appendChild(el('div', 'row-label'));
       const values = el('div', 'row-values');
+      const scenarios = ScenarioRegistry.list();
       scenarios.forEach(scenario => {
-        const isPrimary = primaryId === scenario.id;
-        const cell = el('div', 'value-cell col-head-cell' + (isPrimary ? ' is-primary' : ''));
+        const cell = el('div', 'value-cell col-head-cell');
         const nameRow = el('div', 'name-row');
-        const checkbox = document.createElement('input');
-        checkbox.type = 'radio';
-        checkbox.name = 'car-primary-scenario';
-        checkbox.checked = isPrimary;
-        checkbox.title = 'Use this scenario\'s total for the Monthly Budget "Car" amount';
-        checkbox.setAttribute('aria-label', 'Use this scenario\'s total for the Monthly Budget "Car" amount');
-        checkbox.addEventListener('change', () => selectPrimary(scenario.id));
-        nameRow.appendChild(checkbox);
         const input = document.createElement('input');
         input.className = 'name';
         input.value = scenario.name;
-        input.addEventListener('input', e => { scenario.name = e.target.value; });
+        input.addEventListener('input', e => ScenarioRegistry.rename(scenario.id, e.target.value));
         nameRow.appendChild(input);
         cell.appendChild(nameRow);
 
@@ -2344,7 +2445,7 @@
           const removeBtn = document.createElement('button');
           removeBtn.className = 'remove-btn';
           removeBtn.textContent = 'Remove';
-          removeBtn.onclick = () => removeScenario(scenario.id);
+          removeBtn.onclick = () => ScenarioRegistry.remove(scenario.id);
           cell.appendChild(removeBtn);
         }
         values.appendChild(cell);
@@ -2352,7 +2453,7 @@
       const addBtn = document.createElement('button');
       addBtn.className = 'add-btn';
       addBtn.textContent = '+ Add scenario';
-      addBtn.onclick = () => addScenario();
+      addBtn.onclick = () => ScenarioRegistry.add();
       values.appendChild(addBtn);
       row.appendChild(values);
       return row;
@@ -2366,7 +2467,7 @@
       row.appendChild(label);
 
       const values = el('div', 'row-values');
-      scenarios.forEach(scenario => {
+      ScenarioRegistry.list().forEach(scenario => {
         const cell = el('div', 'value-cell');
         const wrap = el('div', 'field');
         const dollar = document.createElement('span');
@@ -2376,7 +2477,7 @@
         input.type = 'number';
         input.min = '0';
         input.step = '1';
-        input.value = scenario.values[field.key];
+        input.value = valuesByScenario[scenario.id][field.key];
         input.addEventListener('input', e => updateValue(scenario.id, field.key, parseFloat(e.target.value) || 0));
         wrap.appendChild(input);
         cell.appendChild(wrap);
@@ -2390,7 +2491,7 @@
       const row = el('div', 'flex-row payment-row');
       row.appendChild(el('div', 'row-label', '<span class="field-label">Total car expense</span>'));
       const values = el('div', 'row-values');
-      scenarios.forEach(scenario => {
+      ScenarioRegistry.list().forEach(scenario => {
         const cell = el('div', 'value-cell');
         const span = document.createElement('span');
         span.className = 'value-text';
@@ -2422,9 +2523,8 @@
     }
 
     function recalculateAll() {
-      let budgetTotal = 0;
-      scenarios.forEach(scenario => {
-        const v = scenario.values;
+      ScenarioRegistry.list().forEach(scenario => {
+        const v = valuesByScenario[scenario.id];
         let total = 0;
         CAR_FIELDS.forEach(f => {
           const val = parseFloat(v[f.key]) || 0;
@@ -2434,38 +2534,24 @@
         const totalEl = document.getElementById('car-total-' + scenario.id);
         if (totalEl) totalEl.textContent = currency(total);
 
-        if (scenario.id === primaryId) {
-          budgetTotal = total;
-        }
+        BudgetApp.setLockedAmount('car', scenario.id, total);
       });
-      BudgetApp.setLockedAmount('car', budgetTotal);
       queueAutoSave();
     }
 
     function getState() {
-      return { scenarios: JSON.parse(JSON.stringify(scenarios)), nextLetter, primaryId };
+      return { valuesByScenario: JSON.parse(JSON.stringify(valuesByScenario)) };
     }
 
     function setState(state) {
-      if (state && state.scenarios && state.scenarios.length) {
-        scenarios = state.scenarios;
-        nextLetter = state.nextLetter || nextLetter;
-        if (typeof state.primaryId === 'string' && scenarios.some(s => s.id === state.primaryId)) {
-          primaryId = state.primaryId;
-        } else if (Array.isArray(state.primaryIds) && state.primaryIds.length) {
-          const validIds = state.primaryIds.filter(id => scenarios.some(s => s.id === id));
-          primaryId = validIds.length ? validIds[0] : scenarios[0].id;
-        } else {
-          primaryId = scenarios[0].id;
-        }
-      } else {
-        scenarios = [{ id: 'c1', name: 'Scenario A', values: Object.assign({}, DEFAULTS) }];
-        primaryId = 'c1';
-      }
+      valuesByScenario = (state && state.valuesByScenario) ? state.valuesByScenario : {};
+      ensureValues();
       render();
     }
 
-    return { addScenario, getState, setState, selectPrimary };
+    ScenarioRegistry.subscribe(() => { ensureValues(); render(); });
+
+    return { getState, setState };
   })();
 
   /* ================= Utilities app (namespaced) ================= */
@@ -2479,11 +2565,14 @@
     ];
     const DEFAULTS = { electricity: 0, gasHeating: 0, water: 0, internet: 0, mobilePhone: 0 };
 
-    let scenarios = [
-      { id: 'u1', name: 'Scenario A', values: Object.assign({}, DEFAULTS) }
-    ];
-    let nextLetter = 66; // 'B'
-    let primaryId = 'u1';
+    // valuesByScenario[scenarioId] = this tab's own field values for that shared scenario.
+    let valuesByScenario = {};
+
+    function ensureValues() {
+      ScenarioRegistry.list().forEach(s => {
+        if (!valuesByScenario[s.id]) valuesByScenario[s.id] = Object.assign({}, DEFAULTS);
+      });
+    }
 
     function currency(n) {
       return '$' + n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -2496,54 +2585,25 @@
       return e;
     }
 
-    function selectPrimary(id) {
-      if (!scenarios.some(s => s.id === id)) return;
-      primaryId = id;
-      render();
-    }
-
     function updateValue(scenarioId, key, raw) {
-      const scenario = scenarios.find(s => s.id === scenarioId);
-      if (!scenario) return;
-      scenario.values[key] = raw;
+      const values = valuesByScenario[scenarioId];
+      if (!values) return;
+      values[key] = raw;
       recalculateAll();
-    }
-
-    function removeScenario(id) {
-      if (scenarios.length <= 1) return;
-      scenarios = scenarios.filter(s => s.id !== id);
-      if (primaryId === id) primaryId = scenarios[0].id;
-      render();
-    }
-
-    function addScenario() {
-      const id = 'u' + Date.now();
-      const name = 'Scenario ' + String.fromCharCode(nextLetter);
-      nextLetter++;
-      scenarios.push({ id, name, values: Object.assign({}, DEFAULTS) });
-      render();
     }
 
     function buildHeaderRow() {
       const row = el('div', 'flex-row col-head-row');
       row.appendChild(el('div', 'row-label'));
       const values = el('div', 'row-values');
+      const scenarios = ScenarioRegistry.list();
       scenarios.forEach(scenario => {
-        const isPrimary = primaryId === scenario.id;
-        const cell = el('div', 'value-cell col-head-cell' + (isPrimary ? ' is-primary' : ''));
+        const cell = el('div', 'value-cell col-head-cell');
         const nameRow = el('div', 'name-row');
-        const checkbox = document.createElement('input');
-        checkbox.type = 'radio';
-        checkbox.name = 'utilities-primary-scenario';
-        checkbox.checked = isPrimary;
-        checkbox.title = 'Use this scenario\'s total for the Monthly Budget "Utilities" amount';
-        checkbox.setAttribute('aria-label', 'Use this scenario\'s total for the Monthly Budget "Utilities" amount');
-        checkbox.addEventListener('change', () => selectPrimary(scenario.id));
-        nameRow.appendChild(checkbox);
         const input = document.createElement('input');
         input.className = 'name';
         input.value = scenario.name;
-        input.addEventListener('input', e => { scenario.name = e.target.value; });
+        input.addEventListener('input', e => ScenarioRegistry.rename(scenario.id, e.target.value));
         nameRow.appendChild(input);
         cell.appendChild(nameRow);
 
@@ -2551,7 +2611,7 @@
           const removeBtn = document.createElement('button');
           removeBtn.className = 'remove-btn';
           removeBtn.textContent = 'Remove';
-          removeBtn.onclick = () => removeScenario(scenario.id);
+          removeBtn.onclick = () => ScenarioRegistry.remove(scenario.id);
           cell.appendChild(removeBtn);
         }
         values.appendChild(cell);
@@ -2559,7 +2619,7 @@
       const addBtn = document.createElement('button');
       addBtn.className = 'add-btn';
       addBtn.textContent = '+ Add scenario';
-      addBtn.onclick = () => addScenario();
+      addBtn.onclick = () => ScenarioRegistry.add();
       values.appendChild(addBtn);
       row.appendChild(values);
       return row;
@@ -2570,7 +2630,7 @@
       row.appendChild(el('div', 'row-label', '<span class="field-label">' + field.label + '</span>'));
 
       const values = el('div', 'row-values');
-      scenarios.forEach(scenario => {
+      ScenarioRegistry.list().forEach(scenario => {
         const cell = el('div', 'value-cell');
         const wrap = el('div', 'field');
         const dollar = document.createElement('span');
@@ -2580,7 +2640,7 @@
         input.type = 'number';
         input.min = '0';
         input.step = '1';
-        input.value = scenario.values[field.key];
+        input.value = valuesByScenario[scenario.id][field.key];
         input.addEventListener('input', e => updateValue(scenario.id, field.key, parseFloat(e.target.value) || 0));
         wrap.appendChild(input);
         cell.appendChild(wrap);
@@ -2594,7 +2654,7 @@
       const row = el('div', 'flex-row payment-row');
       row.appendChild(el('div', 'row-label', '<span class="field-label">Total utilities expense</span>'));
       const values = el('div', 'row-values');
-      scenarios.forEach(scenario => {
+      ScenarioRegistry.list().forEach(scenario => {
         const cell = el('div', 'value-cell');
         const span = document.createElement('span');
         span.className = 'value-text';
@@ -2626,47 +2686,32 @@
     }
 
     function recalculateAll() {
-      let budgetTotal = 0;
-      scenarios.forEach(scenario => {
-        const v = scenario.values;
+      ScenarioRegistry.list().forEach(scenario => {
+        const v = valuesByScenario[scenario.id];
         let total = 0;
         UTILITIES_FIELDS.forEach(f => { total += parseFloat(v[f.key]) || 0; });
 
         const totalEl = document.getElementById('utilities-total-' + scenario.id);
         if (totalEl) totalEl.textContent = currency(total);
 
-        if (scenario.id === primaryId) {
-          budgetTotal = total;
-        }
+        BudgetApp.setLockedAmount('utilities', scenario.id, total);
       });
-      BudgetApp.setLockedAmount('utilities', budgetTotal);
       queueAutoSave();
     }
 
     function getState() {
-      return { scenarios: JSON.parse(JSON.stringify(scenarios)), nextLetter, primaryId };
+      return { valuesByScenario: JSON.parse(JSON.stringify(valuesByScenario)) };
     }
 
     function setState(state) {
-      if (state && state.scenarios && state.scenarios.length) {
-        scenarios = state.scenarios;
-        nextLetter = state.nextLetter || nextLetter;
-        if (typeof state.primaryId === 'string' && scenarios.some(s => s.id === state.primaryId)) {
-          primaryId = state.primaryId;
-        } else if (Array.isArray(state.primaryIds) && state.primaryIds.length) {
-          const validIds = state.primaryIds.filter(id => scenarios.some(s => s.id === id));
-          primaryId = validIds.length ? validIds[0] : scenarios[0].id;
-        } else {
-          primaryId = scenarios[0].id;
-        }
-      } else {
-        scenarios = [{ id: 'u1', name: 'Scenario A', values: Object.assign({}, DEFAULTS) }];
-        primaryId = 'u1';
-      }
+      valuesByScenario = (state && state.valuesByScenario) ? state.valuesByScenario : {};
+      ensureValues();
       render();
     }
 
-    return { addScenario, getState, setState, selectPrimary };
+    ScenarioRegistry.subscribe(() => { ensureValues(); render(); });
+
+    return { getState, setState };
   })();
 
   /* ================= Savings app (namespaced) ================= */
@@ -2681,11 +2726,14 @@
     ];
     const DEFAULTS = { retirement: 0, emergency: 0, vacation: 0, children: 0, homeMaintenance: 0, general: 0 };
 
-    let scenarios = [
-      { id: 'sv1', name: 'Scenario A', values: Object.assign({}, DEFAULTS) }
-    ];
-    let nextLetter = 66; // 'B'
-    let primaryId = 'sv1';
+    // valuesByScenario[scenarioId] = this tab's own field values for that shared scenario.
+    let valuesByScenario = {};
+
+    function ensureValues() {
+      ScenarioRegistry.list().forEach(s => {
+        if (!valuesByScenario[s.id]) valuesByScenario[s.id] = Object.assign({}, DEFAULTS);
+      });
+    }
 
     function currency(n) {
       return '$' + n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -2698,54 +2746,25 @@
       return e;
     }
 
-    function selectPrimary(id) {
-      if (!scenarios.some(s => s.id === id)) return;
-      primaryId = id;
-      render();
-    }
-
     function updateValue(scenarioId, key, raw) {
-      const scenario = scenarios.find(s => s.id === scenarioId);
-      if (!scenario) return;
-      scenario.values[key] = raw;
+      const values = valuesByScenario[scenarioId];
+      if (!values) return;
+      values[key] = raw;
       recalculateAll();
-    }
-
-    function removeScenario(id) {
-      if (scenarios.length <= 1) return;
-      scenarios = scenarios.filter(s => s.id !== id);
-      if (primaryId === id) primaryId = scenarios[0].id;
-      render();
-    }
-
-    function addScenario() {
-      const id = 'sv' + Date.now();
-      const name = 'Scenario ' + String.fromCharCode(nextLetter);
-      nextLetter++;
-      scenarios.push({ id, name, values: Object.assign({}, DEFAULTS) });
-      render();
     }
 
     function buildHeaderRow() {
       const row = el('div', 'flex-row col-head-row');
       row.appendChild(el('div', 'row-label'));
       const values = el('div', 'row-values');
+      const scenarios = ScenarioRegistry.list();
       scenarios.forEach(scenario => {
-        const isPrimary = primaryId === scenario.id;
-        const cell = el('div', 'value-cell col-head-cell' + (isPrimary ? ' is-primary' : ''));
+        const cell = el('div', 'value-cell col-head-cell');
         const nameRow = el('div', 'name-row');
-        const checkbox = document.createElement('input');
-        checkbox.type = 'radio';
-        checkbox.name = 'savings-primary-scenario';
-        checkbox.checked = isPrimary;
-        checkbox.title = 'Use this scenario\'s total for the Monthly Budget "Savings" amount';
-        checkbox.setAttribute('aria-label', 'Use this scenario\'s total for the Monthly Budget "Savings" amount');
-        checkbox.addEventListener('change', () => selectPrimary(scenario.id));
-        nameRow.appendChild(checkbox);
         const input = document.createElement('input');
         input.className = 'name';
         input.value = scenario.name;
-        input.addEventListener('input', e => { scenario.name = e.target.value; });
+        input.addEventListener('input', e => ScenarioRegistry.rename(scenario.id, e.target.value));
         nameRow.appendChild(input);
         cell.appendChild(nameRow);
 
@@ -2753,7 +2772,7 @@
           const removeBtn = document.createElement('button');
           removeBtn.className = 'remove-btn';
           removeBtn.textContent = 'Remove';
-          removeBtn.onclick = () => removeScenario(scenario.id);
+          removeBtn.onclick = () => ScenarioRegistry.remove(scenario.id);
           cell.appendChild(removeBtn);
         }
         values.appendChild(cell);
@@ -2761,7 +2780,7 @@
       const addBtn = document.createElement('button');
       addBtn.className = 'add-btn';
       addBtn.textContent = '+ Add scenario';
-      addBtn.onclick = () => addScenario();
+      addBtn.onclick = () => ScenarioRegistry.add();
       values.appendChild(addBtn);
       row.appendChild(values);
       return row;
@@ -2775,7 +2794,7 @@
       row.appendChild(label);
 
       const values = el('div', 'row-values');
-      scenarios.forEach(scenario => {
+      ScenarioRegistry.list().forEach(scenario => {
         const cell = el('div', 'value-cell');
         const wrap = el('div', 'field');
         const dollar = document.createElement('span');
@@ -2785,7 +2804,7 @@
         input.type = 'number';
         input.min = '0';
         input.step = '1';
-        input.value = scenario.values[field.key];
+        input.value = valuesByScenario[scenario.id][field.key];
         input.addEventListener('input', e => updateValue(scenario.id, field.key, parseFloat(e.target.value) || 0));
         wrap.appendChild(input);
         cell.appendChild(wrap);
@@ -2799,7 +2818,7 @@
       const row = el('div', 'row flex-row');
       row.appendChild(el('div', 'row-label', '<span class="field-label">' + label + '</span>'));
       const values = el('div', 'row-values');
-      scenarios.forEach(scenario => {
+      ScenarioRegistry.list().forEach(scenario => {
         const cell = el('div', 'value-cell');
         const span = document.createElement('span');
         span.className = 'value-text';
@@ -2816,7 +2835,7 @@
       const row = el('div', 'flex-row payment-row');
       row.appendChild(el('div', 'row-label', '<span class="field-label">Monthly contribution</span>'));
       const values = el('div', 'row-values');
-      scenarios.forEach(scenario => {
+      ScenarioRegistry.list().forEach(scenario => {
         const cell = el('div', 'value-cell');
         const span = document.createElement('span');
         span.className = 'value-text';
@@ -2852,9 +2871,8 @@
     }
 
     function recalculateAll() {
-      let budgetTotal = 0;
-      scenarios.forEach(scenario => {
-        const v = scenario.values;
+      ScenarioRegistry.list().forEach(scenario => {
+        const v = valuesByScenario[scenario.id];
         let yearlyTotal = 0;
         SAVINGS_FIELDS.forEach(f => { yearlyTotal += parseFloat(v[f.key]) || 0; });
         const monthlyTotal = yearlyTotal / 12;
@@ -2864,47 +2882,42 @@
         const monthlyEl = document.getElementById('savings-monthly-' + scenario.id);
         if (monthlyEl) monthlyEl.textContent = currency(monthlyTotal);
 
-        if (scenario.id === primaryId) {
-          budgetTotal = monthlyTotal;
-        }
+        BudgetApp.setLockedAmount('savings', scenario.id, monthlyTotal);
       });
-      BudgetApp.setLockedAmount('savings', budgetTotal);
       queueAutoSave();
     }
 
     function getState() {
-      return { scenarios: JSON.parse(JSON.stringify(scenarios)), nextLetter, primaryId };
+      return { valuesByScenario: JSON.parse(JSON.stringify(valuesByScenario)) };
     }
 
     function setState(state) {
-      if (state && state.scenarios && state.scenarios.length) {
-        scenarios = state.scenarios;
-        nextLetter = state.nextLetter || nextLetter;
-        if (typeof state.primaryId === 'string' && scenarios.some(s => s.id === state.primaryId)) {
-          primaryId = state.primaryId;
-        } else if (Array.isArray(state.primaryIds) && state.primaryIds.length) {
-          const validIds = state.primaryIds.filter(id => scenarios.some(s => s.id === id));
-          primaryId = validIds.length ? validIds[0] : scenarios[0].id;
-        } else {
-          primaryId = scenarios[0].id;
-        }
-      } else {
-        scenarios = [{ id: 'sv1', name: 'Scenario A', values: Object.assign({}, DEFAULTS) }];
-        primaryId = 'sv1';
-      }
+      valuesByScenario = (state && state.valuesByScenario) ? state.valuesByScenario : {};
+      ensureValues();
       render();
     }
 
-    return { addScenario, getState, setState, selectPrimary };
+    ScenarioRegistry.subscribe(() => { ensureValues(); render(); });
+
+    return { getState, setState };
   })();
 
   /* ================= Subscriptions app (namespaced) ================= */
   const SubscriptionsApp = (function () {
     let rows = [];
-    let scenarios = [{ id: 'sc1', name: 'Scenario A', values: {} }];
-    let nextLetter = 66; // 'B'
     let nextRowId = 1;
-    let primaryId = 'sc1';
+    // valuesByScenario[scenarioId][rowId] = amount, for this tab's own subscription rows.
+    let valuesByScenario = {};
+
+    function ensureValues() {
+      ScenarioRegistry.list().forEach(s => {
+        if (!valuesByScenario[s.id]) {
+          const values = {};
+          rows.forEach(r => { values[r.id] = ''; });
+          valuesByScenario[s.id] = values;
+        }
+      });
+    }
 
     function currency(n) {
       return '$' + n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -2917,46 +2930,23 @@
       return e;
     }
 
-    function selectPrimary(id) {
-      if (!scenarios.some(s => s.id === id)) return;
-      primaryId = id;
-      render();
-    }
-
     function updateValue(scenarioId, rowId, raw) {
-      const scenario = scenarios.find(s => s.id === scenarioId);
-      if (!scenario) return;
-      scenario.values[rowId] = raw;
+      const values = valuesByScenario[scenarioId];
+      if (!values) return;
+      values[rowId] = raw;
       recalculateAll();
-    }
-
-    function removeScenario(id) {
-      if (scenarios.length <= 1) return;
-      scenarios = scenarios.filter(s => s.id !== id);
-      if (primaryId === id) primaryId = scenarios[0].id;
-      render();
-    }
-
-    function addScenario() {
-      const id = 'sc' + Date.now();
-      const name = 'Scenario ' + String.fromCharCode(nextLetter);
-      nextLetter++;
-      const values = {};
-      rows.forEach(r => { values[r.id] = ''; });
-      scenarios.push({ id, name, values });
-      render();
     }
 
     function addSubscriptionRow(label) {
       const id = 'r' + (nextRowId++);
       rows.push({ id, label: label || '' });
-      scenarios.forEach(s => { s.values[id] = ''; });
+      ScenarioRegistry.list().forEach(s => { valuesByScenario[s.id][id] = ''; });
       render();
     }
 
     function removeSubscriptionRow(rowId) {
       rows = rows.filter(r => r.id !== rowId);
-      scenarios.forEach(s => { delete s.values[rowId]; });
+      Object.keys(valuesByScenario).forEach(sid => { delete valuesByScenario[sid][rowId]; });
       render();
     }
 
@@ -2964,22 +2954,14 @@
       const row = el('div', 'flex-row col-head-row');
       row.appendChild(el('div', 'row-label'));
       const values = el('div', 'row-values');
+      const scenarios = ScenarioRegistry.list();
       scenarios.forEach(scenario => {
-        const isPrimary = primaryId === scenario.id;
-        const cell = el('div', 'value-cell col-head-cell' + (isPrimary ? ' is-primary' : ''));
+        const cell = el('div', 'value-cell col-head-cell');
         const nameRow = el('div', 'name-row');
-        const checkbox = document.createElement('input');
-        checkbox.type = 'radio';
-        checkbox.name = 'subscriptions-primary-scenario';
-        checkbox.checked = isPrimary;
-        checkbox.title = 'Use this scenario\'s total for the Monthly Budget "Subscriptions" amount';
-        checkbox.setAttribute('aria-label', 'Use this scenario\'s total for the Monthly Budget "Subscriptions" amount');
-        checkbox.addEventListener('change', () => selectPrimary(scenario.id));
-        nameRow.appendChild(checkbox);
         const input = document.createElement('input');
         input.className = 'name';
         input.value = scenario.name;
-        input.addEventListener('input', e => { scenario.name = e.target.value; });
+        input.addEventListener('input', e => ScenarioRegistry.rename(scenario.id, e.target.value));
         nameRow.appendChild(input);
         cell.appendChild(nameRow);
 
@@ -2987,7 +2969,7 @@
           const removeBtn = document.createElement('button');
           removeBtn.className = 'remove-btn';
           removeBtn.textContent = 'Remove';
-          removeBtn.onclick = () => removeScenario(scenario.id);
+          removeBtn.onclick = () => ScenarioRegistry.remove(scenario.id);
           cell.appendChild(removeBtn);
         }
         values.appendChild(cell);
@@ -2995,7 +2977,7 @@
       const addBtn = document.createElement('button');
       addBtn.className = 'add-btn';
       addBtn.textContent = '+ Add scenario';
-      addBtn.onclick = () => addScenario();
+      addBtn.onclick = () => ScenarioRegistry.add();
       values.appendChild(addBtn);
       row.appendChild(values);
       return row;
@@ -3021,7 +3003,7 @@
       row.appendChild(label);
 
       const values = el('div', 'row-values');
-      scenarios.forEach(scenario => {
+      ScenarioRegistry.list().forEach(scenario => {
         const cell = el('div', 'value-cell');
         const wrap = el('div', 'field');
         const dollar = document.createElement('span');
@@ -3031,7 +3013,8 @@
         input.type = 'number';
         input.min = '0';
         input.step = '0.01';
-        input.value = scenario.values[rowData.id] !== undefined ? scenario.values[rowData.id] : '';
+        const scenarioValues = valuesByScenario[scenario.id];
+        input.value = scenarioValues[rowData.id] !== undefined ? scenarioValues[rowData.id] : '';
         input.addEventListener('input', e => updateValue(scenario.id, rowData.id, e.target.value));
         wrap.appendChild(input);
         cell.appendChild(wrap);
@@ -3045,7 +3028,7 @@
       const row = el('div', 'flex-row payment-row');
       row.appendChild(el('div', 'row-label', '<span class="field-label">Total monthly subscriptions</span>'));
       const values = el('div', 'row-values');
-      scenarios.forEach(scenario => {
+      ScenarioRegistry.list().forEach(scenario => {
         const cell = el('div', 'value-cell');
         const span = document.createElement('span');
         span.className = 'value-text';
@@ -3059,6 +3042,7 @@
     }
 
     function render() {
+      ensureValues();
       const root = document.getElementById('subscriptions-table-root');
       root.innerHTML = '';
       root.appendChild(buildHeaderRow());
@@ -3083,54 +3067,40 @@
     }
 
     function recalculateAll() {
-      let budgetTotal = 0;
-      scenarios.forEach(scenario => {
+      ScenarioRegistry.list().forEach(scenario => {
+        const values = valuesByScenario[scenario.id];
         let total = 0;
-        rows.forEach(r => { total += parseFloat(scenario.values[r.id]) || 0; });
+        rows.forEach(r => { total += parseFloat(values[r.id]) || 0; });
         const totalEl = document.getElementById('sub-total-' + scenario.id);
         if (totalEl) totalEl.textContent = currency(total);
-        if (scenario.id === primaryId) budgetTotal = total;
+        BudgetApp.setLockedAmount('subscriptions', scenario.id, total);
       });
-      BudgetApp.setLockedAmount('subscriptions', budgetTotal);
       queueAutoSave();
     }
 
     function getState() {
       return {
         rows: rows.map(r => ({ id: r.id, label: r.label })),
-        scenarios: scenarios.map(s => ({ id: s.id, name: s.name, values: Object.assign({}, s.values) })),
-        nextLetter,
         nextRowId,
-        primaryId
+        valuesByScenario: JSON.parse(JSON.stringify(valuesByScenario))
       };
     }
 
-    function resolvePrimaryId(state) {
-      if (typeof state.primaryId === 'string' && scenarios.some(s => s.id === state.primaryId)) {
-        return state.primaryId;
-      }
-      if (Array.isArray(state.primaryIds) && state.primaryIds.length) {
-        const validIds = state.primaryIds.filter(id => scenarios.some(s => s.id === id));
-        if (validIds.length) return validIds[0];
-      }
-      return scenarios.length ? scenarios[0].id : null;
-    }
-
     function setState(state) {
-      if (state && Array.isArray(state.rows) && Array.isArray(state.scenarios)) {
-        // Current grid format: shared rows (subscriptions) x scenario columns.
+      if (state && Array.isArray(state.rows) && state.valuesByScenario) {
+        // Current format: shared rows (subscriptions) x shared-scenario columns.
         rows = state.rows.map(r => ({ id: r.id, label: r.label }));
-        scenarios = state.scenarios.map(s => ({ id: s.id, name: s.name, values: Object.assign({}, s.values) }));
-        nextLetter = state.nextLetter || nextLetter;
         nextRowId = state.nextRowId || nextRowId;
-        primaryId = resolvePrimaryId(state);
+        valuesByScenario = state.valuesByScenario;
       } else if (state && Array.isArray(state.scenarios) && state.scenarios.length && Array.isArray(state.scenarios[0].items)) {
-        // Migrate from the short-lived per-scenario-list format (each scenario had its own named items) —
-        // matches items across scenarios by name into shared rows, so nothing typed gets lost.
+        // Ancient short-lived per-scenario-list format (each scenario had its own named
+        // items, from before scenarios were synced at all) — collapses everything into
+        // the one scenario the shared registry starts with, matching items by name into
+        // shared rows so nothing typed gets lost.
         const rowByLabel = new Map();
         rows = [];
-        scenarios = state.scenarios.map(s => ({ id: s.id, name: s.name, values: {} }));
-        state.scenarios.forEach((s, sIdx) => {
+        const values = {};
+        state.scenarios.forEach(s => {
           (s.items || []).forEach(item => {
             const key = (item.name || '').trim().toLowerCase();
             let rowId = key && rowByLabel.get(key);
@@ -3139,30 +3109,32 @@
               rows.push({ id: rowId, label: item.name || '' });
               if (key) rowByLabel.set(key, rowId);
             }
-            scenarios[sIdx].values[rowId] = item.amount;
+            values[rowId] = item.amount;
           });
         });
-        nextLetter = state.nextLetter || nextLetter;
-        primaryId = resolvePrimaryId(state);
+        valuesByScenario = {};
+        valuesByScenario[ScenarioRegistry.list()[0].id] = values;
       } else if (state && Array.isArray(state.items)) {
         // Legacy pre-scenarios save format: a single flat subscription list.
         rows = state.items.map(i => ({ id: 'r' + (nextRowId++), label: i.name }));
-        scenarios = [{ id: 'sc1', name: 'Scenario A', values: {} }];
-        rows.forEach((r, idx) => { scenarios[0].values[r.id] = state.items[idx].amount; });
-        primaryId = 'sc1';
+        const values = {};
+        rows.forEach((r, idx) => { values[r.id] = state.items[idx].amount; });
+        valuesByScenario = {};
+        valuesByScenario[ScenarioRegistry.list()[0].id] = values;
       } else {
         rows = [
           { id: 'r' + (nextRowId++), label: 'Netflix' },
           { id: 'r' + (nextRowId++), label: 'Spotify' }
         ];
-        scenarios = [{ id: 'sc1', name: 'Scenario A', values: {} }];
-        rows.forEach(r => { scenarios[0].values[r.id] = ''; });
-        primaryId = 'sc1';
+        valuesByScenario = {};
       }
+      ensureValues();
       render();
     }
 
-    return { addScenario, getState, setState, selectPrimary };
+    ScenarioRegistry.subscribe(() => { render(); });
+
+    return { getState, setState };
   })();
 
   /* ================= GitHub sync (namespaced) ================= */
@@ -3419,7 +3391,7 @@
 
   /* ================= combined save / load ================= */
   function collectAllData() {
-    return { budget: BudgetApp.getState(), income: IncomeApp.getState(), mortgage: MortgageApp.getState(), food: FoodApp.getState(), car: CarApp.getState(), utilities: UtilitiesApp.getState(), savings: SavingsApp.getState(), subscriptions: SubscriptionsApp.getState() };
+    return { scenarios: ScenarioRegistry.getState(), budget: BudgetApp.getState(), income: IncomeApp.getState(), mortgage: MortgageApp.getState(), food: FoodApp.getState(), car: CarApp.getState(), utilities: UtilitiesApp.getState(), savings: SavingsApp.getState(), subscriptions: SubscriptionsApp.getState() };
   }
 
   // All tools share one Drive file (one sign-in, one Google account), each keeping its
@@ -3529,14 +3501,58 @@
       };
     }
 
+    const EXPENSE_TAB_KEYS = ['mortgage', 'food', 'car', 'utilities', 'savings', 'subscriptions'];
+    let scenarioState = saved ? saved.scenarios : null;
+    const tabData = {};
+    EXPENSE_TAB_KEYS.forEach(k => { tabData[k] = saved ? saved[k] : null; });
+
+    // Migrate the old per-tab scenario format — each of the six expense tabs used to keep
+    // its own independent scenario list — into one shared registry, the first time a file
+    // saved before scenarios were synced loads here. Scenarios are matched across tabs by
+    // name (Housing's list first, then any new names Food/Car/Utilities/Savings/Subscriptions
+    // add), so "Scenario B" ends up meaning the same thing everywhere, and nothing anyone
+    // already typed gets lost — a tab that never had that name just starts it blank.
+    const needsScenarioMigration = !(scenarioState && Array.isArray(scenarioState.scenarios) && scenarioState.scenarios.length);
+    if (needsScenarioMigration) {
+      const names = [];
+      EXPENSE_TAB_KEYS.forEach(k => {
+        const old = tabData[k];
+        if (old && Array.isArray(old.scenarios) && old.scenarios.length && old.scenarios[0].values !== undefined) {
+          old.scenarios.forEach(s => { if (names.indexOf(s.name) === -1) names.push(s.name); });
+        }
+      });
+      if (!names.length) names.push('Scenario A');
+
+      const nameToId = {};
+      const scenarios = names.map((name, i) => {
+        const id = 'sc' + (i + 1);
+        nameToId[name] = id;
+        return { id, name };
+      });
+      scenarioState = { scenarios, nextLetter: 65 + names.length };
+
+      EXPENSE_TAB_KEYS.forEach(k => {
+        const old = tabData[k];
+        if (old && Array.isArray(old.scenarios) && old.scenarios.length && old.scenarios[0].values !== undefined) {
+          const valuesByScenario = {};
+          old.scenarios.forEach(s => { valuesByScenario[nameToId[s.name]] = s.values; });
+          tabData[k] = (k === 'subscriptions')
+            ? { rows: old.rows, nextRowId: old.nextRowId, valuesByScenario }
+            : { valuesByScenario };
+        }
+      });
+    }
+
+    ScenarioRegistry.setState(scenarioState);
+
     BudgetApp.setState(saved ? saved.budget : null);
     IncomeApp.setState(incomeState);
-    MortgageApp.setState(saved ? saved.mortgage : null);
-    FoodApp.setState(saved ? saved.food : null);
-    CarApp.setState(saved ? saved.car : null);
-    UtilitiesApp.setState(saved ? saved.utilities : null);
-    SavingsApp.setState(saved ? saved.savings : null);
-    SubscriptionsApp.setState(saved ? saved.subscriptions : null);
+    MortgageApp.setState(tabData.mortgage);
+    FoodApp.setState(tabData.food);
+    CarApp.setState(tabData.car);
+    UtilitiesApp.setState(tabData.utilities);
+    SavingsApp.setState(tabData.savings);
+    SubscriptionsApp.setState(tabData.subscriptions);
     sizeAllCurrencyInputs();
   }
 
