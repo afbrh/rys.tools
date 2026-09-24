@@ -1385,9 +1385,11 @@
   // A single, synced list of scenario names shared by every expense tab (Housing, Food, Car,
   // Utilities, Savings, Subscriptions) — adding, removing, or renaming a scenario in any one
   // tab does the same everywhere else. Each tab keeps only its own per-scenario dollar values,
-  // keyed by these shared ids. Renames don't call notify(): the input that's being typed into
-  // stays the visible source of truth for its own tab, and every tab reads the name fresh from
-  // here whenever it next renders, so no re-render fights the user's cursor mid-keystroke.
+  // keyed by these shared ids. rename() itself doesn't notify: the input being typed into stays
+  // the visible source of truth for its own tab while the user is still mid-keystroke, so a
+  // notify()-triggered re-render there can't fight the cursor. Each tab's name <input> calls
+  // commitRename() on blur (and Enter) instead, once typing is actually done, which both
+  // notifies (pushing the new name out to every other tab's next render) and saves.
   const ScenarioRegistry = (function () {
     let scenarios = [{ id: 'sc1', name: 'Scenario A' }];
     let nextLetter = 66; // 'B'
@@ -1418,6 +1420,13 @@
       if (s) s.name = name;
     }
 
+    // Called once the user is done typing a scenario name (blur/Enter) — pushes the
+    // new name out to every other tab's next render and saves it.
+    function commitRename() {
+      notify();
+      queueAutoSave();
+    }
+
     function getState() {
       return { scenarios: JSON.parse(JSON.stringify(scenarios)), nextLetter };
     }
@@ -1433,7 +1442,7 @@
       notify();
     }
 
-    return { list, subscribe, add, remove, rename, getState, setState };
+    return { list, subscribe, add, remove, rename, commitRename, getState, setState };
   })();
 
   /* ================= Budget app (namespaced) ================= */
@@ -1540,6 +1549,8 @@
         input.className = 'name';
         input.value = scenario.name;
         input.addEventListener('input', e => ScenarioRegistry.rename(scenario.id, e.target.value));
+        input.addEventListener('blur', () => ScenarioRegistry.commitRename());
+        input.addEventListener('keydown', e => { if (e.key === 'Enter') input.blur(); });
         nameRow.appendChild(input);
         cell.appendChild(nameRow);
 
@@ -1999,6 +2010,8 @@
         input.className = 'name';
         input.value = scenario.name;
         input.addEventListener('input', e => ScenarioRegistry.rename(scenario.id, e.target.value));
+        input.addEventListener('blur', () => ScenarioRegistry.commitRename());
+        input.addEventListener('keydown', e => { if (e.key === 'Enter') input.blur(); });
         nameRow.appendChild(input);
         cell.appendChild(nameRow);
 
@@ -2268,6 +2281,8 @@
         input.className = 'name';
         input.value = scenario.name;
         input.addEventListener('input', e => ScenarioRegistry.rename(scenario.id, e.target.value));
+        input.addEventListener('blur', () => ScenarioRegistry.commitRename());
+        input.addEventListener('keydown', e => { if (e.key === 'Enter') input.blur(); });
         nameRow.appendChild(input);
         cell.appendChild(nameRow);
 
@@ -2438,6 +2453,8 @@
         input.className = 'name';
         input.value = scenario.name;
         input.addEventListener('input', e => ScenarioRegistry.rename(scenario.id, e.target.value));
+        input.addEventListener('blur', () => ScenarioRegistry.commitRename());
+        input.addEventListener('keydown', e => { if (e.key === 'Enter') input.blur(); });
         nameRow.appendChild(input);
         cell.appendChild(nameRow);
 
@@ -2604,6 +2621,8 @@
         input.className = 'name';
         input.value = scenario.name;
         input.addEventListener('input', e => ScenarioRegistry.rename(scenario.id, e.target.value));
+        input.addEventListener('blur', () => ScenarioRegistry.commitRename());
+        input.addEventListener('keydown', e => { if (e.key === 'Enter') input.blur(); });
         nameRow.appendChild(input);
         cell.appendChild(nameRow);
 
@@ -2765,6 +2784,8 @@
         input.className = 'name';
         input.value = scenario.name;
         input.addEventListener('input', e => ScenarioRegistry.rename(scenario.id, e.target.value));
+        input.addEventListener('blur', () => ScenarioRegistry.commitRename());
+        input.addEventListener('keydown', e => { if (e.key === 'Enter') input.blur(); });
         nameRow.appendChild(input);
         cell.appendChild(nameRow);
 
@@ -2962,6 +2983,8 @@
         input.className = 'name';
         input.value = scenario.name;
         input.addEventListener('input', e => ScenarioRegistry.rename(scenario.id, e.target.value));
+        input.addEventListener('blur', () => ScenarioRegistry.commitRename());
+        input.addEventListener('keydown', e => { if (e.key === 'Enter') input.blur(); });
         nameRow.appendChild(input);
         cell.appendChild(nameRow);
 
