@@ -417,11 +417,14 @@
     padding: 2px 0;
   }
   #tab-budget .col-head-cell input.name:focus { outline: none; border-bottom: 1px solid var(--ink-soft); }
-  #tab-budget .col-head-cell .remove-btn {
-    display: block; margin: 3px 0 0 auto; background: none; border: none;
+  #tab-budget .col-head-cell .col-head-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 3px; }
+  #tab-budget .col-head-cell .remove-btn,
+  #tab-budget .col-head-cell .clone-btn {
+    background: none; border: none;
     color: var(--ink-soft); font-size: 12px; cursor: pointer; padding: 0;
   }
   #tab-budget .col-head-cell .remove-btn:hover { color: var(--expense); }
+  #tab-budget .col-head-cell .clone-btn:hover { color: var(--gold); }
   #tab-budget .section { margin-bottom: 26px; }
   #tab-budget .section-head { border-bottom: 2px solid var(--ink); padding-bottom: 6px; margin-bottom: 2px; }
   #tab-budget .section-head h2 { font-family: var(--font-header); font-size: 15px; font-weight: 600; margin: 0; color: var(--expense); }
@@ -1399,20 +1402,47 @@
 
     function subscribe(fn) { listeners.push(fn); }
 
-    function notify() { listeners.forEach(fn => fn()); }
+    // Every subscriber gets the same event object, so a tab can tell a plain
+    // add/remove/load apart from a clone (which needs to copy a source scenario's
+    // values instead of just defaulting the new column blank).
+    function notify(event) { listeners.forEach(fn => fn(event || { type: 'change' })); }
 
     function add() {
       const id = 'sc' + Date.now();
       scenarios.push({ id, name: 'Scenario ' + String.fromCharCode(nextLetter) });
       nextLetter++;
-      notify();
+      notify({ type: 'add', id });
+      queueAutoSave();
       return id;
     }
 
     function remove(id) {
       if (scenarios.length <= 1) return;
       scenarios = scenarios.filter(s => s.id !== id);
-      notify();
+      notify({ type: 'remove', id });
+      queueAutoSave();
+    }
+
+    // Picks "<name> copy", or "<name> copy 2", "<name> copy 3", ... if that's taken —
+    // stripping any existing " copy"/" copy N" suffix first, so cloning a clone doesn't
+    // pile up into "Scenario A copy copy copy".
+    function cloneName(baseName) {
+      const stripped = baseName.replace(/\s+copy(\s+\d+)?$/i, '');
+      const taken = new Set(scenarios.map(s => s.name));
+      if (!taken.has(stripped + ' copy')) return stripped + ' copy';
+      let n = 2;
+      while (taken.has(stripped + ' copy ' + n)) n++;
+      return stripped + ' copy ' + n;
+    }
+
+    function clone(sourceId) {
+      const source = scenarios.find(s => s.id === sourceId);
+      if (!source) return;
+      const id = 'sc' + Date.now();
+      scenarios.push({ id, name: cloneName(source.name) });
+      notify({ type: 'clone', id, sourceId });
+      queueAutoSave();
+      return id;
     }
 
     function rename(id, name) {
@@ -1423,7 +1453,7 @@
     // Called once the user is done typing a scenario name (blur/Enter) — pushes the
     // new name out to every other tab's next render and saves it.
     function commitRename() {
-      notify();
+      notify({ type: 'rename' });
       queueAutoSave();
     }
 
@@ -1439,10 +1469,10 @@
         scenarios = [{ id: 'sc1', name: 'Scenario A' }];
         nextLetter = 66;
       }
-      notify();
+      notify({ type: 'load' });
     }
 
-    return { list, subscribe, add, remove, rename, commitRename, getState, setState };
+    return { list, subscribe, add, remove, clone, rename, commitRename, getState, setState };
   })();
 
   /* ================= Budget app (namespaced) ================= */
@@ -1537,6 +1567,8 @@
       recalculateAll();
     }
 
+    // Adding, removing, and cloning scenarios all live here on the Budget tab only —
+    // the other tabs just display and edit whatever scenarios already exist.
     function buildHeaderRow() {
       const row = el('div', 'flex-row col-head-row');
       row.appendChild(el('div', 'row-label'));
@@ -1554,13 +1586,21 @@
         nameRow.appendChild(input);
         cell.appendChild(nameRow);
 
+        const actions = el('div', 'col-head-actions');
+        const cloneBtn = document.createElement('button');
+        cloneBtn.className = 'clone-btn';
+        cloneBtn.textContent = 'Clone';
+        cloneBtn.title = 'Duplicate this scenario, with all its numbers, to tweak the copy for comparison';
+        cloneBtn.onclick = () => ScenarioRegistry.clone(scenario.id);
+        actions.appendChild(cloneBtn);
         if (scenarios.length > 1) {
           const removeBtn = document.createElement('button');
           removeBtn.className = 'remove-btn';
           removeBtn.textContent = 'Remove';
           removeBtn.onclick = () => ScenarioRegistry.remove(scenario.id);
-          cell.appendChild(removeBtn);
+          actions.appendChild(removeBtn);
         }
+        cell.appendChild(actions);
         values.appendChild(cell);
       });
       const addBtn = document.createElement('button');
@@ -1752,7 +1792,14 @@
       render();
     }
 
-    ScenarioRegistry.subscribe(() => { render(); });
+    ScenarioRegistry.subscribe(event => {
+      if (event && event.type === 'clone' && event.sourceId) {
+        customRows.forEach(row => {
+          if (row.values[event.sourceId] !== undefined) row.values[event.id] = row.values[event.sourceId];
+        });
+      }
+      render();
+    });
 
     return { addCustomRow, removeCustomRow, getState, setState, setLockedAmount, setIncomeAmount };
   })();
@@ -1998,6 +2045,8 @@
       }
     }
 
+    // Adding, removing, and cloning scenarios only happens on the Budget tab — this
+    // header just displays each scenario's name (still editable/renamable here).
     function buildHeaderRow() {
       const row = el('div', 'flex-row col-head-row');
       row.appendChild(el('div', 'row-label'));
@@ -2014,21 +2063,8 @@
         input.addEventListener('keydown', e => { if (e.key === 'Enter') input.blur(); });
         nameRow.appendChild(input);
         cell.appendChild(nameRow);
-
-        if (scenarios.length > 1) {
-          const removeBtn = document.createElement('button');
-          removeBtn.className = 'remove-btn';
-          removeBtn.textContent = 'Remove';
-          removeBtn.onclick = () => ScenarioRegistry.remove(scenario.id);
-          cell.appendChild(removeBtn);
-        }
         values.appendChild(cell);
       });
-      const addBtn = document.createElement('button');
-      addBtn.className = 'add-btn';
-      addBtn.textContent = '+ Add scenario';
-      addBtn.onclick = () => ScenarioRegistry.add();
-      values.appendChild(addBtn);
       row.appendChild(values);
       return row;
     }
@@ -2229,7 +2265,13 @@
       render();
     }
 
-    ScenarioRegistry.subscribe(() => { ensureValues(); render(); });
+    ScenarioRegistry.subscribe(event => {
+      if (event && event.type === 'clone' && valuesByScenario[event.sourceId]) {
+        valuesByScenario[event.id] = JSON.parse(JSON.stringify(valuesByScenario[event.sourceId]));
+      }
+      ensureValues();
+      render();
+    });
 
     return { getState, setState };
   })();
@@ -2269,6 +2311,8 @@
       recalculateAll();
     }
 
+    // Adding, removing, and cloning scenarios only happens on the Budget tab — this
+    // header just displays each scenario's name (still editable/renamable here).
     function buildHeaderRow() {
       const row = el('div', 'flex-row col-head-row');
       row.appendChild(el('div', 'row-label'));
@@ -2285,21 +2329,8 @@
         input.addEventListener('keydown', e => { if (e.key === 'Enter') input.blur(); });
         nameRow.appendChild(input);
         cell.appendChild(nameRow);
-
-        if (scenarios.length > 1) {
-          const removeBtn = document.createElement('button');
-          removeBtn.className = 'remove-btn';
-          removeBtn.textContent = 'Remove';
-          removeBtn.onclick = () => ScenarioRegistry.remove(scenario.id);
-          cell.appendChild(removeBtn);
-        }
         values.appendChild(cell);
       });
-      const addBtn = document.createElement('button');
-      addBtn.className = 'add-btn';
-      addBtn.textContent = '+ Add scenario';
-      addBtn.onclick = () => ScenarioRegistry.add();
-      values.appendChild(addBtn);
       row.appendChild(values);
       return row;
     }
@@ -2398,7 +2429,13 @@
       render();
     }
 
-    ScenarioRegistry.subscribe(() => { ensureValues(); render(); });
+    ScenarioRegistry.subscribe(event => {
+      if (event && event.type === 'clone' && valuesByScenario[event.sourceId]) {
+        valuesByScenario[event.id] = JSON.parse(JSON.stringify(valuesByScenario[event.sourceId]));
+      }
+      ensureValues();
+      render();
+    });
 
     return { getState, setState };
   })();
@@ -2441,6 +2478,8 @@
       recalculateAll();
     }
 
+    // Adding, removing, and cloning scenarios only happens on the Budget tab — this
+    // header just displays each scenario's name (still editable/renamable here).
     function buildHeaderRow() {
       const row = el('div', 'flex-row col-head-row');
       row.appendChild(el('div', 'row-label'));
@@ -2457,21 +2496,8 @@
         input.addEventListener('keydown', e => { if (e.key === 'Enter') input.blur(); });
         nameRow.appendChild(input);
         cell.appendChild(nameRow);
-
-        if (scenarios.length > 1) {
-          const removeBtn = document.createElement('button');
-          removeBtn.className = 'remove-btn';
-          removeBtn.textContent = 'Remove';
-          removeBtn.onclick = () => ScenarioRegistry.remove(scenario.id);
-          cell.appendChild(removeBtn);
-        }
         values.appendChild(cell);
       });
-      const addBtn = document.createElement('button');
-      addBtn.className = 'add-btn';
-      addBtn.textContent = '+ Add scenario';
-      addBtn.onclick = () => ScenarioRegistry.add();
-      values.appendChild(addBtn);
       row.appendChild(values);
       return row;
     }
@@ -2566,7 +2592,13 @@
       render();
     }
 
-    ScenarioRegistry.subscribe(() => { ensureValues(); render(); });
+    ScenarioRegistry.subscribe(event => {
+      if (event && event.type === 'clone' && valuesByScenario[event.sourceId]) {
+        valuesByScenario[event.id] = JSON.parse(JSON.stringify(valuesByScenario[event.sourceId]));
+      }
+      ensureValues();
+      render();
+    });
 
     return { getState, setState };
   })();
@@ -2609,6 +2641,8 @@
       recalculateAll();
     }
 
+    // Adding, removing, and cloning scenarios only happens on the Budget tab — this
+    // header just displays each scenario's name (still editable/renamable here).
     function buildHeaderRow() {
       const row = el('div', 'flex-row col-head-row');
       row.appendChild(el('div', 'row-label'));
@@ -2625,21 +2659,8 @@
         input.addEventListener('keydown', e => { if (e.key === 'Enter') input.blur(); });
         nameRow.appendChild(input);
         cell.appendChild(nameRow);
-
-        if (scenarios.length > 1) {
-          const removeBtn = document.createElement('button');
-          removeBtn.className = 'remove-btn';
-          removeBtn.textContent = 'Remove';
-          removeBtn.onclick = () => ScenarioRegistry.remove(scenario.id);
-          cell.appendChild(removeBtn);
-        }
         values.appendChild(cell);
       });
-      const addBtn = document.createElement('button');
-      addBtn.className = 'add-btn';
-      addBtn.textContent = '+ Add scenario';
-      addBtn.onclick = () => ScenarioRegistry.add();
-      values.appendChild(addBtn);
       row.appendChild(values);
       return row;
     }
@@ -2728,7 +2749,13 @@
       render();
     }
 
-    ScenarioRegistry.subscribe(() => { ensureValues(); render(); });
+    ScenarioRegistry.subscribe(event => {
+      if (event && event.type === 'clone' && valuesByScenario[event.sourceId]) {
+        valuesByScenario[event.id] = JSON.parse(JSON.stringify(valuesByScenario[event.sourceId]));
+      }
+      ensureValues();
+      render();
+    });
 
     return { getState, setState };
   })();
@@ -2772,6 +2799,8 @@
       recalculateAll();
     }
 
+    // Adding, removing, and cloning scenarios only happens on the Budget tab — this
+    // header just displays each scenario's name (still editable/renamable here).
     function buildHeaderRow() {
       const row = el('div', 'flex-row col-head-row');
       row.appendChild(el('div', 'row-label'));
@@ -2788,21 +2817,8 @@
         input.addEventListener('keydown', e => { if (e.key === 'Enter') input.blur(); });
         nameRow.appendChild(input);
         cell.appendChild(nameRow);
-
-        if (scenarios.length > 1) {
-          const removeBtn = document.createElement('button');
-          removeBtn.className = 'remove-btn';
-          removeBtn.textContent = 'Remove';
-          removeBtn.onclick = () => ScenarioRegistry.remove(scenario.id);
-          cell.appendChild(removeBtn);
-        }
         values.appendChild(cell);
       });
-      const addBtn = document.createElement('button');
-      addBtn.className = 'add-btn';
-      addBtn.textContent = '+ Add scenario';
-      addBtn.onclick = () => ScenarioRegistry.add();
-      values.appendChild(addBtn);
       row.appendChild(values);
       return row;
     }
@@ -2918,7 +2934,13 @@
       render();
     }
 
-    ScenarioRegistry.subscribe(() => { ensureValues(); render(); });
+    ScenarioRegistry.subscribe(event => {
+      if (event && event.type === 'clone' && valuesByScenario[event.sourceId]) {
+        valuesByScenario[event.id] = JSON.parse(JSON.stringify(valuesByScenario[event.sourceId]));
+      }
+      ensureValues();
+      render();
+    });
 
     return { getState, setState };
   })();
@@ -2971,6 +2993,8 @@
       render();
     }
 
+    // Adding, removing, and cloning scenarios only happens on the Budget tab — this
+    // header just displays each scenario's name (still editable/renamable here).
     function buildHeaderRow() {
       const row = el('div', 'flex-row col-head-row');
       row.appendChild(el('div', 'row-label'));
@@ -2987,21 +3011,8 @@
         input.addEventListener('keydown', e => { if (e.key === 'Enter') input.blur(); });
         nameRow.appendChild(input);
         cell.appendChild(nameRow);
-
-        if (scenarios.length > 1) {
-          const removeBtn = document.createElement('button');
-          removeBtn.className = 'remove-btn';
-          removeBtn.textContent = 'Remove';
-          removeBtn.onclick = () => ScenarioRegistry.remove(scenario.id);
-          cell.appendChild(removeBtn);
-        }
         values.appendChild(cell);
       });
-      const addBtn = document.createElement('button');
-      addBtn.className = 'add-btn';
-      addBtn.textContent = '+ Add scenario';
-      addBtn.onclick = () => ScenarioRegistry.add();
-      values.appendChild(addBtn);
       row.appendChild(values);
       return row;
     }
@@ -3155,7 +3166,12 @@
       render();
     }
 
-    ScenarioRegistry.subscribe(() => { render(); });
+    ScenarioRegistry.subscribe(event => {
+      if (event && event.type === 'clone' && valuesByScenario[event.sourceId]) {
+        valuesByScenario[event.id] = JSON.parse(JSON.stringify(valuesByScenario[event.sourceId]));
+      }
+      render();
+    });
 
     return { getState, setState };
   })();
