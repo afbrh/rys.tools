@@ -233,7 +233,7 @@
   .cal-status.error { color: var(--expense); }
   /* Lives inside .app-header-sticky (not .cal-app) as of 2026-09-21, so it stays
      pinned in view with the rest of the header instead of scrolling away. */
-  .cal-upcoming { border: 1.5px solid var(--ink); border-radius: 10px; padding: 14px 16px; }
+  .cal-upcoming { padding: 14px 0 0; }
   .cal-upcoming[hidden] { display: none; }
   .cal-upcoming-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 10px; }
   .cal-upcoming-title {
@@ -312,20 +312,20 @@
   .cal-day-more { font-size: 10px; color: var(--ink-soft); }
 
   /* .cal-agenda-* below styles the items rendered into #cal-upcoming-list — either the
-     next 3 events (renderUpcoming) or a tapped day's events (renderSelectedDay), which
-     share this same box now instead of a separate box below the scroll grid. */
+     next 3 events (renderUpcoming) or a tapped day's events (renderSelectedDay). Each
+     one is its own card (border box), matching the E-Mail tool's per-message cards,
+     rather than all sharing one outer box. */
   .cal-agenda-empty { color: var(--ink-soft); font-size: 14px; }
   /* Every item in both the Upcoming and single-day views opens that event for
-     editing on click — the negative margin lets the hover background bleed past
-     the text without shifting the surrounding layout. */
+     editing on click. */
   .cal-agenda-item {
     display: flex;
     flex-direction: column;
     gap: 4px;
     cursor: pointer;
-    border-radius: 6px;
-    padding: 4px 6px;
-    margin: -4px -6px;
+    border: 1.5px solid var(--ink);
+    border-radius: 10px;
+    padding: 10px 12px;
     transition: background .12s ease;
   }
   .cal-agenda-item:hover { background: var(--paper-line); }
