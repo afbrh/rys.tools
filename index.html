@@ -278,16 +278,23 @@
   }
   .mail-search-clear:hover { color: var(--ink); background: rgba(0,0,0,0.08); }
   .mail-search-clear[hidden] { display: none; }
-  /* One column, same on every screen size — a tap expands a message inline right below
-     its row (see toggleInlineDetail), so there's no separate detail pane to lay out
+  /* One column, same on every screen size — a tap expands a message inline right inside
+     its own card (see toggleInlineDetail), so there's no separate detail pane to lay out
      alongside the list. Fills .mail-app's own width (which matches the header above it)
      rather than being capped any narrower. */
-  .mail-list {
+  .mail-list { display: flex; flex-direction: column; gap: 10px; }
+  .mail-list-empty { padding: 20px; font-size: 14px; color: var(--ink-soft); text-align: center; }
+  /* Each message gets its own bordered card — .mail-swipe-row (the row) and, once
+     expanded, .mail-inline-detail both live inside it as siblings, so the box visually
+     grows to wrap the opened message instead of the detail floating below as a separate
+     block. overflow:hidden here (not on .mail-swipe-row) clips both the row's swipe
+     transform and the detail's content to this card's rounded corners. */
+  .mail-card {
     border: 1.5px solid var(--ink);
     border-radius: 10px;
     overflow: hidden;
+    background: var(--paper);
   }
-  .mail-list-empty { padding: 20px; font-size: 14px; color: var(--ink-soft); text-align: center; }
   .mail-refresh-btn {
     width: 34px;
     height: 34px;
@@ -304,8 +311,7 @@
     flex-shrink: 0;
   }
   .mail-refresh-btn:hover { background: var(--paper-line); }
-  .mail-swipe-row { position: relative; overflow: hidden; border-bottom: 1px solid var(--paper-line); }
-  .mail-swipe-row:last-child { border-bottom: none; }
+  .mail-swipe-row { position: relative; overflow: hidden; }
   .mail-swipe-action {
     position: absolute;
     inset: 0;
@@ -465,15 +471,14 @@
   .compose-status { font-size: 13px; color: var(--gold); }
   .compose-status.error { color: var(--expense); }
 
-  /* Same everywhere, not just mobile — tapping a row expands its detail inline (right
-     below that row) instead of opening a separate detail pane. There's no other layout
-     to switch to at any width. */
+  /* Same everywhere, not just mobile — tapping a row expands its detail inline, inside
+     that same message's card, instead of opening a separate detail pane. There's no
+     other layout to switch to at any width. Only a top divider here (not its own
+     border/box) since .mail-card already draws the card's outer boundary — this and
+     the row above it are meant to read as one continuous card, not two stacked boxes. */
   .mail-inline-detail {
-    margin: 8px;
     padding: 14px;
-    border: 1.5px solid var(--ink);
-    border-radius: 10px;
-    background: var(--paper);
+    border-top: 1.5px solid var(--ink);
   }
 
   @media (max-width: 720px) {
@@ -1708,7 +1713,15 @@
       row.appendChild(btn);
 
       attachSwipeActions(btn, action, msg.id, isArchived, isUnread);
-      return row;
+
+      // Each message gets its own card (border box) — the row goes inside it, and
+      // toggleInlineDetail() inserts the expanded detail as this same card's other
+      // child (afterend of the row, within the card), so the box grows to fit both.
+      const card = document.createElement('div');
+      card.className = 'mail-card';
+      card.dataset.id = msg.id;
+      card.appendChild(row);
+      return card;
     }
 
     // Pointer Events cover touch, mouse, and pen with one code path — a real swipe on a
@@ -1764,7 +1777,7 @@
         if (horizontal && dx <= -THRESHOLD) {
           suppressClick = true;
           el.style.transform = 'translateX(-100%)';
-          toggleArchiveMessage(id, el.closest('.mail-swipe-row'), isArchived);
+          toggleArchiveMessage(id, el.closest('.mail-card'), isArchived);
         } else if (horizontal && dx >= THRESHOLD) {
           suppressClick = true;
           el.style.transform = 'translateX(0)';
