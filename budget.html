@@ -1573,7 +1573,8 @@
   /* ================= Mortgage app (namespaced) ================= */
   const MortgageApp = (function () {
     const LOAN_FIELDS = [
-      { key: 'loanAmount', label: 'Loan amount', type: 'currency' },
+      { key: 'price', label: 'Purchase price', type: 'currency' },
+      { key: 'down', label: 'Down payment', type: 'percent' },
       { key: 'rate', label: 'Interest rate', type: 'percent' },
       { key: 'term', label: 'Loan term', type: 'select' }
     ];
@@ -1585,7 +1586,7 @@
       { key: 'rent', label: 'Rent', type: 'currency' },
       { key: 'rentersInsurance', label: 'Renters insurance', type: 'currency', hint: 'per year' }
     ];
-    const DEFAULTS = { loanAmount: 0, rate: 0, term: '30', tax: 0, insurance: 0, rent: 0, rentersInsurance: 0 };
+    const DEFAULTS = { price: 0, down: 20, rate: 0, term: '30', tax: 0, insurance: 0, rent: 0, rentersInsurance: 0 };
     const TERM_OPTIONS = [30, 20, 15, 10];
 
     // valuesByScenario[scenarioId] = this tab's own field values for that shared scenario.
@@ -1733,7 +1734,7 @@
           const input = document.createElement('input');
           input.type = 'number';
           input.min = '0';
-          input.step = field.type === 'percent' ? '0.05' : '50';
+          input.step = field.key === 'down' ? '1' : field.type === 'percent' ? '0.05' : '50';
           input.value = v[field.key];
           input.dataset.scenario = scenario.id;
           input.dataset.field = field.key;
@@ -1806,6 +1807,8 @@
       const loanSection = el('div', 'section');
       loanSection.appendChild(el('div', 'section-head', '<h2>Loan details</h2>'));
       LOAN_FIELDS.forEach(f => loanSection.appendChild(buildInputRow(f)));
+      loanSection.appendChild(buildOutputRow('Down payment needed', 'down-amount', 'down-row'));
+      loanSection.appendChild(buildOutputRow('Loan amount', 'loan-amount'));
       root.appendChild(loanSection);
 
       const taxSection = el('div', 'section');
@@ -1839,7 +1842,10 @@
     function recalculateAll() {
       ScenarioRegistry.list().forEach(scenario => {
         const v = valuesByScenario[scenario.id];
-        const loanAmount = parseFloat(v.loanAmount) || 0;
+        const price = parseFloat(v.price) || 0;
+        const downPct = Math.min(Math.max(parseFloat(v.down) || 0, 0), 100);
+        const downAmount = price * downPct / 100;
+        const loanAmount = price - downAmount;
         const annualRate = parseFloat(v.rate) || 0;
         const years = parseInt(v.term, 10) || 30;
 
@@ -1872,6 +1878,8 @@
           if (elx) elx.textContent = text;
         };
 
+        setText('down-amount', currency(downAmount));
+        setText('loan-amount', currency(loanAmount));
         setText('total-interest', currency(totalInterest));
         setText('total-paid', currency(totalPaid));
         setText('pi-monthly', currency(monthlyPayment));
@@ -1892,6 +1900,17 @@
 
     function setState(state) {
       valuesByScenario = (state && state.valuesByScenario) ? state.valuesByScenario : {};
+      // Older saves stored a loan amount directly; convert it to the purchase price that
+      // would give that loan at the default down payment.
+      Object.keys(valuesByScenario).forEach(id => {
+        const v = valuesByScenario[id];
+        if (v.price === undefined) {
+          const down = v.down === undefined ? DEFAULTS.down : v.down;
+          v.down = down;
+          v.price = v.loanAmount ? Math.round(v.loanAmount / (1 - down / 100)) : 0;
+        }
+        delete v.loanAmount;
+      });
       ensureValues();
       render();
     }
