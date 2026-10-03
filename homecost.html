@@ -95,12 +95,33 @@
     .row.off { background:transparent; }
     .note { padding:0; }
   }
+/* ---------- slide-out menu ---------- */
+.menu-btn { width: 34px; height: 34px; padding: 0; flex: none; display: inline-flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; border: 1.5px solid var(--ink); border-radius: 8px; background: none; cursor: pointer; }
+.menu-btn:hover { background: var(--hide); }
+.menu-btn span { display: block; width: 16px; height: 2px; border-radius: 1px; background: var(--ink); }
+.side-overlay { position: fixed; inset: 0; background: rgba(0, 0, 0, 0.35); opacity: 0; pointer-events: none; transition: opacity .25s ease; z-index: 200; }
+.side-menu { position: fixed; top: 0; left: 0; bottom: 0; width: 260px; max-width: 80vw; padding: 20px 14px; background: var(--card); border-right: 1.5px solid var(--ink); transform: translateX(-100%); visibility: hidden; transition: transform .25s ease, visibility 0s linear .25s; z-index: 201; font-family: inherit; }
+body.menu-open .side-overlay { opacity: 1; pointer-events: auto; }
+body.menu-open .side-menu { transform: none; visibility: visible; transition-delay: 0s; }
+.side-title { font-size: 12px; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); margin: 0 8px 12px; }
+.side-link { display: block; padding: 11px 12px; border-radius: 8px; color: var(--ink); text-decoration: none; font-size: 16px; font-weight: 600; }
+.side-link:hover { background: var(--hide); }
+.side-link[aria-current="page"] { background: var(--hide); }
+@media print { .menu-btn, .side-menu, .side-overlay { display: none !important; } }
+  .titlebar { display:flex; align-items:center; gap:10px; margin-bottom:8px; }
+  .titlebar h1 { margin:0; }
   .note { color:var(--muted); font-size:12px; padding:0 16px 24px; }
 </style>
 </head>
 <body>
+<div class="side-overlay" id="side-overlay"></div>
+<nav class="side-menu" id="side-menu" aria-label="Tools">
+  <div class="side-title">Ry's Tools</div>
+  <a class="side-link" href="budget.html">Budget Planner</a>
+  <a class="side-link" href="homecost.html" aria-current="page">Home Cost Explorer</a>
+</nav>
 <header><div class="wrap">
-  <h1>Home Cost Explorer <span>· Addendum options</span></h1>
+  <div class="titlebar"><button type="button" class="menu-btn" id="menu-btn" aria-label="Open menu" aria-expanded="false" aria-controls="side-menu"><span></span><span></span><span></span></button><h1>Home Cost Explorer <span>· Addendum options</span></h1></div>
   <div class="stats">
     <div class="stat base"><div class="l">Base House Price</div><div class="v" id="base"></div></div>
     <div class="stat"><div class="l">Original Addendum total</div><div class="v" id="orig"></div></div>
@@ -547,5 +568,19 @@ window.addEventListener("beforeprint", stamp);
 document.getElementById("pdf").onclick = () => { stamp(); window.print(); };
 render();
 </script>
+<script>
+(function () {
+  var btn = document.getElementById('menu-btn'), body = document.body;
+  function setOpen(open) {
+    body.classList.toggle('menu-open', open);
+    btn.setAttribute('aria-expanded', open ? 'true' : 'false');
+    btn.setAttribute('aria-label', open ? 'Close menu' : 'Open menu');
+  }
+  btn.addEventListener('click', function () { setOpen(!body.classList.contains('menu-open')); });
+  document.getElementById('side-overlay').addEventListener('click', function () { setOpen(false); });
+  document.addEventListener('keydown', function (e) { if (e.key === 'Escape') setOpen(false); });
+})();
+</script>
+
 </body>
 </html>
