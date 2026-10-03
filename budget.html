@@ -164,7 +164,6 @@
   .brand-block { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; }
   .tool-controls { display: flex; align-items: center; flex-wrap: wrap; gap: 12px; margin-left: auto; }
   .tool-controls[hidden] { display: none; }
-  .brand-title { font-family: var(--font-header); font-size: 17px; font-weight: 600; color: var(--ink); letter-spacing: var(--letter-spacing-header); line-height: 34px; }
   .save-btn {
     height: 34px;
     display: inline-flex;
@@ -1027,7 +1026,6 @@
   <div class="app-header-inner">
   <div class="save-bar">
     <div class="brand-block">
-      <div class="brand-title">Budget Planner</div>
       <div class="signed-in-banner" id="signed-in-banner"></div>
     </div>
     <div class="tool-controls" id="tool-controls">
@@ -3001,11 +2999,9 @@
     // Client IDs are meant to be public (unlike API tokens) — the real gate is the
     // Google sign-in + consent screen each user goes through, not a hidden secret.
     const CLIENT_ID = '575902569700-4l05lkmf0kbrgq5kdr58canigcvafv3j.apps.googleusercontent.com';
-    // Every tool page requests this same full set of scopes (not just what this page
-    // itself uses) so signing in once, from any tool, grants everything every other
-    // tool needs too — no per-tool "reconnect" prompts later. Keep this identical to
-    // the SCOPE constant in email.html/cal.html any time a tool's needs change.
-    const SCOPE = 'https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/userinfo.email https://www.googleapis.com/auth/gmail.readonly https://www.googleapis.com/auth/gmail.send https://www.googleapis.com/auth/gmail.modify https://www.googleapis.com/auth/calendar.events';
+    // Only what this page needs: Drive (app-created files) for saving, and the account
+    // email for the signed-in banner.
+    const SCOPE = 'https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/userinfo.email';
     const FILE_NAME = 'munny-data.json';
     const FILE_ID_KEY = 'munny_drive_file_id';
     const TOKEN_KEY = 'munny_google_token';
