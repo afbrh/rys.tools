@@ -1,6 +1,5 @@
 <!DOCTYPE html>
 <html lang="en"><head>
-<script>(function(){try{var a=localStorage.getItem('munny_appearance');if(a!=='light'&&a!=='dark'){a=(localStorage.getItem('munny_theme')==='light')?'light':'dark';}if(a==='dark'){document.documentElement.setAttribute('data-theme','dark');}}catch(e){}})();</script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Ry's Tools</title>
@@ -27,19 +26,6 @@
     --font-mono: 'IBM Plex Mono', monospace;
     --bg-texture: none;
     --letter-spacing-header: -0.01em;
-  }
-  :root[data-theme="dark"] {
-    --paper: #000000;
-    --paper-line: #1C1C1C;
-    --ink: #F0F0EA;
-    --ink-soft: #8C8C84;
-    --income: #6FCF7A;
-    --income-bg: #101F13;
-    --expense: #E2685A;
-    --expense-bg: #241211;
-    --gold: #D9B25E;
-    --gold-bg: #1F1A0E;
-    --danger: #EF5350;
   }
   * { box-sizing: border-box; }
   body {
@@ -172,122 +158,13 @@
     user-select: none;
   }
   .save-bar { display: flex; align-items: flex-start; justify-content: flex-start; flex-wrap: wrap; gap: 12px; margin-bottom: 13px; }
-  /* The tool dropdown now sits where the page title used to be, with the signed-in
+  /* The page title sits at the top of the header, with the signed-in
      banner still stacked underneath it — everything in the header stays inline and
      wraps naturally at any width now, no more separate mobile layout/drawer. */
   .brand-block { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; }
   .tool-controls { display: flex; align-items: center; flex-wrap: wrap; gap: 12px; margin-left: auto; }
   .tool-controls[hidden] { display: none; }
-  .tool-dropdown { position: relative; }
-  .tool-dropdown-toggle {
-    height: 34px;
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    padding: 0 14px;
-    border-radius: 17px;
-    background: none;
-    border: 1.5px solid var(--ink);
-    color: var(--ink);
-    font-family: var(--font-body);
-    font-size: 13px;
-    font-weight: 600;
-    cursor: pointer;
-  }
-  .tool-dropdown-toggle:hover, .tool-dropdown-toggle.is-open { background: var(--paper-line); }
-  .tool-dropdown-caret {
-    font-size: 9px;
-    color: var(--ink-soft);
-    transition: transform .15s ease;
-  }
-  .tool-dropdown-toggle.is-open .tool-dropdown-caret { transform: rotate(180deg); }
-  .tool-dropdown-menu {
-    position: absolute;
-    top: calc(100% + 8px);
-    left: 0;
-    min-width: 160px;
-    background: var(--paper);
-    border: 1.5px solid var(--ink);
-    border-radius: 12px;
-    padding: 6px;
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
-    box-shadow: 0 10px 28px rgba(0,0,0,0.2);
-    opacity: 0;
-    transform: translateY(-6px);
-    pointer-events: none;
-    transition: opacity .15s ease, transform .15s ease;
-    z-index: 50;
-  }
-  .tool-dropdown-menu.expanded {
-    opacity: 1;
-    transform: translateY(0);
-    pointer-events: auto;
-  }
-  .tool-dropdown-item {
-    display: block;
-    width: 100%;
-    text-align: left;
-    background: none;
-    border: none;
-    border-radius: 7px;
-    padding: 9px 12px;
-    font-family: var(--font-body);
-    font-size: 13px;
-    font-weight: 600;
-    color: var(--ink-soft);
-    cursor: pointer;
-  }
-  .tool-dropdown-item:hover { background: var(--paper-line); color: var(--ink); }
-  .tool-dropdown-item.active { color: var(--ink); background: var(--gold-bg); }
-  .dropdown-label-short { display: none; }
-  .save-bar.labels-short .dropdown-label-full { display: none; }
-  .save-bar.labels-short .dropdown-label-short { display: inline; }
-  /* Classic sun/moon slider switch — a plain single-click toggle (not a dropdown),
-     not an actual draggable range input. margin-left: auto keeps it pinned to the
-     right edge of the header at every width. Entirely CSS-driven off the same
-     :root[data-theme="dark"] attribute setAppearance() already toggles, so the
-     thumb's slide and each icon's color need no JS beyond the existing click
-     handler — see .theme-toggle-icon/.theme-toggle-thumb below. */
-  .theme-toggle-btn {
-    position: relative;
-    width: 56px;
-    height: 34px;
-    padding: 0;
-    border-radius: 17px;
-    background: none;
-    border: 1.5px solid var(--ink);
-    cursor: pointer;
-    margin-left: auto;
-    flex-shrink: 0;
-  }
-  .theme-toggle-btn:hover { background: var(--paper-line); }
-  .theme-toggle-icon {
-    position: absolute;
-    top: 50%;
-    width: 16px;
-    height: 16px;
-    transform: translateY(-50%);
-    color: var(--ink-soft);
-    transition: color .15s ease;
-    pointer-events: none;
-  }
-  .theme-toggle-icon.sun { left: 8px; color: var(--ink); }
-  .theme-toggle-icon.moon { right: 8px; }
-  :root[data-theme="dark"] .theme-toggle-icon.sun { color: var(--ink-soft); }
-  :root[data-theme="dark"] .theme-toggle-icon.moon { color: var(--ink); }
-  .theme-toggle-thumb {
-    position: absolute;
-    top: 4px;
-    left: 4px;
-    width: 24px;
-    height: 24px;
-    border-radius: 50%;
-    background: var(--gold-bg);
-    transition: transform .2s ease;
-  }
-  :root[data-theme="dark"] .theme-toggle-thumb { transform: translateX(22px); }
+  .brand-title { font-family: var(--font-header); font-size: 17px; font-weight: 600; color: var(--ink); letter-spacing: var(--letter-spacing-header); line-height: 34px; }
   .save-btn {
     height: 34px;
     display: inline-flex;
@@ -1150,30 +1027,13 @@
   <div class="app-header-inner">
   <div class="save-bar">
     <div class="brand-block">
-      <div class="tool-dropdown">
-        <button class="tool-dropdown-toggle" id="tool-dropdown-toggle" onclick="toggleToolMenu(event)" aria-haspopup="true" aria-expanded="false">
-          <span id="tool-dropdown-label" class="dropdown-label-full">Budget Planner</span>
-          <span id="tool-dropdown-label-short" class="dropdown-label-short" aria-hidden="true">B</span>
-          <span class="tool-dropdown-caret">&#9662;</span>
-        </button>
-        <div class="tool-dropdown-menu" id="tool-menu" role="menu" aria-label="Tool">
-          <button type="button" class="tool-dropdown-item" data-value="budget" role="menuitemradio" onclick="setActiveTool('budget')">Budget Planner</button>
-          <button type="button" class="tool-dropdown-item" data-value="email" role="menuitemradio" onclick="setActiveTool('email')">E-Mail</button>
-          <button type="button" class="tool-dropdown-item" data-value="calendar" role="menuitemradio" onclick="setActiveTool('calendar')">Calendar</button>
-          <button type="button" class="tool-dropdown-item" data-value="scratch" role="menuitemradio" onclick="setActiveTool('scratch')">Scratch</button>
-        </div>
-      </div>
+      <div class="brand-title">Budget Planner</div>
       <div class="signed-in-banner" id="signed-in-banner"></div>
     </div>
     <div class="tool-controls" id="tool-controls">
       <button class="save-btn export-btn" id="google-signin-btn" onclick="handleGoogleSignIn()">Google Sign-In</button>
       <span class="save-status" id="save-status"></span>
     </div>
-    <button type="button" class="theme-toggle-btn" id="theme-toggle-btn" onclick="toggleAppearance()" aria-label="Switch to light mode">
-      <span class="theme-toggle-thumb"></span>
-      <svg class="theme-toggle-icon sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4"></circle><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"></path></svg>
-      <svg class="theme-toggle-icon moon" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>
-    </button>
   </div>
   <div id="app-header-tabs">
   <div class="tab-bar">
@@ -3415,10 +3275,11 @@
     await GoogleDriveSync.save({ tools: tools });
   }
 
+  const CURRENT_TOOL = 'budget';
+
   function setGoogleSignedInUi(signedIn) {
     const signinBtn = document.getElementById('google-signin-btn');
     if (signinBtn) signinBtn.hidden = signedIn;
-    updateDropdownLabelFit();
   }
 
   async function showSignedInBanner() {
@@ -3555,64 +3416,6 @@
     sizeAllCurrencyInputs();
   }
 
-  function setAppearance(appearance) {
-    if (appearance === 'dark') {
-      document.documentElement.setAttribute('data-theme', 'dark');
-    } else {
-      appearance = 'light';
-      document.documentElement.removeAttribute('data-theme');
-    }
-    try { localStorage.setItem('munny_appearance', appearance); } catch (e) {}
-    syncThemeToggle(appearance);
-  }
-
-  function toggleAppearance() {
-    setAppearance(document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark');
-  }
-
-  // Shrinks the tool dropdown's toggle label to a single initial only when the
-  // current label text — plus the Save/Google Sign-In buttons, which can't shrink —
-  // would otherwise force something onto a new line. Re-checked whenever a label's
-  // text changes or the window resizes, never a fixed viewport breakpoint (shorter
-  // label combos keep their full words much longer). Prefers full labels whenever
-  // everything already fits on one row, and only shrinks when doing so actually
-  // frees up enough room to get everything back onto a single row. The theme toggle
-  // isn't part of this check — it just wraps to its own line via .save-bar's
-  // flex-wrap if it doesn't fit, since "Light"/"Dark" are already as short as they
-  // can get.
-  function updateDropdownLabelFit() {
-    const saveBar = document.querySelector('.save-bar');
-    const toolDropdown = document.querySelector('.tool-dropdown');
-    const toolControls = document.getElementById('tool-controls');
-    if (!saveBar || !toolDropdown) return;
-
-    function rowTops() {
-      const els = [toolDropdown];
-      if (toolControls && !toolControls.hidden) els.push(toolControls);
-      return els.map(function (el) { return Math.round(el.getBoundingClientRect().top); });
-    }
-
-    function sameRow(tops) {
-      return tops.every(function (t) { return t === tops[0]; });
-    }
-
-    saveBar.classList.remove('labels-short');
-    if (sameRow(rowTops())) return;
-
-    saveBar.classList.add('labels-short');
-    if (!sameRow(rowTops())) {
-      // Shrinking the labels didn't free up enough room anyway (the buttons are the
-      // bottleneck), so keep the full, more readable labels instead of shrinking for no benefit.
-      saveBar.classList.remove('labels-short');
-    }
-  }
-
-  let dropdownLabelFitResizeTimer = null;
-  window.addEventListener('resize', function () {
-    clearTimeout(dropdownLabelFitResizeTimer);
-    dropdownLabelFitResizeTimer = setTimeout(updateDropdownLabelFit, 100);
-  });
-
   // Shrinks the middle tab labels (Housing, Food, Car, ...) down to short initials only
   // when they'd otherwise need horizontal scrolling to all fit — content-aware, not a
   // fixed viewport breakpoint. Horizontal scroll stays as a fallback for anything still
@@ -3641,99 +3444,6 @@
     clearTimeout(tabLabelFitResizeTimer);
     tabLabelFitResizeTimer = setTimeout(updateTabLabelFit, 100);
   });
-
-  // save-status text length varies a lot (sign-in progress, errors, "Saved to Google
-  // Drive", etc.) and can itself push tool-controls onto a new line, so watch it
-  // directly instead of re-checking fit at every call site that sets its text.
-  const saveStatusEl = document.getElementById('save-status');
-  if (saveStatusEl && window.MutationObserver) {
-    new MutationObserver(updateDropdownLabelFit).observe(saveStatusEl, { characterData: true, childList: true, subtree: true });
-  }
-
-  // The sun/moon icons and thumb slide purely via CSS off :root[data-theme] (see
-  // .theme-toggle-icon/.theme-toggle-thumb) — this only needs to keep the
-  // accessible label in sync with what a click will actually do.
-  function syncThemeToggle(appearance) {
-    const btn = document.getElementById('theme-toggle-btn');
-    if (btn) btn.setAttribute('aria-label', appearance === 'dark' ? 'Switch to light mode' : 'Switch to dark mode');
-    updateDropdownLabelFit();
-  }
-
-  function toggleDropdown(e, toggleId, menuId) {
-    if (e) e.stopPropagation();
-    const panel = document.getElementById(menuId);
-    const toggle = document.getElementById(toggleId);
-    if (!panel || !toggle) return;
-    const isOpen = panel.classList.toggle('expanded');
-    toggle.classList.toggle('is-open', isOpen);
-    toggle.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
-  }
-
-  function closeDropdown(toggleId, menuId) {
-    const panel = document.getElementById(menuId);
-    const toggle = document.getElementById(toggleId);
-    if (panel) panel.classList.remove('expanded');
-    if (toggle) { toggle.classList.remove('is-open'); toggle.setAttribute('aria-expanded', 'false'); }
-  }
-
-  function toggleToolMenu(e) { toggleDropdown(e, 'tool-dropdown-toggle', 'tool-menu'); }
-  function closeToolMenu() { closeDropdown('tool-dropdown-toggle', 'tool-menu'); }
-
-  document.addEventListener('click', function (e) {
-    [
-      ['tool-dropdown-toggle', 'tool-menu', '.tool-dropdown']
-    ].forEach(function (entry) {
-      const toggleId = entry[0], menuId = entry[1], wrapSelector = entry[2];
-      const panel = document.getElementById(menuId);
-      const wrap = document.querySelector(wrapSelector);
-      if (!panel || !wrap || !panel.classList.contains('expanded')) return;
-      if (wrap.contains(e.target)) return;
-      closeDropdown(toggleId, menuId);
-    });
-  });
-
-  // Each tool now lives on its own page (see the "shared chrome duplicated per file"
-  // note this was heading toward) — CURRENT_TOOL says which one *this* page is, so
-  // selecting a different tool from the dropdown navigates instead of toggling in place.
-  const CURRENT_TOOL = 'budget';
-  const TOOL_PAGES = { budget: 'budget.html', email: 'email.html', calendar: 'cal.html', scratch: 'scratch.html' };
-  const TOOL_LABELS = { budget: 'Budget Planner', email: 'E-Mail', calendar: 'Calendar', scratch: 'Scratch' };
-
-  function setActiveTool(tool) {
-    if (!TOOL_PAGES[tool]) tool = CURRENT_TOOL;
-    if (tool !== CURRENT_TOOL) {
-      window.location.href = TOOL_PAGES[tool];
-      return;
-    }
-    syncToolMenu(tool);
-    closeToolMenu();
-  }
-
-  function syncToolMenu(tool) {
-    const label = TOOL_LABELS[tool] || TOOL_LABELS[CURRENT_TOOL];
-    const toggleLabel = document.getElementById('tool-dropdown-label');
-    if (toggleLabel) toggleLabel.textContent = label;
-    const toggleLabelShort = document.getElementById('tool-dropdown-label-short');
-    if (toggleLabelShort) toggleLabelShort.textContent = label.charAt(0);
-    updateDropdownLabelFit();
-    document.querySelectorAll('#tool-menu .tool-dropdown-item').forEach(function (item) {
-      const isActive = item.dataset.value === tool;
-      item.classList.toggle('active', isActive);
-      item.setAttribute('aria-checked', isActive ? 'true' : 'false');
-    });
-  }
-
-  function currentAppearance() {
-    let appearance;
-    try { appearance = localStorage.getItem('munny_appearance'); } catch (e) {}
-    if (appearance === 'light' || appearance === 'dark') return appearance;
-    // Anything else — the older dark-mode-only toggle, or a stale Elder/Machina
-    // value from before those themes were removed — falls back to dark.
-    let theme;
-    try { theme = localStorage.getItem('munny_theme'); } catch (e) {}
-    return theme === 'light' ? 'light' : 'dark';
-  }
-
   async function loadApp() {
     // A still-valid access token from an earlier sign-in (saved in localStorage) can be
     // restored without any popup — so a refresh doesn't force signing in again until that
@@ -3743,8 +3453,6 @@
     // access before) stays signed in indefinitely, same as Gmail itself.
     applyLoadedData(null);
     setGoogleSignedInUi(false);
-    setAppearance(currentAppearance());
-    syncToolMenu(CURRENT_TOOL);
     updateTabLabelFit();
     switchTab(currentActiveTab());
 
