@@ -1,0 +1,551 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Home Cost Explorer</title>
+<style>
+  :root {
+    color-scheme:light;
+    --bg:#f4ecd8; --card:#fbf6e9; --ink:#3b3226; --muted:#85796a; --line:#e2d7bd;
+    --accent:#6b4f2a; --accent-soft:#ecdfc0; --neg:#a8402a; --hide:#efe5cb;
+  }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--bg); color:var(--ink);
+    font:16px/1.45 "Palatino Linotype",Palatino,"Iowan Old Style",Georgia,serif;
+    font-variant-numeric:lining-nums; }
+  header { position:sticky; top:0; z-index:5; background:var(--card); border-bottom:1px solid var(--line);
+    padding:12px 16px; }
+  .wrap { max-width:960px; margin:0 auto; }
+  h1 { font-size:16px; margin:0 0 8px; font-weight:600; }
+  h1 span { color:var(--muted); font-weight:400; }
+  .stats { display:grid; grid-template-columns:repeat(5,1fr); gap:10px; }
+  .stat.base { grid-row:span 2; display:flex; flex-direction:column; justify-content:center; }
+  @media (max-width:900px) { .stats { grid-template-columns:1fr 1fr; } .stat.base { grid-column:1/-1; grid-row:auto; } }
+  @media (max-width:560px) { .stat .v { font-size:18px; } }
+  .stat .s { font-size:11px; color:var(--muted); }
+  .stat { background:var(--bg); border-radius:10px; padding:8px 12px; }
+  .stat .l { font-size:11px; text-transform:uppercase; letter-spacing:.05em; color:var(--muted); }
+  .stat .v, .row .c, .sh .sub, .addform .amt { font-family:-apple-system,"SF Pro Display",BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif; font-variant-numeric:lining-nums tabular-nums; }
+  .stat .v { font-size:22px; font-weight:650; }
+  .stat.main { background:var(--accent-soft); }
+  .stat.main .v { color:var(--accent); }
+  .bar { display:flex; gap:8px; margin-top:10px; flex-wrap:wrap; align-items:center; }
+  button { font:inherit; font-size:13px; padding:6px 12px; border-radius:8px; cursor:pointer;
+    border:1px solid var(--line); background:var(--card); color:var(--ink); }
+  button:hover { border-color:var(--accent); }
+  .hint { color:var(--muted); font-size:12px; margin-left:auto; }
+  main { padding:16px; }
+  section { background:var(--card); border:1px solid var(--line); border-radius:12px; margin-bottom:14px; overflow:hidden; }
+  .sh { display:flex; align-items:center; gap:10px; padding:10px 14px; background:var(--bg);
+    border-bottom:1px solid var(--line); }
+  .sh h2 { margin:0; font-size:14px; font-weight:600; flex:1; }
+  .sh .sub { font-variant-numeric:tabular-nums; font-weight:600; }
+  .sh .sub small { color:var(--muted); font-weight:400; margin-left:6px; }
+  .sh button { padding:3px 9px; font-size:12px; }
+  .row { display:flex; gap:12px; align-items:flex-start; padding:9px 14px; border-bottom:1px solid var(--line);
+    cursor:pointer; }
+  .row:last-child { border-bottom:0; }
+  .row:hover { background:var(--bg); }
+  .row input { margin-top:3px; accent-color:var(--accent); width:16px; height:16px; flex:none; }
+  .row .t { flex:1; min-width:0; }
+  .row .n { font-weight:500; }
+  .row .d { color:var(--muted); font-size:13px; }
+  .row .c { font-variant-numeric:tabular-nums; font-weight:600; white-space:nowrap; }
+  .row .c.neg { color:var(--neg); }
+  .row.off { background:var(--hide); }
+  .row.off .n, .row.off .d, .row.off .c { text-decoration:line-through; opacity:.45; }
+  .row.custom .n, .row.custom .c, .row.custom .d { color:#c0261b; }
+  .row.custom .d { font-size:12px; font-style:italic; }
+  .row .x { background:none; border:0; color:#c0261b; font-size:18px; line-height:1; padding:0 4px; opacity:.6; }
+  .row .x:hover { opacity:1; }
+  .addbar { padding:8px 14px; border-top:1px solid var(--line); }
+  .plus { width:30px; height:30px; padding:0; border-radius:50%; font-size:20px; line-height:1;
+    color:#c0261b; border-color:#c0261b; background:transparent; }
+  .plus:hover { background:#c0261b; color:#fff; }
+  .addform { display:flex; gap:8px; flex-wrap:wrap; align-items:center; padding:10px 14px;
+    border-top:1px solid var(--line); background:var(--hide); }
+  .addform input[type=text] { font:inherit; font-size:14px; padding:6px 9px; border:1px solid #c0261b;
+    border-radius:8px; background:var(--card); color:var(--ink); }
+  .addform .ttl { flex:2 1 200px; } .addform .amt { flex:1 1 110px; }
+  .addform .ok { background:#c0261b; color:#fff; border-color:#c0261b; }
+  .row .nb { background:none; border:0; padding:0 4px; font-size:15px; color:var(--muted); opacity:.55; }
+  .row .nb:hover { opacity:1; color:#c0261b; }
+  .note-t { color:#c0261b; font-size:13px; margin-top:2px; white-space:pre-wrap; }
+  .noteform { display:flex; gap:6px; flex-wrap:wrap; margin-top:5px; }
+  .noteform input { flex:1 1 200px; font:inherit; font-size:13px; padding:4px 8px; border:1px solid #c0261b;
+    border-radius:6px; background:var(--card); color:#c0261b; }
+  .noteform button { padding:3px 10px; font-size:12px; }
+  .th { width:64px; height:64px; object-fit:contain; background:#fff; border:1px solid var(--line); border-radius:6px; flex:none; }
+  .row.off .th { opacity:.35; }
+  .cnt { font-size:12px; color:var(--muted); display:flex; gap:5px; align-items:center; cursor:pointer; }
+  .printonly { display:none; }
+  @media print {
+    @page { margin:14mm; }
+    * { -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+    body { background:#fff; }
+    header { position:static; border:0; padding:0 0 10px; }
+    .bar, .addbar, .addform, .sh button, .cnt, .row .x, .row .nb, .row input[type=checkbox], .hint { display:none !important; }
+    .printonly { display:block; color:var(--muted); font-size:12px; margin:0 0 8px; }
+    main { padding:0; }
+    section { break-inside:auto; }
+    .sh, .row { break-inside:avoid; }
+    .row { cursor:auto; }
+    .row:hover { background:transparent; }
+    .row.off { background:transparent; }
+    .note { padding:0; }
+  }
+  .note { color:var(--muted); font-size:12px; padding:0 16px 24px; }
+</style>
+</head>
+<body>
+<header><div class="wrap">
+  <h1>Home Cost Explorer <span>· Addendum options</span></h1>
+  <div class="stats">
+    <div class="stat base"><div class="l">Base House Price</div><div class="v" id="base"></div></div>
+    <div class="stat"><div class="l">Original Addendum total</div><div class="v" id="orig"></div></div>
+    <div class="stat"><div class="l">Total House Cost</div><div class="v" id="total0"></div></div>
+    <div class="stat"><div class="l">20% Down Payment</div><div class="v" id="down0"></div></div>
+    <div class="stat"><div class="l">5.99% Mortgage Payment</div><div class="v" id="mo0"></div><div class="s" id="mos0"></div></div>
+    <div class="stat main"><div class="l">Calculated Addendum Total</div><div class="v" id="cur"></div></div>
+    <div class="stat main"><div class="l">Total House Cost</div><div class="v" id="total"></div></div>
+    <div class="stat main"><div class="l">20% Down Payment</div><div class="v" id="down"></div></div>
+    <div class="stat main"><div class="l">5.99% Mortgage Payment</div><div class="v" id="mo"></div><div class="s" id="mos"></div></div>
+  </div>
+  <div class="printonly" id="printdate"></div>
+  <div class="bar">
+    <button id="showAll">Show all</button>
+    <button id="hideAllowances">Hide all allowances</button>
+    <button id="pdf">Export PDF</button>
+    <span class="hint">Click any row to hide or show it · Use + to add items and ✎ to add notes (shown in red)</span>
+  </div>
+</div></header>
+<main><div class="wrap" id="app"></div></main>
+<p class="note wrap">Source: Addendum Draft 1, printed 09/30/2026. Allowances are budget placeholders, not fixed prices. Credits (negative amounts) increase your total when hidden.</p>
+
+<script>
+// [name, details, cost]
+const DATA = [
+  { id:"app", title:"Appliance & lighting allowances (Addendum 02)", allowance:true, items:[
+    ["Washer & dryer allowance","Additional appliance allowance",2000],
+    ["Appliances of choice","Additional appliance allowance",4500],
+    ["Additional lighting allowance","Added to the $1,435 included lighting allowance",3500],
+  ]},
+  { id:"exp", title:"Home expansion & exterior (Addendum 03)", items:[
+    ["Widen home 2' – first floor","74 sq ft × $117",8658],
+    ["Widen home 2' – second floor","78 sq ft × $117",9126],
+    ["Widen garage 2'","40 sq ft (20×2) × $62",2480],
+    ["Concrete patio","12×12, fiber mesh, two 3' steps · 144 sq ft × $20",2880],
+    ["Patio picture framing","144 sq ft × $1.65",237.6],
+  ]},
+  { id:"win", title:"Windows (Addendum 03)", items:[
+    ["Primary bath – add window","24×42 single hung, per redline",875],
+    ["Bedroom 2 – add window","36×54 single hung",875],
+    ["Bedroom 3 – add window","36×54 single hung",875],
+    ["Great room – add front window","30×66 single hung",875],
+    ["Great room – two 30×66 windows","Single hung, replace the included 36×24 direct-set windows (2 × $875)",1750],
+    ["Great room – remove 36×24 window (1 of 2)","Credit, direct set",-660],
+    ["Great room – remove 36×24 window (2 of 2)","Credit, direct set",-660],
+    ["Upper stair – add window","72×24 direct set, per redline plan · 12 sq ft × $70",840],
+    ["Window wrap – Bedroom 2","3¾\", corner site requirement",395],
+    ["Window wrap – Garage","3¾\", corner site requirement",395],
+    ["Window wraps – Great room (×2)","3¾\", corner site requirement",790],
+    ["Window wrap – Kitchen","3¾\", corner site requirement",395],
+    ["Window grilles – Bedroom 2","Corner site requirement",65],
+    ["Window grilles – Garage","Corner site requirement",65],
+    ["Window grilles – Great room (×2)","Corner site requirement",130],
+    ["Window grilles – Kitchen","Corner site requirement",65],
+  ]},
+  { id:"oth", title:"Other plan options (Addendum 03)", items:[
+    ["Primary suite tray ceiling","Square tray, built into trusses",2072],
+    ["Laundry sink rough-in","Lower level: drain, vent and water lines",665],
+    ["Peak accent siding (×2)","Side elevations, includes 5\" trim, corner site requirement",560],
+  ]},
+  { id:"kit", title:"Kitchen allowances (Addendum 04)", allowance:true, items:[
+    ["Cabinet upgrade","Upgrade kitchen cabinets",9000],
+    ["Group D quartz countertops","Upgrade in kitchen",2950],
+    ["Backsplash","Select kitchen backsplash",2200],
+    ["Larger stainless sink basin","Upgrade kitchen sink",600],
+    ["Faucet upgrade","Upgrade kitchen faucet",250],
+    ["Pipe air gap under sink","",220],
+    ["Soap dispenser","",100],
+  ]},
+  { id:"lau", title:"Laundry allowances (Addendum 04)", allowance:true, items:[
+    ["Lockers with bottom drawers","Laundry room",5250],
+    ["Cabinets above washer & dryer","",1000],
+    ["Laminate folding top","Laundry room folding area",400],
+  ]},
+  { id:"bath", title:"Bathroom allowances (Addendum 04)", allowance:true, items:[
+    ["Primary bath – tiled shower","Primary suite tiled shower allowance",5375],
+    ["Primary bath – Group C quartz","Countertop",1000],
+    ["Primary bath – fixture upgrade","",800],
+    ["Primary bath – comfort-height toilet","",85],
+    ["Main bath – Group C quartz","Countertop",750],
+    ["Main bath – fixture upgrade","",500],
+    ["Main bath – comfort-height toilet","",85],
+    ["Powder bath – Group C quartz","Countertop",750],
+    ["Powder bath – fixture upgrade","",350],
+    ["Powder bath – comfort-height toilet","",85],
+  ]},
+  { id:"flr", title:"Flooring allowances (Addendum 04)", allowance:true, items:[
+    ["Level 4 LVP","All LVP and carpeted areas except stairs",7350],
+    ["Level 5 tile (24×12)","Laundry room, main bath, primary bath",1900],
+    ["Level 7+ carpet","Stairs",1440],
+  ]},
+  { id:"int", title:"Interior allowances (Addendum 04)", allowance:true, items:[
+    ["Interior door upgrade","",1300],
+    ["Matte black knobs","",75],
+  ]},
+  { id:"ext", title:"Exterior allowances (Addendum 04)", allowance:true, items:[
+    ["Fence allowance","Estimate",10000],
+    ["Premium siding upgrade","",1050],
+    ["Widen garage door to 18'","",500],
+    ["Thumblatch front door handle","",190],
+  ]},
+  { id:"fee", title:"Plan modification fees (Addendum 04)", items:[
+    ["Exterior modification fee","",250],
+    ["Interior plan modification fee","",250],
+  ]},
+  { id:"ferg", title:"Ferguson Home cart · 42 items", excluded:true, items:[
+    [
+     "Innovations Lighting Hadley 12\" Tall Wall Sconce",
+     "Model 616-1W-BK-G341 · Matte Black / Matte White · Qty 2 @ $147.40 · In stock · ships 1-2 business days",
+     294.8
+    ],
+    [
+     "Kichler Avery 15\" Wide Pendant",
+     "Model 43906BK · Black · Qty 2 @ $219.97 · In stock · ships 1-3 business days",
+     439.94
+    ],
+    [
+     "KitchenAid 33\" French Door Refrigerator (22 cu ft, Max Cool)",
+     "Model KRFF333SPS · PrintShield Stainless · Special order · 6-10 weeks",
+     2469.0
+    ],
+    [
+     "Golden Lighting Keating 3 Light 14\" Flush Mount",
+     "Model 0806-FM ABI · Antique Black Iron · In stock · ships 1-2 business days",
+     189.99
+    ],
+    [
+     "Golden Lighting Keating 3 Light 17\" Pendant",
+     "Model 0806-3P ABI · Antique Black Iron · Qty 2 @ $299.99 · In stock · ships 1-2 business days",
+     599.98
+    ],
+    [
+     "Livex Lighting Oldwick 5 Light 42\" Vanity Light, white shade",
+     "Model 5715-04 · Black · Qty 2 @ $471.96 · In stock · ships 1-2 business days",
+     943.92
+    ],
+    [
+     "Forte Lighting Harmon 12\" Pendant",
+     "Model 7210-01-04 · Black · Qty 2 @ $130.20 · In stock · ships 1-2 business days",
+     260.4
+    ],
+    [
+     "Moen Dartmoor Widespread Bathroom Faucet",
+     "Model TV6805BL · Matte Black · In stock · delivery by Tuesday",
+     341.87
+    ],
+    [
+     "Delta Roe Widespread Bathroom Faucet",
+     "Model 35985LF-BL · Matte Black · Qty 2 @ $139.00 · In stock · ships 5-7 business days",
+     278.0
+    ],
+    [
+     "Delta Roe Monitor 14 Tub & Shower Trim (less rough-in valve)",
+     "Model T144985-BL · Matte Black · Special order · 6-10 weeks",
+     139.0
+    ],
+    [
+     "Delta Modern Round Shower System Package (includes rough-in)",
+     "Model 342702-BL · Matte Black · In stock · delivery by Tuesday",
+     669.0
+    ],
+    [
+     "Signature Hardware Greyfield Pull Down Kitchen Faucet",
+     "Model SHXCGF107MB · Matte Black · In stock · delivery by Tuesday",
+     536.54
+    ],
+    [
+     "Kohler Tone Pull Down Kitchen Faucet",
+     "Model K-23764-BL · Matte Black · In stock · delivery by Tuesday",
+     607.5
+    ],
+    [
+     "Amerock Renown 1-1/4\" Mushroom Cabinet Knob",
+     "Model BP36793FB · Matte Black · In stock · delivery by Tuesday",
+     8.56
+    ],
+    [
+     "Amerock Renown 5-1/16\" Cabinet Pull",
+     "Model BP36795FB · Matte Black · In stock · delivery by Tuesday",
+     12.84
+    ],
+    [
+     "Amerock Renown 12-5/8\" Cabinet Pull",
+     "Model BP36989FB · Matte Black · In stock · ships 1-2 business days",
+     43.19
+    ],
+    [
+     "Merola Tile Kings Star 18×18 Floor & Wall Tile (10.95 SF/carton)",
+     "Model FPESTRNI · Night · Qty 2 @ $129.37 · In stock · ships 1-2 business days",
+     258.74
+    ],
+    [
+     "Millennium Lighting RLM 14\" Pendant",
+     "Model RWHC14-SB · Satin Black · Qty 2 @ $129.90 · In stock · ships 1-3 business days",
+     259.8
+    ],
+    [
+     "Savoy House Berg 12\" Pendant, metal shade",
+     "Model 7-3751-1-89 · Matte Black · Qty 2 @ $260.00 · In stock · ships 1-2 business days",
+     520.0
+    ],
+    [
+     "KitchenAid 24\" Countertop Microwave (2.2 cu ft)",
+     "Model KMCS324SPS · PrintShield Stainless · In stock · delivery by Tuesday",
+     629.99
+    ],
+    [
+     "KitchenAid 24\" Built-In Dishwasher (ProDry)",
+     "Model KDTS324SPS · PrintShield Stainless · In stock · ships tomorrow, Oct 2",
+     849.99
+    ],
+    [
+     "Capital Lighting Bradford 21\" Outdoor Wall Sconce",
+     "Model 946421BK · Black · In stock · delivery by Tuesday",
+     178.0
+    ],
+    [
+     "Capital Lighting Bradford 17\" Outdoor Wall Sconce",
+     "Model 946411BK · Black · In stock · delivery by Tuesday",
+     130.0
+    ],
+    [
+     "Schlage Georgian Passage Door Knob Set",
+     "Model F10GEO622 · Matte Black · In stock · delivery by Tuesday",
+     24.99
+    ],
+    [
+     "Golden Lighting Duncan 14\" Pendant",
+     "Model 3602-L PW-BLK · Matte Black · Qty 2 @ $197.99 · In stock · ships 1-2 business days",
+     395.98
+    ],
+    [
+     "Elegant Lighting Merce 20\" Pendant, metal shade",
+     "Model LD6013D20BK · Vintage Black · In stock · ships 1-2 business days",
+     194.0
+    ],
+    [
+     "Capital Lighting Oakwood 18\" Pendant",
+     "Model 9D331A · Matte Black · Special order · 6-13 weeks",
+     296.0
+    ],
+    [
+     "Lark Bliss 15\" Wall Sconce, off-white linen shade",
+     "Model 84380BK · Black · In stock · ships 1-2 business days",
+     129.99
+    ],
+    [
+     "Bedrosians Wave 12×24 Floor & Wall Tile (15.5 SF/carton)",
+     "Model 100001516 · Coal · In stock · ships 2-3 business days",
+     97.5
+    ],
+    [
+     "Bedrosians Wave 12×24 Floor & Wall Tile (15.5 SF/carton)",
+     "Model 100001526 · Ash Fan · In stock · ships 2-3 business days",
+     102.15
+    ],
+    [
+     "Emser Tile Sterlina II 12×24 Floor Tile (15.5 SF/carton)",
+     "Model F20STERAS1224 · Asphalt · In stock · ships 2-4 business days",
+     106.98
+    ],
+    [
+     "Emser Tile Sterlina II 12×24 Floor Tile (15.5 SF/carton)",
+     "Model F20STERGR1224 · Gray · In stock · ships 2-4 business days",
+     106.98
+    ],
+    [
+     "Estimated tax (Oregon, WI 53575)",
+     "Per the Ferguson cart · shipping and freight are free",
+     666.38
+    ]
+]},
+];
+
+const fmt0 = n => (Math.round(n)<0?"–":"")+"$"+Math.abs(Math.round(n)).toLocaleString("en-US");
+const fmt = n => (n<0?"–":"")+"$"+Math.abs(n).toLocaleString("en-US",{minimumFractionDigits:2,maximumFractionDigits:2});
+const FERG_IMGS = [
+ "https://s3.img-b.com/image/private/t_base,c_lpad,f_auto,dpr_auto,w_200,h_200/product/innovationslighting/innovations-lighting-616-1w-bk-g341-2703211.jpg",
+ "https://s3.img-b.com/image/private/t_base,c_lpad,f_auto,dpr_auto,w_200,h_200/product/kichler/kichler-43906bk-8276025.jpg",
+ "https://s3.img-b.com/image/private/t_base,c_lpad,f_auto,dpr_auto,w_200,h_200/product/kitchenaid/kitchenaid-krff333sps-7656366.jpg",
+ "https://s3.img-b.com/image/private/t_base,c_lpad,f_auto,dpr_auto,w_200,h_200/product/goldenlighting/golden-lighting-0806-fm-abi-8182642.jpg",
+ "https://s3.img-b.com/image/private/t_base,c_lpad,f_auto,dpr_auto,w_200,h_200/product/goldenlighting/0806-3P%20ABI-primary.jpg",
+ "https://s3.img-b.com/image/private/t_base,c_lpad,f_auto,dpr_auto,w_200,h_200/product/livexlighting/livex-lighting-5715-04-9417993.jpg",
+ "https://s3.img-b.com/image/private/t_base,c_lpad,f_auto,dpr_auto,w_200,h_200/product/fortelighting/forte-lighting-7210-01-04-9275781.jpg",
+ "https://s3.img-b.com/image/private/t_base,c_lpad,f_auto,dpr_auto,w_200,h_200/product/moen/moen-tv6805bl-5053675.jpg",
+ "https://s3.img-b.com/image/private/t_base,c_lpad,f_auto,dpr_auto,w_200,h_200/product/delta/delta-35985lf-bl-1222956.jpg",
+ "https://s3.img-b.com/image/private/t_base,c_lpad,f_auto,dpr_auto,w_200,h_200/product/delta/delta-t144985-bl-1222956.jpg",
+ "https://s3.img-b.com/image/private/t_base,c_lpad,f_auto,dpr_auto,w_200,h_200/product/delta/delta-342702-bl-9217950.jpg",
+ "https://s3.img-b.com/image/private/t_base,c_lpad,f_auto,dpr_auto,w_200,h_200/product/signaturehardware/signature-hardware-shxcgf107mb-8342401.jpg",
+ "https://s3.img-b.com/image/private/t_base,c_lpad,f_auto,dpr_auto,w_200,h_200/product/kohler/kohler-k-23764-bl-535090.jpg",
+ "https://s3.img-b.com/image/private/t_base,c_lpad,f_auto,dpr_auto,w_200,h_200/product/amerock/amerock-bp36793fb-2942164.jpg",
+ "https://s3.img-b.com/image/private/t_base,c_lpad,f_auto,dpr_auto,w_200,h_200/product/amerock/amerock-bp36795fb-2942164.jpg",
+ "https://s3.img-b.com/image/private/t_base,c_lpad,f_auto,dpr_auto,w_200,h_200/product/amerock/amerock-bp36989fb-2942164.jpg",
+ "https://s3.img-b.com/image/private/t_base,c_lpad,f_auto,dpr_auto,w_200,h_200/product/merolatile/merola-tile-fpestrni-5198023.jpg",
+ "https://s3.img-b.com/image/private/t_base,c_lpad,f_auto,dpr_auto,w_200,h_200/product/millenniumlighting/rwhc14-sb-2019-2.jpg",
+ "https://s3.img-b.com/image/private/t_base,c_lpad,f_auto,dpr_auto,w_200,h_200/product/savoyhouse/savoy-house-7-3751-1-89-7489130.jpg",
+ "https://s3.img-b.com/image/private/t_base,c_lpad,f_auto,dpr_auto,w_200,h_200/product/kitchenaid/kitchenaid-kmcs324sps-7656366.jpg",
+ "https://s3.img-b.com/image/private/t_base,c_lpad,f_auto,dpr_auto,w_200,h_200/product/kitchenaid/kitchenaid-kdts324sps-7656366.jpg",
+ "https://s3.img-b.com/image/private/t_base,c_lpad,f_auto,dpr_auto,w_200,h_200/product/capitallighting/capital-lighting-946421bk-843623.jpg",
+ "https://s3.img-b.com/image/private/t_base,c_lpad,f_auto,dpr_auto,w_200,h_200/product/capitallighting/capital-lighting-946411bk-843623.jpg",
+ "https://s3.img-b.com/image/private/t_base,c_lpad,f_auto,dpr_auto,w_200,h_200/product/schlage/schlage-f10geo622-1788141.jpg",
+ "https://s3.img-b.com/image/private/t_base,c_lpad,f_auto,dpr_auto,w_200,h_200/product/goldenlighting/golden-lighting-3602-l-pw-blk-2391169.jpg",
+ "https://s3.img-b.com/image/private/t_base,c_lpad,f_auto,dpr_auto,w_200,h_200/product/elegantlighting/elegant_ld6013d20bk.jpg",
+ "https://s3.img-b.com/image/private/t_base,c_lpad,f_auto,dpr_auto,w_200,h_200/product/capitallighting/capital-lighting-9d331a-1754681.jpg",
+ "https://s3.img-b.com/image/private/t_base,c_lpad,f_auto,dpr_auto,w_200,h_200/product/lark/lark-84380bk-1606409.jpg",
+ "https://s3.img-b.com/image/private/t_base,c_lpad,f_auto,dpr_auto,w_200,h_200/product/bedrosians/bedrosians-100001516-8497430.jpg",
+ "https://s3.img-b.com/image/private/t_base,c_lpad,f_auto,dpr_auto,w_200,h_200/product/bedrosians/bedrosians-100001526-8497430.jpg",
+ "https://s3.img-b.com/image/private/t_base,c_lpad,f_auto,dpr_auto,w_200,h_200/product/emsertile/emser-tile-f20steras1224-7891504.jpg",
+ "https://s3.img-b.com/image/private/t_base,c_lpad,f_auto,dpr_auto,w_200,h_200/product/emsertile/emser-tile-f20stergr1224-7891504.jpg"
+];
+const BASE = 485600;
+const RATE = 0.0599, YEARS = 30, TAX = 6000, INS = 1500;   // 20% down; tax and insurance are per year
+function monthly(price) {
+  const loan = price * 0.8, r = RATE/12, n = YEARS*12;
+  const pi = loan * r / (1 - Math.pow(1 + r, -n));
+  return {pi, total: pi + (TAX + INS)/12};
+}
+const KEY = "homecost-hidden-v1", CKEY = "homecost-custom-v1", NKEY = "homecost-notes-v1";
+let hidden = new Set(), custom = [], notes = {}, adding = null, noting = null, countFerg = true;
+try { hidden = new Set(JSON.parse(localStorage.getItem(KEY)||"[]")); } catch(e){}
+try { custom = JSON.parse(localStorage.getItem(CKEY)||"[]"); } catch(e){}
+try { notes = JSON.parse(localStorage.getItem(NKEY)||"{}"); } catch(e){}
+try { countFerg = localStorage.getItem("homecost-ferg-v1") !== "0"; } catch(e){}
+const save = () => { try { localStorage.setItem(KEY, JSON.stringify([...hidden])); localStorage.setItem(CKEY, JSON.stringify(custom)); localStorage.setItem(NKEY, JSON.stringify(notes)); localStorage.setItem("homecost-ferg-v1", countFerg ? "1" : "0"); } catch(e){} };
+const esc = t => String(t).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+
+const app = document.getElementById("app");
+DATA.forEach(s => s.items.forEach((it,i) => it.key = s.id+":"+i));
+DATA.find(s => s.id==="ferg").items.forEach((it,i) => { it.img = FERG_IMGS[i]; });
+// every item in a section, original and custom, as {key,name,detail,cost,custom}
+const itemsOf = s => [
+  ...s.items.map(it => ({key:it.key, name:it[0], detail:it[1], cost:it[2], custom:false, img:it.img})),
+  ...custom.filter(c => c.sec===s.id).map(c => ({key:"c:"+c.id, name:c.name, detail:"Added by you", cost:c.cost, custom:true, id:c.id})),
+];
+
+function render() {
+  let orig = 0, cur = 0;
+  app.innerHTML = "";
+  DATA.forEach(s => {
+    const items = itemsOf(s);
+    let so = 0, sc = 0;
+    items.forEach(it => { if (!it.custom) so += it.cost; if (!hidden.has(it.key)) sc += it.cost; });
+    if (!s.excluded) orig += so;          // original = builder PDF only
+    if (!s.excluded || countFerg) cur += sc;
+    const sec = document.createElement("section");
+    const allHidden = items.every(it => hidden.has(it.key));
+    sec.innerHTML = `<div class="sh"><h2>${s.title}</h2>
+      <span class="sub">${fmt(sc)}${sc!==so?`<small>vs ${fmt(so)} original</small>`:""}</span>
+      ${s.excluded?`<label class="cnt"><input type="checkbox" data-count="1" ${countFerg?"checked":""}> Count in totals</label>`:""}
+      <button data-sec="${s.id}">${allHidden?"Show":"Hide"} section</button></div>`;
+    items.forEach(it => {
+      const off = hidden.has(it.key);
+      const r = document.createElement("label");
+      r.className = "row"+(off?" off":"")+(it.custom?" custom":"");
+      const nt = noting===it.key
+        ? `<div class="noteform"><input type="text" class="noteinp" value="${esc(notes[it.key]||"")}" placeholder="Type a note">
+             <button type="button" data-nsave="${it.key}">Save</button><button type="button" data-ncancel="1">Cancel</button></div>`
+        : (notes[it.key] ? `<div class="note-t">${esc(notes[it.key])}</div>` : "");
+      r.innerHTML = `<input type="checkbox" ${off?"":"checked"} data-key="${it.key}">
+        ${it.img?`<img class="th" src="${it.img}" alt="" loading="lazy" referrerpolicy="no-referrer">`:""}
+        <div class="t"><div class="n">${esc(it.name)}</div>${it.detail?`<div class="d">${esc(it.detail)}</div>`:""}${nt}</div>
+        <div class="c ${it.cost<0&&!it.custom?"neg":""}">${fmt(it.cost)}</div>
+        <button type="button" class="nb" data-note="${it.key}" title="Add or edit a note">✎</button>
+        ${it.custom?`<button class="x" data-del="${it.id}" title="Remove this item">×</button>`:""}`;
+      sec.appendChild(r);
+    });
+    if (adding === s.id) {
+      const f = document.createElement("form");
+      f.className = "addform"; f.dataset.form = s.id;
+      f.innerHTML = `<input type="text" class="ttl" name="t" placeholder="Item title" required>
+        <input type="text" class="amt" name="a" placeholder="Cost, e.g. 1500" inputmode="decimal" required>
+        <button class="ok" type="submit">Add</button><button type="button" data-cancel="1">Cancel</button>`;
+      sec.appendChild(f);
+    } else {
+      const b = document.createElement("div");
+      b.className = "addbar";
+      b.innerHTML = `<button class="plus" data-add="${s.id}" title="Add an item to this section">+</button>`;
+      sec.appendChild(b);
+    }
+    app.appendChild(sec);
+  });
+  document.getElementById("cur").textContent = fmt0(cur);
+  document.getElementById("orig").textContent = fmt0(orig);
+  document.getElementById("base").textContent = fmt0(BASE);
+  document.getElementById("total0").textContent = fmt0(BASE + orig);
+  document.getElementById("total").textContent = fmt0(BASE + cur);
+  document.getElementById("down0").textContent = fmt0((BASE + orig) * 0.2);
+  document.getElementById("down").textContent = fmt0((BASE + cur) * 0.2);
+  [["mo0","mos0",BASE+orig],["mo","mos",BASE+cur]].forEach(([a,b,price]) => {
+    const m = monthly(price);
+    document.getElementById(a).textContent = fmt0(m.total);
+    document.getElementById(b).textContent = "P&I " + fmt0(m.pi) + " + tax/ins " + fmt0((TAX+INS)/12);
+  });
+  const t = app.querySelector(".addform .ttl, .noteinp"); if (t) t.focus();
+}
+
+app.addEventListener("change", e => {
+  if (e.target.dataset.count) { countFerg = e.target.checked; save(); const y = scrollY; render(); scrollTo(0,y); return; }
+  const k = e.target.dataset.key; if (!k) return;
+  e.target.checked ? hidden.delete(k) : hidden.add(k);
+  save(); const y = scrollY; render(); scrollTo(0,y);
+});
+app.addEventListener("click", e => {
+  const d = e.target.dataset, y = scrollY;
+  if (d.del) {
+    e.preventDefault();
+    custom = custom.filter(c => String(c.id)!==d.del); hidden.delete("c:"+d.del); delete notes["c:"+d.del];
+  } else if (d.note) { e.preventDefault(); noting = d.note; adding = null; }
+  else if (d.nsave) { e.preventDefault(); saveNote(d.nsave); }
+  else if (d.ncancel) { e.preventDefault(); noting = null; }
+  else if (d.add) { adding = d.add; noting = null; }
+  else if (d.cancel) { adding = null; }
+  else if (d.sec) {
+    const items = itemsOf(DATA.find(x => x.id===d.sec));
+    const all = items.every(it => hidden.has(it.key));
+    items.forEach(it => all ? hidden.delete(it.key) : hidden.add(it.key));
+  } else return;
+  save(); render(); scrollTo(0,y);
+});
+function saveNote(key) {
+  const v = app.querySelector(".noteinp").value.trim();
+  v ? notes[key] = v : delete notes[key];
+  noting = null;
+}
+app.addEventListener("keydown", e => {
+  if (!e.target.classList.contains("noteinp")) return;
+  if (e.key === "Enter") { e.preventDefault(); const y = scrollY; saveNote(noting); save(); render(); scrollTo(0,y); }
+  if (e.key === "Escape") { noting = null; render(); }
+});
+app.addEventListener("submit", e => {
+  e.preventDefault();
+  const f = e.target, cost = parseFloat(f.a.value.replace(/[$,\s]/g,"").replace(/^\((.*)\)$/,"-$1"));
+  if (!f.t.value.trim() || isNaN(cost)) { f.a.setCustomValidity("Enter a number"); f.a.reportValidity(); f.a.setCustomValidity(""); return; }
+  custom.push({id:Date.now(), sec:f.dataset.form, name:f.t.value.trim(), cost});
+  adding = null; save(); const y = scrollY; render(); scrollTo(0,y);
+});
+document.getElementById("showAll").onclick = () => { hidden.clear(); save(); render(); };
+document.getElementById("hideAllowances").onclick = () => {
+  DATA.filter(s => s.allowance).forEach(s => itemsOf(s).forEach(it => hidden.add(it.key)));
+  save(); render();
+};
+const stamp = () => document.getElementById("printdate").textContent = "Exported " + new Date().toLocaleDateString("en-US",{year:"numeric",month:"long",day:"numeric"});
+window.addEventListener("beforeprint", stamp);
+document.getElementById("pdf").onclick = () => { stamp(); window.print(); };
+render();
+</script>
+</body>
+</html>
