@@ -1563,11 +1563,7 @@
       { key: 'tax', label: 'Property tax', type: 'currency', hint: 'per year' },
       { key: 'insurance', label: 'Home insurance', type: 'currency', hint: 'per year' }
     ];
-    const RENT_FIELDS = [
-      { key: 'rent', label: 'Rent', type: 'currency' },
-      { key: 'rentersInsurance', label: 'Renters insurance', type: 'currency', hint: 'per year' }
-    ];
-    const DEFAULTS = { price: 0, down: 20, rate: 0, term: '30', tax: 0, insurance: 0, rent: 0, rentersInsurance: 0 };
+    const DEFAULTS = { price: 0, down: 20, rate: 0, term: '30', tax: 0, insurance: 0 };
     const TERM_OPTIONS = [30, 20, 15, 10];
 
     // valuesByScenario[scenarioId] = this tab's own field values for that shared scenario.
@@ -1797,11 +1793,6 @@
       TAX_FIELDS.forEach(f => taxSection.appendChild(buildInputRow(f)));
       root.appendChild(taxSection);
 
-      const rentSection = el('div', 'section');
-      rentSection.appendChild(el('div', 'section-head', '<h2>Rent</h2>'));
-      RENT_FIELDS.forEach(f => rentSection.appendChild(buildInputRow(f)));
-      root.appendChild(rentSection);
-
       const totalsBlock = el('div', 'summary-block');
       totalsBlock.appendChild(buildOutputRow('Total interest', 'total-interest', 'interest-row'));
       totalsBlock.appendChild(buildOutputRow('Total paid (P&amp;I)', 'total-paid'));
@@ -1811,8 +1802,6 @@
       monthlyBlock.appendChild(buildOutputRow('Principal and interest', 'pi-monthly'));
       monthlyBlock.appendChild(buildOutputRow('Property tax', 'tax-monthly'));
       monthlyBlock.appendChild(buildOutputRow('Home insurance', 'insurance-monthly'));
-      monthlyBlock.appendChild(buildOutputRow('Rent', 'rent-monthly'));
-      monthlyBlock.appendChild(buildOutputRow('Renters insurance', 'renters-insurance-monthly'));
       monthlyBlock.appendChild(buildPaymentRow());
       root.appendChild(monthlyBlock);
 
@@ -1849,10 +1838,7 @@
         const annualInsurance = parseFloat(v.insurance) || 0;
         const taxMonthly = annualTax / 12;
         const insuranceMonthly = annualInsurance / 12;
-        const rentMonthly = parseFloat(v.rent) || 0;
-        const annualRentersInsurance = parseFloat(v.rentersInsurance) || 0;
-        const rentersInsuranceMonthly = annualRentersInsurance / 12;
-        const totalMonthly = monthlyPayment + taxMonthly + insuranceMonthly + rentMonthly + rentersInsuranceMonthly;
+        const totalMonthly = monthlyPayment + taxMonthly + insuranceMonthly;
 
         const setText = (idPrefix, text) => {
           const elx = document.getElementById(idPrefix + '-' + scenario.id);
@@ -1866,8 +1852,6 @@
         setText('pi-monthly', currency(monthlyPayment));
         setText('tax-monthly', currency(taxMonthly));
         setText('insurance-monthly', currency(insuranceMonthly));
-        setText('rent-monthly', currency(rentMonthly));
-        setText('renters-insurance-monthly', currency(rentersInsuranceMonthly));
         setText('monthly-payment', currency(totalMonthly));
 
         BudgetApp.setLockedAmount('house-payment', scenario.id, totalMonthly);
@@ -1890,6 +1874,8 @@
           v.price = v.loanAmount ? Math.round(v.loanAmount / (1 - down / 100)) : 0;
         }
         delete v.loanAmount;
+        delete v.rent;
+        delete v.rentersInsurance;
       });
       ensureValues();
       render();
