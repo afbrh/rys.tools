@@ -56,107 +56,25 @@
     transform: translateX(-50%);
   }
   .app-header-inner { max-width: 860px; margin: 0 auto; padding: 0 20px; }
-  .tab-bar {
-    display: flex;
-    align-items: flex-end;
-    gap: 16px;
-    flex-wrap: wrap;
-    margin-bottom: 28px;
-    border-bottom: 2px solid var(--ink);
-  }
-  .tabs {
-    display: flex;
-    align-items: flex-end;
-    gap: 5px;
-    flex: 1 1 auto;
-    min-width: 0;
-  }
-  /* Income/Budget grow too (weight 1 each), matching one middle tab's share, while the
-     6 middle tabs (in .tabs-scroll, weight 6) split their combined share evenly — so
-     every tab across the whole row ends up filling a roughly equal width. */
-  .tabs-fixed { display: flex; align-items: flex-end; gap: 5px; flex: 1 1 0%; min-width: 0; }
-  .tabs-fixed .tab-btn { flex: 1 1 0%; min-width: 0; text-align: center; }
-  .tabs-scroll {
-    display: flex;
-    align-items: flex-end;
-    gap: 5px;
-    overflow-x: auto;
-    overflow-y: hidden;
-    scrollbar-width: thin;
-    flex: 6 1 0%;
-    min-width: 0;
-    touch-action: pan-x;
-    /* Gives the active tab's -2px "poke past the line" trick room to render without
-       being clipped by overflow-y:hidden (needed to stop vertical touch-scroll), while
-       the matching negative margin cancels the padding back out so it doesn't change
-       this row's height (and therefore doesn't shift the tab-bar's border line). */
-    padding-bottom: 8px;
-    margin-bottom: -8px;
-  }
-  /* Fill leftover width by growing each tab's own padding instead of stretching the
-     gaps between them — keeps tabs sitting snug next to each other at any width. */
-  .tabs-scroll .tab-btn { flex: 1 1 0%; text-align: center; }
-  .tab-label-medium, .tab-label-short { display: none; }
-  .tabs.labels-medium .tab-label-full { display: none; }
-  .tabs.labels-medium .tab-label-medium { display: inline; }
-  .tabs.labels-short .tab-label-full,
-  .tabs.labels-short .tab-label-medium { display: none; }
-  .tabs.labels-short .tab-label-short { display: inline; }
-  /* Abbreviations/initials don't need the same horizontal breathing room full words do —
-     tighten each tab's padding and the gaps between them so the shrunk row has the best
-     chance of fitting without horizontal scroll on narrow/mobile widths. */
-  .tabs.labels-medium .tab-btn,
-  .tabs.labels-short .tab-btn { padding-left: 6px; padding-right: 6px; }
-  .tabs.labels-medium .tab-separator,
-  .tabs.labels-short .tab-separator { padding: 0 1px; }
-  .tabs.labels-medium .tabs-fixed,
-  .tabs.labels-medium .tabs-scroll,
-  .tabs.labels-short .tabs-fixed,
-  .tabs.labels-short .tabs-scroll { gap: 2px; }
-  .tabs.labels-medium,
-  .tabs.labels-short { gap: 2px; }
-  .tab-btn {
-    font-family: var(--font-body);
-    font-weight: 600;
-    font-size: 14px;
-    background: var(--paper-line);
-    color: var(--ink-soft);
-    border: 1.5px solid var(--ink-soft);
-    border-bottom: none;
-    border-radius: 9px 9px 0 0;
-    padding: 9px 20px 9px;
-    cursor: pointer;
-    position: relative;
-    top: 3px;
-    flex-shrink: 0;
-    white-space: nowrap;
-    transition: top .12s ease, background .12s ease, color .12s ease, border-color .12s ease;
-  }
-  .tab-btn:hover:not(.active) { color: var(--ink); background: var(--gold-bg); top: 1px; }
-  .tab-btn.active {
-    background: var(--paper);
-    border-color: var(--ink);
-    color: var(--ink);
-    top: 0;
-    z-index: 2;
-    margin-bottom: -2px;
-    padding-bottom: 11px;
-    cursor: default;
-  }
-  .tab-btn-summary:hover:not(.active) { color: var(--gold); background: var(--gold-bg); }
-  .tab-btn-summary.active { background: var(--gold-bg); border-color: var(--gold); color: var(--gold); font-weight: 700; }
-  .tab-btn-income:hover:not(.active) { color: var(--income); background: var(--income-bg); }
-  .tab-btn-income.active { background: var(--income-bg); border-color: var(--income); color: var(--income); font-weight: 700; }
-  .tab-separator {
-    align-self: center;
-    font-family: var(--font-mono);
-    font-size: 18px;
-    font-weight: 700;
-    color: var(--ink-soft);
-    line-height: 1;
-    padding: 0 3px;
-    user-select: none;
-  }
+  /* ---------- fixed totals window ---------- */
+  .summary-bar { padding-bottom: 12px; border-bottom: 2px solid var(--ink); }
+  .sum-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px 10px; }
+  .sum-grid.multi { grid-template-columns: minmax(60px, auto) repeat(3, minmax(0, 1fr)); }
+  .sum-label { font-size: 11px; text-transform: uppercase; letter-spacing: .05em; color: var(--ink-soft); }
+  .sum-val { background: var(--gold-bg); border-radius: 10px; padding: 8px 12px; font-family: var(--font-mono); font-size: 20px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .sum-val.income { color: var(--income); }
+  .sum-val.net { color: var(--gold); }
+  .sum-name { align-self: center; font-size: 13px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .sum-grid.multi .sum-val { padding: 5px 12px; font-size: 17px; }
+  @media (max-width: 560px) { .sum-val, .sum-grid.multi .sum-val { font-size: 13px; padding: 6px 8px; } .sum-name { font-size: 11px; } .sum-grid.multi { grid-template-columns: minmax(48px, auto) repeat(3, minmax(0, 1fr)); } }
+
+  /* ---------- single-scroll cards ---------- */
+  #app-content { padding-top: 6px; }
+  .tab-panel { max-width: 860px; margin: 18px auto 0; padding: 16px 20px 10px; border: 1px solid var(--paper-line); border-radius: 12px; background: rgba(255, 255, 255, 0.28); }
+  @media (max-width: 560px) { .tab-panel { padding: 12px 10px 8px; } }
+  .card-title { font-family: var(--font-header); font-size: 18px; font-weight: 600; margin: 0 0 12px; color: var(--ink); }
+  #app-content .tab-panel .page, #app-content .tab-panel .sheet { max-width: none; }
+
   .save-bar { display: flex; align-items: flex-start; justify-content: flex-start; flex-wrap: wrap; gap: 12px; margin-bottom: 13px; }
   /* The page title sits at the top of the header, with the signed-in
      banner still stacked underneath it — everything in the header stays inline and
@@ -1033,48 +951,12 @@
       <span class="save-status" id="save-status"></span>
     </div>
   </div>
-  <div id="app-header-tabs">
-  <div class="tab-bar">
-    <div class="tabs">
-      <div class="tabs-fixed">
-        <button class="tab-btn tab-btn-income" data-tab="income" onclick="switchTab('income')"><span class="tab-label-full">Income</span><span class="tab-label-medium" aria-hidden="true">Inc</span><span class="tab-label-short" aria-hidden="true">I</span></button>
-        <span class="tab-separator" aria-hidden="true">&minus;</span>
-      </div>
-      <div class="tabs-scroll">
-        <button class="tab-btn" data-tab="mortgage" onclick="switchTab('mortgage')"><span class="tab-label-full">Housing</span><span class="tab-label-medium" aria-hidden="true">House</span><span class="tab-label-short" aria-hidden="true">H</span></button>
-        <button class="tab-btn" data-tab="food" onclick="switchTab('food')"><span class="tab-label-full">Food</span><span class="tab-label-medium" aria-hidden="true">Food</span><span class="tab-label-short" aria-hidden="true">F</span></button>
-        <button class="tab-btn" data-tab="car" onclick="switchTab('car')"><span class="tab-label-full">Car</span><span class="tab-label-medium" aria-hidden="true">Car</span><span class="tab-label-short" aria-hidden="true">C</span></button>
-        <button class="tab-btn" data-tab="utilities" onclick="switchTab('utilities')"><span class="tab-label-full">Utilities</span><span class="tab-label-medium" aria-hidden="true">Utils</span><span class="tab-label-short" aria-hidden="true">U</span></button>
-        <button class="tab-btn" data-tab="savings" onclick="switchTab('savings')"><span class="tab-label-full">Savings</span><span class="tab-label-medium" aria-hidden="true">Save</span><span class="tab-label-short" aria-hidden="true">Sa</span></button>
-        <button class="tab-btn" data-tab="subscriptions" onclick="switchTab('subscriptions')"><span class="tab-label-full">Subscriptions</span><span class="tab-label-medium" aria-hidden="true">Subs</span><span class="tab-label-short" aria-hidden="true">Su</span></button>
-      </div>
-      <div class="tabs-fixed">
-        <span class="tab-separator" aria-hidden="true">=</span>
-        <button class="tab-btn tab-btn-summary active" data-tab="budget" onclick="switchTab('budget')"><span class="tab-label-full">Budget</span><span class="tab-label-medium" aria-hidden="true">Bud</span><span class="tab-label-short" aria-hidden="true">B</span></button>
-      </div>
-    </div>
-  </div>
-  </div>
+  <div class="summary-bar" id="summary-bar"></div>
   </div>
   </div>
 
   <div id="app-content">
-  <div id="tab-budget" class="tab-panel">
-    <div class="sheet">
-      <div class="section income" id="income-section">
-        <div id="income-rows"></div>
-      </div>
-    </div>
-
-    <div class="page">
-      <div class="table-scroll">
-        <div id="budget-table-root"></div>
-      </div>
-      <p class="footnote">"Save" (top right) writes all tabs' numbers directly into this HTML file, so reopening it later shows them again.</p>
-    </div>
-  </div>
-
-  <div id="tab-income" class="tab-panel" hidden="">
+  <div id="tab-income" class="tab-panel">
     <div class="sheet">
       <div class="section income" id="income-sources-section">
         <div class="section-head">
@@ -1091,68 +973,74 @@
           <span class="value" id="income-total-value">$10,374.00</span>
         </div>
       </div>
-      <p class="footnote">Each source's monthly equivalent syncs automatically into the Monthly Budget tab.</p>
     </div>
   </div>
 
-  <div id="tab-mortgage" class="tab-panel" hidden="">
+  <div id="tab-mortgage" class="tab-panel">
+    <h2 class="card-title">Housing</h2>
     <div class="page">
       <div class="table-scroll">
         <div id="table-root"></div>
       </div>
       <p class="fill-rates-status" id="mortgage-fill-rates-status"></p>
 
-      <p class="footnote">Estimate only — excludes HOA dues and PMI. Checked scenarios' total monthly payments sync automatically into the Monthly Budget tab.</p>
     </div>
   </div>
 
-  <div id="tab-food" class="tab-panel" hidden="">
+  <div id="tab-food" class="tab-panel">
+    <h2 class="card-title">Food</h2>
     <div class="page">
       <div class="table-scroll">
         <div id="food-table-root"></div>
       </div>
 
-      <p class="footnote">Checked scenarios' total food expense syncs automatically into the Monthly Budget tab.</p>
     </div>
   </div>
 
-  <div id="tab-car" class="tab-panel" hidden="">
+  <div id="tab-car" class="tab-panel">
+    <h2 class="card-title">Car</h2>
     <div class="page">
       <div class="table-scroll">
         <div id="car-table-root"></div>
       </div>
 
-      <p class="footnote">Checked scenarios' total monthly car expense syncs automatically into the Monthly Budget tab.</p>
     </div>
   </div>
 
-  <div id="tab-utilities" class="tab-panel" hidden="">
+  <div id="tab-utilities" class="tab-panel">
+    <h2 class="card-title">Utilities</h2>
     <div class="page">
       <div class="table-scroll">
         <div id="utilities-table-root"></div>
       </div>
 
-      <p class="footnote">Checked scenarios' total utilities expense syncs automatically into the Monthly Budget tab.</p>
     </div>
   </div>
 
-  <div id="tab-savings" class="tab-panel" hidden="">
+  <div id="tab-savings" class="tab-panel">
+    <h2 class="card-title">Savings</h2>
     <div class="page">
       <div class="table-scroll">
         <div id="savings-table-root"></div>
       </div>
 
-      <p class="footnote">Yearly goals are divided by 12 into a monthly contribution, which syncs automatically into the Monthly Budget tab.</p>
     </div>
   </div>
 
-  <div id="tab-subscriptions" class="tab-panel" hidden>
+  <div id="tab-subscriptions" class="tab-panel">
+    <h2 class="card-title">Subscriptions</h2>
     <div class="page">
       <div class="table-scroll">
         <div id="subscriptions-table-root"></div>
       </div>
 
-      <p class="footnote">Checked scenarios' total monthly subscriptions syncs automatically into the Monthly Budget tab.</p>
+    </div>
+  </div>
+  <div id="tab-budget" class="tab-panel">
+    <div class="page">
+      <div class="table-scroll">
+        <div id="budget-table-root"></div>
+      </div>
     </div>
   </div>
   </div>
@@ -1177,30 +1065,6 @@
       sizeCurrencyInput(e.target);
     }
   });
-
-  /* ================= tab switching ================= */
-  const TAB_NAMES = ['budget', 'income', 'mortgage', 'food', 'car', 'utilities', 'savings', 'subscriptions'];
-
-  function switchTab(name) {
-    document.getElementById('tab-budget').hidden = name !== 'budget';
-    document.getElementById('tab-income').hidden = name !== 'income';
-    document.getElementById('tab-mortgage').hidden = name !== 'mortgage';
-    document.getElementById('tab-food').hidden = name !== 'food';
-    document.getElementById('tab-car').hidden = name !== 'car';
-    document.getElementById('tab-utilities').hidden = name !== 'utilities';
-    document.getElementById('tab-savings').hidden = name !== 'savings';
-    document.getElementById('tab-subscriptions').hidden = name !== 'subscriptions';
-    document.querySelectorAll('.tab-btn').forEach(function (b) {
-      b.classList.toggle('active', b.dataset.tab === name);
-    });
-    try { localStorage.setItem('munny_active_tab', name); } catch (e) {}
-  }
-
-  function currentActiveTab() {
-    let tab;
-    try { tab = localStorage.getItem('munny_active_tab'); } catch (e) {}
-    return TAB_NAMES.indexOf(tab) !== -1 ? tab : 'budget';
-  }
 
   /* ================= Shared scenario registry ================= */
   // A single, synced list of scenario names shared by every expense tab (Housing, Food, Car,
@@ -1325,23 +1189,29 @@
       return e;
     }
 
-    // Income has no scenarios, so it's rendered once, outside the scenario grid.
-    function renderIncomeRow() {
-      const container = document.getElementById('income-rows');
-      container.innerHTML =
-        '<div class="row locked">' +
-          '<div class="row-main">' +
-            '<input type="text" value="Income" readonly title="Open Income" onclick="switchTab(\'income\')" onkeydown="if(event.key===\'Enter\'){switchTab(\'income\')}">' +
-          '</div>' +
-          '<div class="row-actions">' +
-            '<div class="amount-wrap"><span>$</span><input type="number" value="' + incomeAmount.toFixed(2) + '" readonly tabindex="-1" title="Open Income" onclick="switchTab(\'income\')"></div>' +
-          '</div>' +
-        '</div>';
+    // Income has no scenarios; the summary bar shows it once next to every scenario's totals.
+    function renderSummary() {
+      const bar = document.getElementById('summary-bar');
+      if (!bar) return;
+      const scenarios = ScenarioRegistry.list();
+      const multi = scenarios.length > 1;
+      let html = '<div class="sum-grid' + (multi ? ' multi' : '') + '">';
+      html += (multi ? '<div></div>' : '') +
+        '<div class="sum-label">Income</div><div class="sum-label">Expenses</div><div class="sum-label">Net</div>';
+      scenarios.forEach(s => {
+        html += (multi ? '<div class="sum-name"></div>' : '') +
+          '<div class="sum-val income" id="sum-income-' + s.id + '">$0.00</div>' +
+          '<div class="sum-val" id="sum-exp-' + s.id + '">$0.00</div>' +
+          '<div class="sum-val net" id="sum-net-' + s.id + '">$0.00</div>';
+      });
+      bar.innerHTML = html + '</div>';
+      if (multi) {
+        bar.querySelectorAll('.sum-name').forEach((n, i) => { n.textContent = scenarios[i].name; });
+      }
     }
 
     function setIncomeAmount(amount) {
       incomeAmount = parseFloat(amount) || 0;
-      renderIncomeRow();
       recalculateAll();
     }
 
@@ -1430,35 +1300,6 @@
       return row;
     }
 
-    function buildLockedRow(field) {
-      const row = el('div', 'row flex-row locked');
-      const label = el('div', 'row-label');
-      const labelInput = document.createElement('input');
-      labelInput.type = 'text';
-      labelInput.className = 'row-name';
-      labelInput.value = field.label;
-      labelInput.readOnly = true;
-      labelInput.title = 'Open ' + field.label;
-      labelInput.onclick = () => switchTab(field.tabName);
-      label.appendChild(labelInput);
-      row.appendChild(label);
-
-      const values = el('div', 'row-values');
-      ScenarioRegistry.list().forEach(scenario => {
-        const cell = el('div', 'value-cell');
-        const span = document.createElement('span');
-        span.className = 'value-text locked-amount';
-        span.id = 'locked-' + field.key + '-' + scenario.id;
-        span.title = 'Open ' + field.label;
-        span.textContent = '$0.00';
-        span.onclick = () => switchTab(field.tabName);
-        cell.appendChild(span);
-        values.appendChild(cell);
-      });
-      row.appendChild(values);
-      return row;
-    }
-
     function buildCustomRow(rowData) {
       const row = el('div', 'row flex-row');
       const label = el('div', 'row-label');
@@ -1499,23 +1340,6 @@
       return row;
     }
 
-    function buildNetRow() {
-      const row = el('div', 'flex-row payment-row');
-      row.appendChild(el('div', 'row-label', '<span class="field-label">Net for the month</span>'));
-      const values = el('div', 'row-values');
-      ScenarioRegistry.list().forEach(scenario => {
-        const cell = el('div', 'value-cell');
-        const span = document.createElement('span');
-        span.className = 'value-text';
-        span.id = 'net-' + scenario.id;
-        span.textContent = '$0.00';
-        cell.appendChild(span);
-        values.appendChild(cell);
-      });
-      row.appendChild(values);
-      return row;
-    }
-
     function render() {
       ensureScenarioColumns();
       const root = document.getElementById('budget-table-root');
@@ -1523,8 +1347,7 @@
       root.appendChild(buildHeaderRow());
 
       const section = el('div', 'section');
-      section.appendChild(el('div', 'section-head', '<h2>Expenses</h2>'));
-      LOCKED_FIELDS.forEach(f => section.appendChild(buildLockedRow(f)));
+      section.appendChild(el('div', 'section-head', '<h2>Other expenses</h2>'));
       customRows.forEach(r => section.appendChild(buildCustomRow(r)));
       root.appendChild(section);
 
@@ -1534,23 +1357,12 @@
       addRowBtn.onclick = () => addCustomRow();
       root.appendChild(addRowBtn);
 
-      const totalsBlock = el('div', 'summary-block');
-      totalsBlock.appendChild(buildNetRow());
-      root.appendChild(totalsBlock);
-
+      renderSummary();
       recalculateAll();
       sizeAllCurrencyInputs();
     }
 
     function recalculateAll() {
-      LOCKED_FIELDS.forEach(field => {
-        ScenarioRegistry.list().forEach(scenario => {
-          const amount = (lockedAmounts[field.key] && lockedAmounts[field.key][scenario.id]) || 0;
-          const elx = document.getElementById('locked-' + field.key + '-' + scenario.id);
-          if (elx) elx.textContent = currency(amount);
-        });
-      });
-
       ScenarioRegistry.list().forEach(scenario => {
         let expenseTotal = 0;
         LOCKED_FIELDS.forEach(field => {
@@ -1560,11 +1372,13 @@
           expenseTotal += parseFloat(row.values[scenario.id]) || 0;
         });
         const net = incomeAmount - expenseTotal;
-        const netEl = document.getElementById('net-' + scenario.id);
-        if (netEl) {
-          netEl.textContent = (net < 0 ? '-' : '') + currency(Math.abs(net));
-          netEl.style.color = net < 0 ? 'var(--expense)' : 'var(--gold)';
-        }
+        const set = (id, text, color) => {
+          const e = document.getElementById(id + scenario.id);
+          if (e) { e.textContent = text; if (color) e.style.color = color; }
+        };
+        set('sum-income-', currency(incomeAmount));
+        set('sum-exp-', currency(expenseTotal));
+        set('sum-net-', (net < 0 ? '-' : '') + currency(Math.abs(net)), net < 0 ? 'var(--expense)' : '');
       });
 
       sizeAllCurrencyInputs();
@@ -1606,7 +1420,6 @@
         ScenarioRegistry.list().forEach(s => { values[s.id] = ''; });
         customRows = [{ id: 'exp' + (nextCustomRowId++), label: 'Transportation', values }];
       }
-      renderIncomeRow();
       render();
     }
 
@@ -3412,34 +3225,6 @@
     sizeAllCurrencyInputs();
   }
 
-  // Shrinks the middle tab labels (Housing, Food, Car, ...) down to short initials only
-  // when they'd otherwise need horizontal scrolling to all fit — content-aware, not a
-  // fixed viewport breakpoint. Horizontal scroll stays as a fallback for anything still
-  // too narrow even with the shrunk labels.
-  // Tries, in order: full words, then short abbreviations ("Housing" -> "Hous"), then
-  // single/double-letter initials as a last resort — landing on the most readable tier
-  // that actually fits without horizontal scroll, re-checked on resize.
-  function updateTabLabelFit() {
-    const tabsEl = document.querySelector('.tabs');
-    const scrollEl = document.querySelector('.tabs-scroll');
-    if (!tabsEl || !scrollEl) return;
-    function fits() { return scrollEl.scrollWidth <= scrollEl.clientWidth + 1; }
-
-    tabsEl.classList.remove('labels-medium', 'labels-short');
-    if (fits()) return;
-
-    tabsEl.classList.add('labels-medium');
-    if (fits()) return;
-
-    tabsEl.classList.remove('labels-medium');
-    tabsEl.classList.add('labels-short');
-  }
-
-  let tabLabelFitResizeTimer = null;
-  window.addEventListener('resize', function () {
-    clearTimeout(tabLabelFitResizeTimer);
-    tabLabelFitResizeTimer = setTimeout(updateTabLabelFit, 100);
-  });
   async function loadApp() {
     // A still-valid access token from an earlier sign-in (saved in localStorage) can be
     // restored without any popup — so a refresh doesn't force signing in again until that
@@ -3449,8 +3234,6 @@
     // access before) stays signed in indefinitely, same as Gmail itself.
     applyLoadedData(null);
     setGoogleSignedInUi(false);
-    updateTabLabelFit();
-    switchTab(currentActiveTab());
 
     let signedIn = GoogleDriveSync.restoreSession();
     if (!signedIn) signedIn = await GoogleDriveSync.trySilentSignIn();
