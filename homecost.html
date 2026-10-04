@@ -157,7 +157,7 @@ body.menu-open .side-menu { transform: none; visibility: visible; transition-del
   <button id="importBtn" type="button">Import data</button><input type="file" id="importFile" accept="application/json,.json" hidden>
 </div>
 <div class="wrap"><section class="gate" id="gate"></section></div><div class="wrap" id="app" hidden></div></main>
-<p class="note wrap" id="srcnote" hidden>Source: Addendum Draft 1, printed 09/30/2026. Allowances are budget placeholders, not fixed prices. Credits (negative amounts) increase your total when hidden. Click a row to hide or show it, use + to add items and ✎ to add notes (shown in red). Hover a monthly payment for its breakdown. Property tax is estimated at <span data-taxrate></span> of total house cost (the 2025 net rate for this tax district, schools and county included); the actual bill depends on the assessed value and changes each year.</p>
+<p class="note wrap" id="srcnote" hidden>Source: Addendum Draft 1, printed 09/30/2026. Allowances are budget placeholders, not fixed prices. Credits (negative amounts) increase your total when hidden. Click a row to hide or show it, use + to add items and ✎ to add notes (shown in red). Hover a monthly payment for its breakdown. Property tax is assumed to be a flat <span data-tax></span> per year.</p>
 
 <script>
 // Source data (sections, prices, mortgage assumptions) is not part of this page. It is
@@ -166,14 +166,13 @@ let DATA = [];
 
 const fmt0 = n => (Math.round(n)<0?"–":"")+"$"+Math.abs(Math.round(n)).toLocaleString("en-US");
 const fmt = n => (n<0?"–":"")+"$"+Math.abs(n).toLocaleString("en-US",{minimumFractionDigits:2,maximumFractionDigits:2});
-// Property tax is a share of the purchase price (the tax district's total net rate: city, schools,
-// county and technical college, 2025 tax year); insurance is a flat amount per year.
-const DEFAULT_TAX_RATE = 0.018656;
-let FERG_IMGS = [], BASE = 0, RATE = 0.06, YEARS = 30, TAXRATE = DEFAULT_TAX_RATE, INS = 0, DOWN = 0.2;
+// Property tax is a flat assumption per year (not derived from the price); insurance is too.
+const DEFAULT_ANNUAL_TAX = 10000;
+let FERG_IMGS = [], BASE = 0, RATE = 0.06, YEARS = 30, TAX = DEFAULT_ANNUAL_TAX, INS = 0, DOWN = 0.2;
 function monthly(price) {
   const loan = price * (1 - DOWN), r = RATE/12, n = YEARS*12;
   const pi = loan * r / (1 - Math.pow(1 + r, -n));
-  const tax = price * TAXRATE / 12, ins = INS / 12;
+  const tax = TAX / 12, ins = INS / 12;
   return {pi, tax, ins, total: pi + tax + ins};
 }
 let hidden = new Set(), custom = [], notes = {}, adding = null, noting = null, countFerg = true, dirty = false;
@@ -618,13 +617,13 @@ function applySource(src) {
   source = src;
   DATA = JSON.parse(JSON.stringify(src.sections));
   FERG_IMGS = src.fergImgs || [];
-  BASE = src.base; RATE = src.rate; YEARS = src.years || 30; TAXRATE = typeof src.taxRate === "number" ? src.taxRate : DEFAULT_TAX_RATE; INS = src.ins || 0;
+  BASE = src.base; RATE = src.rate; YEARS = src.years || 30; TAX = typeof src.annualTax === "number" ? src.annualTax : DEFAULT_ANNUAL_TAX; INS = src.ins || 0;
   DOWN = typeof src.downPct === "number" ? src.downPct : 0.2;
   DATA.forEach(s => s.items.forEach((it, i) => it.key = s.id + ":" + i));
   const ferg = DATA.find(s => s.id === "ferg");
   if (ferg) ferg.items.forEach((it, i) => { it.img = FERG_IMGS[i]; });
   document.querySelectorAll("[data-rate]").forEach(e => { e.textContent = parseFloat((RATE * 100).toFixed(3)) + "%"; });
-  document.querySelectorAll("[data-taxrate]").forEach(e => { e.textContent = (TAXRATE * 100).toFixed(2) + "%"; });
+  document.querySelectorAll("[data-tax]").forEach(e => { e.textContent = fmt0(TAX); });
   document.querySelectorAll("[data-down]").forEach(e => { e.textContent = Math.round(DOWN * 100) + "%"; });
 }
 function applyState(st) {
