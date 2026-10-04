@@ -15,22 +15,29 @@
     font:16px/1.45 "Palatino Linotype",Palatino,"Iowan Old Style",Georgia,serif;
     font-variant-numeric:lining-nums; }
   header { position:sticky; top:0; z-index:5; background:var(--card); border-bottom:1px solid var(--line);
-    padding:12px 16px; }
+    padding:8px 16px 10px; }
   .wrap { max-width:960px; margin:0 auto; }
   h1 { font-size:16px; margin:0 0 8px; font-weight:600; }
   h1 span { color:var(--muted); font-weight:400; }
-  .stats { display:grid; grid-template-columns:repeat(5,1fr); gap:10px; }
-  .stat.base { grid-row:span 2; display:flex; flex-direction:column; justify-content:center; }
-  @media (max-width:900px) { .stats { grid-template-columns:1fr 1fr; } .stat.base { grid-column:1/-1; grid-row:auto; } }
-  @media (max-width:560px) { .stat .v { font-size:18px; } }
-  .stat .s { font-size:11px; color:var(--muted); }
-  .stat { background:var(--bg); border-radius:10px; padding:8px 12px; }
-  .stat .l { font-size:11px; text-transform:uppercase; letter-spacing:.05em; color:var(--muted); }
-  .stat .v, .row .c, .sh .sub, .addform .amt { font-family:-apple-system,"SF Pro Display",BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif; font-variant-numeric:lining-nums tabular-nums; }
-  .stat .v { font-size:22px; font-weight:650; }
-  .stat.main { background:var(--accent-soft); }
-  .stat.main .v { color:var(--accent); }
-  .bar { display:flex; gap:8px; margin-top:10px; flex-wrap:wrap; align-items:center; }
+  .stats { display:grid; grid-template-columns:auto repeat(4,minmax(0,1fr)); gap:4px 8px; align-items:center; }
+  .stats .col { font-size:10.5px; text-transform:uppercase; letter-spacing:.05em; color:var(--muted); padding:0 10px; white-space:nowrap; }
+  .stats .corner { font-size:12px; color:var(--muted); white-space:nowrap; padding-right:6px; }
+  .stats .corner b { color:var(--ink); font-weight:650; }
+  .stats .rl { font-size:12px; color:var(--muted); padding-right:6px; }
+  .stats .rl.main { color:var(--accent); font-weight:600; }
+  .stats .v { background:var(--bg); border-radius:8px; padding:4px 10px; font-size:17px; font-weight:650; white-space:nowrap; }
+  .stats .v.main { background:var(--accent-soft); color:var(--accent); }
+  .stats .v, .stats .corner b, .row .c, .sh .sub, .addform .amt { font-family:-apple-system,"SF Pro Display",BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif; font-variant-numeric:lining-nums tabular-nums; }
+  #acct-btn { max-width:46vw; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  @media (max-width:560px) {
+    #acct-btn { max-width:30vw; } h1 { font-size:15px; white-space:nowrap; } .titlebar h1 .sub2 { display:none; }
+    .acct { flex-wrap:nowrap; } .acct .st { font-size:11px; max-width:30vw; }
+    .stats { grid-template-columns:auto repeat(3,minmax(0,1fr)); gap:3px 5px; }
+    .stats .adn { display:none; }
+    .stats .col { padding:0 4px; font-size:9px; letter-spacing:.02em; }
+    .stats .v { font-size:14px; padding:3px 6px; } .stats .rl, .stats .corner { font-size:10px; padding-right:2px; }
+  }
+  .bar { display:flex; gap:8px; margin-bottom:12px; flex-wrap:wrap; align-items:center; }
   button { font:inherit; font-size:13px; padding:6px 12px; border-radius:8px; cursor:pointer;
     border:1px solid var(--line); background:var(--card); color:var(--ink); }
   button:hover { border-color:var(--accent); }
@@ -108,7 +115,7 @@ body.menu-open .side-menu { transform: none; visibility: visible; transition-del
 .side-link:hover { background: var(--bg); }
 .side-link[aria-current="page"] { background: var(--hide); }
 @media print { .menu-btn, .side-menu, .side-overlay, .acct, .gate { display: none !important; } }
-  .titlebar { display:flex; align-items:center; gap:10px; margin-bottom:8px; }
+  .titlebar { display:flex; align-items:center; gap:10px; margin-bottom:6px; }
   .titlebar h1 { margin:0; }
   [hidden] { display:none !important; }
   .acct { margin-left:auto; display:flex; align-items:center; gap:10px; flex-wrap:wrap; justify-content:flex-end; }
@@ -130,30 +137,27 @@ body.menu-open .side-menu { transform: none; visibility: visible; transition-del
   <a class="side-link" href="homecost.html" aria-current="page">Home Cost Explorer</a>
 </nav>
 <header><div class="wrap">
-  <div class="titlebar"><button type="button" class="menu-btn" id="menu-btn" aria-label="Open menu" aria-expanded="false" aria-controls="side-menu"><span></span><span></span><span></span></button><h1>Home Cost Explorer <span>· Addendum options</span></h1>
+  <div class="titlebar"><button type="button" class="menu-btn" id="menu-btn" aria-label="Open menu" aria-expanded="false" aria-controls="side-menu"><span></span><span></span><span></span></button><h1>Home Cost Explorer <span class="sub2">· Addendum options</span></h1>
     <div class="acct"><span class="st" id="save-status"></span><button type="button" id="acct-btn">Google Sign-In</button></div></div>
-  <div class="stats" id="stats" hidden>
-    <div class="stat base"><div class="l">Base House Price</div><div class="v" id="base"></div></div>
-    <div class="stat"><div class="l">Original Addendum total</div><div class="v" id="orig"></div></div>
-    <div class="stat"><div class="l">Total House Cost</div><div class="v" id="total0"></div></div>
-    <div class="stat"><div class="l"><span data-down></span> Down Payment</div><div class="v" id="down0"></div></div>
-    <div class="stat"><div class="l"><span data-rate></span> Mortgage Payment</div><div class="v" id="mo0"></div><div class="s" id="mos0"></div></div>
-    <div class="stat main"><div class="l">Calculated Addendum Total</div><div class="v" id="cur"></div></div>
-    <div class="stat main"><div class="l">Total House Cost</div><div class="v" id="total"></div></div>
-    <div class="stat main"><div class="l"><span data-down></span> Down Payment</div><div class="v" id="down"></div></div>
-    <div class="stat main"><div class="l"><span data-rate></span> Mortgage Payment</div><div class="v" id="mo"></div><div class="s" id="mos"></div></div>
-  </div>
+<div class="stats" id="stats" hidden>
+  <div class="corner">Base <b id="base"></b></div>
+  <div class="col adn">Addendum</div><div class="col">House cost</div><div class="col"><span data-down></span> down</div><div class="col">Monthly @ <span data-rate></span></div>
+  <div class="rl">Original</div>
+  <div class="v adn" id="orig"></div><div class="v" id="total0"></div><div class="v" id="down0"></div><div class="v" id="mo0"></div>
+  <div class="rl main">Calculated</div>
+  <div class="v main adn" id="cur"></div><div class="v main" id="total"></div><div class="v main" id="down"></div><div class="v main" id="mo"></div>
+</div>
   <div class="printonly" id="printdate"></div>
-  <div class="bar" id="bar" hidden>
-    <button id="showAll">Show all</button>
-    <button id="hideAllowances">Hide all allowances</button>
-    <button id="pdf">Export PDF</button>
-    <button id="importBtn" type="button">Import data</button><input type="file" id="importFile" accept="application/json,.json" hidden>
-    <span class="hint">Click any row to hide or show it · Use + to add items and ✎ to add notes (shown in red)</span>
-  </div>
 </div></header>
-<main><div class="wrap"><section class="gate" id="gate"></section></div><div class="wrap" id="app" hidden></div></main>
-<p class="note wrap" id="srcnote" hidden>Source: Addendum Draft 1, printed 09/30/2026. Allowances are budget placeholders, not fixed prices. Credits (negative amounts) increase your total when hidden. Property tax is estimated at <span data-taxrate></span> of total house cost (the 2025 net rate for this tax district, schools and county included); the actual bill depends on the assessed value and changes each year.</p>
+<main>
+<div class="wrap bar" id="bar" hidden>
+  <button id="showAll">Show all</button>
+  <button id="hideAllowances">Hide all allowances</button>
+  <button id="pdf">Export PDF</button>
+  <button id="importBtn" type="button">Import data</button><input type="file" id="importFile" accept="application/json,.json" hidden>
+</div>
+<div class="wrap"><section class="gate" id="gate"></section></div><div class="wrap" id="app" hidden></div></main>
+<p class="note wrap" id="srcnote" hidden>Source: Addendum Draft 1, printed 09/30/2026. Allowances are budget placeholders, not fixed prices. Credits (negative amounts) increase your total when hidden. Click a row to hide or show it, use + to add items and ✎ to add notes (shown in red). Hover a monthly payment for its breakdown. Property tax is estimated at <span data-taxrate></span> of total house cost (the 2025 net rate for this tax district, schools and county included); the actual bill depends on the assessed value and changes each year.</p>
 
 <script>
 // Source data (sections, prices, mortgage assumptions) is not part of this page. It is
@@ -240,7 +244,7 @@ function render() {
   [["mo0","mos0",BASE+orig],["mo","mos",BASE+cur]].forEach(([a,b,price]) => {
     const m = monthly(price);
     document.getElementById(a).textContent = fmt0(m.total);
-    document.getElementById(b).textContent = "P&I " + fmt0(m.pi) + " + tax " + fmt0(m.tax) + " + ins " + fmt0(m.ins);
+    document.getElementById(a).title = "P&I " + fmt0(m.pi) + " + tax " + fmt0(m.tax) + " + ins " + fmt0(m.ins);
   });
   const t = app.querySelector(".addform .ttl, .noteinp"); if (t) t.focus();
 }
