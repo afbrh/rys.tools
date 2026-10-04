@@ -149,7 +149,7 @@ let sel = new Set();
 let layerOn = Object.fromEntries(LAYERS.map(l => [l[0], true]));
 let tool = "select";
 let view = { x: 0, y: 0, w: 600, h: 400 };    // viewBox in inches
-let measure = null;
+let measure = null, viewRestored = false;
 
 function loadAll() {
   let saved = null;
@@ -160,10 +160,11 @@ function loadAll() {
   }
   if (saved && saved.current && plans[saved.current]) planKey = saved.current;
   if (saved && saved.layers) Object.assign(layerOn, saved.layers);
+  if (saved && saved.view && [saved.view.x, saved.view.y, saved.view.w, saved.view.h].every(Number.isFinite) && saved.view.w > 20) { view = saved.view; viewRestored = true; }
 }
 function persist() {
   try {
-    const out = { v: 1, current: planKey, layers: layerOn, plans: {} };
+    const out = { v: 1, current: planKey, layers: layerOn, view, plans: {} };
     for (const k in plans) out.plans[k] = plans[k].shapes.map(s => { const c = Object.assign({}, s); delete c.id; return c; });
     localStorage.setItem(LS_KEY, JSON.stringify(out));
   } catch (e) {}
@@ -373,8 +374,10 @@ function drawShape(s, g) {
   nodeFor.set(s.id, grp);
 }
 
+let viewTimer = null;
 function render() {
   rebuildK();
+  clearTimeout(viewTimer); viewTimer = setTimeout(persist, 400);
   nodeFor.clear();
   svg.innerHTML = "";
   svg.setAttribute("viewBox", `${view.x} ${view.y} ${view.w} ${view.h}`);
@@ -427,14 +430,19 @@ function drawMeasure(world) {
 }
 
 /* ---------- view ---------- */
-function planBounds() {
+function planBounds(allPlans) {
   let x0 = 1e9, y0 = 1e9, x1 = -1e9, y1 = -1e9;
-  for (const s of shapes()) { if (!visible(s)) continue; const b = bbox(s); x0 = Math.min(x0, b.x); y0 = Math.min(y0, b.y); x1 = Math.max(x1, b.x + b.w); y1 = Math.max(y1, b.y + b.h); }
+  const keys = allPlans ? Object.keys(plans) : [planKey], keep = planKey;
+  for (const k of keys) {
+    planKey = k; rebuildK();
+    for (const s of shapes()) { if (!visible(s)) continue; const b = bbox(s); x0 = Math.min(x0, b.x); y0 = Math.min(y0, b.y); x1 = Math.max(x1, b.x + b.w); y1 = Math.max(y1, b.y + b.h); }
+  }
+  planKey = keep; rebuildK();
   if (x0 > x1) { x0 = 0; y0 = 0; x1 = 400; y1 = 300; }
   return { x: x0, y: y0, w: x1 - x0, h: y1 - y0 };
 }
-function fit() {
-  const b = planBounds(), r = stage.getBoundingClientRect(); const pad = 14;
+function fit() {      // one view is shared by all three plans, so fit around all of them together
+  const b = planBounds(true), r = stage.getBoundingClientRect(); const pad = 14;
   const aspect = (r.width || 800) / (r.height || 600);
   let w = b.w + pad * 2, h = b.h + pad * 2;
   if (w / h < aspect) w = h * aspect; else h = w / aspect;
@@ -725,10 +733,10 @@ $("zoomIn").onclick = () => { const c = viewCentre(); zoomAt(c.x, c.y, .8); };
 $("zoomOut").onclick = () => { const c = viewCentre(); zoomAt(c.x, c.y, 1.25); };
 $("zoomFit").onclick = fit;
 $("undo").onclick = undo; $("redo").onclick = redo;
-$("plan").onchange = () => { planKey = $("plan").value; sel = new Set(); measure = null; persist(); fit(); renderProps(); updateButtons(); toast("Plan " + planKey); };
+$("plan").onchange = () => { planKey = $("plan").value; sel = new Set(); measure = null; persist(); render(); renderProps(); updateButtons(); toast("Plan " + planKey); };
 $("reset").onclick = () => {
   if (!confirm("Put plan " + planKey + " back to how the PDF drew it? Your changes to this plan will be lost.")) return;
-  snapshot(); cur().shapes = withIds(clone(DATA[planKey])); sel = new Set(); persist(); fit(); renderProps(); updateButtons(); toast("Plan " + planKey + " reset");
+  snapshot(); cur().shapes = withIds(clone(DATA[planKey])); sel = new Set(); persist(); render(); renderProps(); updateButtons(); toast("Plan " + planKey + " reset");
 };
 $("snap").onchange = () => { try { localStorage.setItem(LS_KEY + "-snap", $("snap").value); } catch (e) {} };
 function toast(msg) { const t = $("toast"); t.textContent = msg; t.classList.add("show"); clearTimeout(toast._t); toast._t = setTimeout(() => t.classList.remove("show"), 1500); }
@@ -745,7 +753,7 @@ $("importFile").onchange = async ev => {
     const j = JSON.parse(await f.text());
     if (!j.plans) throw new Error("not a floor plan file");
     for (const k of ["1", "2", "3"]) if (Array.isArray(j.plans[k])) { plans[k].undo.push(clone(plans[k].shapes)); plans[k].shapes = withIds(clone(j.plans[k])); plans[k].redo = []; }
-    sel = new Set(); persist(); fit(); renderProps(); updateButtons(); toast("Opened " + f.name);
+    sel = new Set(); persist(); render(); renderProps(); updateButtons(); toast("Opened " + f.name);
   } catch (e) { alert("Couldn't open that file: " + e.message); }
 };
 $("exportSvg").onclick = () => {
@@ -786,7 +794,7 @@ $("plan").value = planKey;
 buildLayers();
 updateButtons();
 window.addEventListener("resize", () => { const c = viewCentre(); view.h = view.w / stageAspect(); view.y = c.y - view.h / 2; render(); });
-requestAnimationFrame(() => { fit(); renderProps(); });
+requestAnimationFrame(() => { if (viewRestored) { view.h = view.w / stageAspect(); render(); } else fit(); renderProps(); });
 window.__fp = { plans, get shapes() { return shapes(); }, fit, setTool };
 })();
 </script>
