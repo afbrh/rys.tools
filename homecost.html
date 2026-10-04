@@ -96,16 +96,16 @@
     .note { padding:0; }
   }
 /* ---------- slide-out menu ---------- */
-.menu-btn { width: 34px; height: 34px; padding: 0; flex: none; display: inline-flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; border: 1.5px solid var(--ink); border-radius: 8px; background: none; cursor: pointer; }
-.menu-btn:hover { background: var(--hide); }
+  .menu-btn { width: 34px; height: 34px; padding: 0; flex: none; display: inline-flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; border: 1px solid var(--line); border-radius: 8px; background: var(--card); cursor: pointer; }
+  .menu-btn:hover { border-color: var(--accent); background: var(--card); }
 .menu-btn span { display: block; width: 16px; height: 2px; border-radius: 1px; background: var(--ink); }
 .side-overlay { position: fixed; inset: 0; background: rgba(0, 0, 0, 0.35); opacity: 0; pointer-events: none; transition: opacity .25s ease; z-index: 200; }
-.side-menu { position: fixed; top: 0; left: 0; bottom: 0; width: 260px; max-width: 80vw; padding: 20px 14px; background: var(--card); border-right: 1.5px solid var(--ink); transform: translateX(-100%); visibility: hidden; transition: transform .25s ease, visibility 0s linear .25s; z-index: 201; font-family: inherit; }
+.side-menu { position: fixed; top: 0; left: 0; bottom: 0; width: 260px; max-width: 80vw; padding: 20px 14px; background: var(--card); border-right: 1px solid var(--line); transform: translateX(-100%); visibility: hidden; transition: transform .25s ease, visibility 0s linear .25s; z-index: 201; font-family: inherit; }
 body.menu-open .side-overlay { opacity: 1; pointer-events: auto; }
 body.menu-open .side-menu { transform: none; visibility: visible; transition-delay: 0s; }
 .side-title { font-size: 12px; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); margin: 0 8px 12px; }
 .side-link { display: block; padding: 11px 12px; border-radius: 8px; color: var(--ink); text-decoration: none; font-size: 16px; font-weight: 600; }
-.side-link:hover { background: var(--hide); }
+.side-link:hover { background: var(--bg); }
 .side-link[aria-current="page"] { background: var(--hide); }
 @media print { .menu-btn, .side-menu, .side-overlay, .acct, .gate { display: none !important; } }
   .titlebar { display:flex; align-items:center; gap:10px; margin-bottom:8px; }
@@ -153,7 +153,7 @@ body.menu-open .side-menu { transform: none; visibility: visible; transition-del
   </div>
 </div></header>
 <main><div class="wrap"><section class="gate" id="gate"></section></div><div class="wrap" id="app" hidden></div></main>
-<p class="note wrap">Source: Addendum Draft 1, printed 09/30/2026. Allowances are budget placeholders, not fixed prices. Credits (negative amounts) increase your total when hidden.</p>
+<p class="note wrap" id="srcnote" hidden>Source: Addendum Draft 1, printed 09/30/2026. Allowances are budget placeholders, not fixed prices. Credits (negative amounts) increase your total when hidden.</p>
 
 <script>
 // Source data (sections, prices, mortgage assumptions) is not part of this page. It is
@@ -597,11 +597,11 @@ function showGate(message, withImport) {
     gate.appendChild(b);
   }
   gate.hidden = false;
-  $("stats").hidden = true; $("bar").hidden = true; $("app").hidden = true;
+  $("stats").hidden = true; $("bar").hidden = true; $("app").hidden = true; $("srcnote").hidden = true;
 }
 function showApp() {
   $("gate").hidden = true;
-  $("stats").hidden = false; $("bar").hidden = false; $("app").hidden = false;
+  $("stats").hidden = false; $("bar").hidden = false; $("app").hidden = false; $("srcnote").hidden = false;
   render();
 }
 
