@@ -4,6 +4,8 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Floor Plan Editor</title>
+<link rel="icon" type="image/png" href="logo.png">
+<script src="https://accounts.google.com/gsi/client" async defer></script>
 <style>
   :root { color-scheme: light;
     --bg:#f4ecd8; --card:#fbf6e9; --ink:#3b3226; --muted:#85796a; --line:#e2d7bd;
@@ -69,6 +71,7 @@
   <div class="side-title">Ry's Tools</div>
   <a class="side-link" href="budget.html">Budget Planner</a>
   <a class="side-link" href="floorplan.html" aria-current="page">Floor Plan</a>
+  <a class="side-link" href="homecost.html" id="side-home-link" hidden>Home Cost Explorer</a>
 </nav>
 <header>
   <button type="button" class="menu-btn" id="menu-btn" aria-label="Open menu" aria-expanded="false" aria-controls="side-menu"><span></span><span></span><span></span></button>
@@ -787,6 +790,53 @@ $("layers").addEventListener("change", ev => { const k = ev.target.dataset.layer
   document.addEventListener("keydown", e => { if (e.key === "Escape") setOpen(false); });
 })();
 
+/* ---------- the Home Cost Explorer menu link ---------- */
+// Same rule as the Budget Planner's menu: the link shows only when the signed-in Google account is one of the approved
+// ones (stored as SHA-256 hashes, so the addresses aren't printed here). The sign-in is the one the other pages already
+// made, shared through this site's localStorage, renewed silently when it has expired. This only decides what the menu
+// shows: the Home Cost Explorer keeps its data in each person's own Google Drive and checks access itself.
+const HOME_ACCESS_HASHES = ["7632439ab9eed19264bc3e1aa4ad1a2c4a0cfcbd0334a6a3d9d1ef5231bec8b7", "d86c22090aa6b4f235012ebb9376f1651f6e26bf33879165000a6075b661928b", "08d75589e1d251a55018e1f5c3e769f40720a44bef0dc28f689b5dbd067e26e5", "9aba2ffbc6f32a548f8b91fdab8e456cadb68b5a851aff20b5b8fb1d0ec122d5"];
+const G_CLIENT_ID = "575902569700-4l05lkmf0kbrgq5kdr58canigcvafv3j.apps.googleusercontent.com";
+const G_SCOPE = "https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/userinfo.email";
+const G_TOKEN_KEY = "munny_google_token";
+function savedToken() {
+  try {
+    const t = JSON.parse(localStorage.getItem(G_TOKEN_KEY) || "null");
+    if (t && t.access_token && t.expires_at && Date.now() < t.expires_at - 60000) return t.access_token;
+  } catch (e) {}
+  return null;
+}
+function silentToken() {     // renew the sign-in without any popup, if the browser still has a Google session
+  return new Promise(resolve => {
+    if (!window.google || !google.accounts || !google.accounts.oauth2) { resolve(null); return; }
+    let done = false; const finish = v => { if (!done) { done = true; resolve(v); } };
+    setTimeout(() => finish(null), 8000);
+    try {
+      const client = google.accounts.oauth2.initTokenClient({ client_id: G_CLIENT_ID, scope: G_SCOPE, callback: resp => {
+        if (resp.error || !resp.access_token) { finish(null); return; }
+        try { localStorage.setItem(G_TOKEN_KEY, JSON.stringify({ access_token: resp.access_token, expires_at: Date.now() + (resp.expires_in || 3600) * 1000 })); } catch (e) {}
+        finish(resp.access_token);
+      } });
+      client.requestAccessToken({ prompt: "" });
+    } catch (e) { finish(null); }
+  });
+}
+async function checkHomeAccess() {
+  const link = $("side-home-link"); if (!link) return;
+  try {
+    const token = savedToken() || await silentToken();
+    if (!token) return;
+    const resp = await fetch("https://www.googleapis.com/oauth2/v3/userinfo", { headers: { Authorization: "Bearer " + token } });
+    if (!resp.ok) return;
+    const email = ((await resp.json()).email || "").trim().toLowerCase();
+    if (!email || !window.crypto || !crypto.subtle) return;
+    const buf = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(email));
+    const hex = Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, "0")).join("");
+    link.hidden = HOME_ACCESS_HASHES.indexOf(hex) === -1;
+  } catch (e) {}
+}
+window.addEventListener("load", checkHomeAccess);
+
 /* ---------- boot ---------- */
 loadAll();
 try { const sn = localStorage.getItem(LS_KEY + "-snap"); if (sn !== null) $("snap").value = sn; } catch (e) {}
@@ -795,7 +845,7 @@ buildLayers();
 updateButtons();
 window.addEventListener("resize", () => { const c = viewCentre(); view.h = view.w / stageAspect(); view.y = c.y - view.h / 2; render(); });
 requestAnimationFrame(() => { if (viewRestored) { view.h = view.w / stageAspect(); render(); } else fit(); renderProps(); });
-window.__fp = { plans, get shapes() { return shapes(); }, fit, setTool };
+window.__fp = { plans, get shapes() { return shapes(); }, fit, setTool, checkHomeAccess };
 })();
 </script>
 </body>
