@@ -1,0 +1,56 @@
+name: Update mortgage rates
+
+on:
+  schedule:
+    - cron: '0 14 * * *'
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Fetch latest rates from FRED
+        run: |
+          python3 - <<'EOF'
+          import csv, io, json, urllib.request, datetime
+
+          def latest(series_id):
+              url = f"https://fred.stlouisfed.org/graph/fredgraph.csv?id={series_id}"
+              req = urllib.request.Request(url, headers={"User-Agent": "rys.tools mortgage-rate updater"})
+              with urllib.request.urlopen(req, timeout=20) as resp:
+                  text = resp.read().decode("utf-8")
+              rows = list(csv.reader(io.StringIO(text)))
+              for date, value in reversed(rows[1:]):
+                  try:
+                      return date, float(value)
+                  except ValueError:
+                      continue
+              raise RuntimeError(f"No numeric data for {series_id}")
+
+          date30, rate30 = latest("MORTGAGE30US")
+          date15, rate15 = latest("MORTGAGE15US")
+          data = {
+              "asOf": max(date30, date15),
+              "rate30": rate30,
+              "rate15": rate15,
+              "source": "Freddie Mac Primary Mortgage Market Survey, via FRED (fred.stlouisfed.org)",
+              "updated": datetime.datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ")
+          }
+          with open("mortgage-rates.json", "w") as f:
+              json.dump(data, f, indent=2)
+              f.write("\n")
+          print(data)
+          EOF
+
+      - name: Commit and push if changed
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add mortgage-rates.json
+          git diff --cached --quiet || git commit -m "Update mortgage rates"
+          git push

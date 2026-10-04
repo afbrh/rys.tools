@@ -1,0 +1,3289 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ry's Tools</title>
+<link rel="icon" type="image/png" href="logo.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&amp;family=Source+Sans+Pro:wght@400;600&amp;display=swap" rel="stylesheet">
+<script src="https://accounts.google.com/gsi/client" async="" defer=""></script>
+<style>
+  :root {
+    --paper: #F3E9CE;
+    --paper-line: #D9C79C;
+    --ink: #3B2A16;
+    --ink-soft: #7A6142;
+    --income: #3F6B33;
+    --income-bg: #E4EDD7;
+    --expense: #93402A;
+    --expense-bg: #F1DCC9;
+    --gold: #8A6423;
+    --gold-bg: #EBDBAF;
+    --danger: #93402A;
+    --font-header: 'Source Sans Pro', sans-serif;
+    --font-body: 'Source Sans Pro', sans-serif;
+    --font-mono: 'IBM Plex Mono', monospace;
+    --bg-texture: none;
+    --letter-spacing-header: -0.01em;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg-texture), var(--paper);
+    background-attachment: fixed;
+    color: var(--ink);
+    font-family: var(--font-body);
+    transition: background-color .15s ease, color .15s ease;
+    padding: 0 20px 80px;
+    overflow-x: hidden;
+  }
+
+  /* ---------- app shell / tabs ---------- */
+  .app-shell { max-width: 820px; margin: 0 auto; }
+  /* Full-bleed: the sticky header's background must span the whole viewport width,
+     no matter the window size, so nothing can ever be seen scrolling past its sides —
+     it breaks out of .app-shell's centered column while .app-header-inner puts the
+     actual content back into that same 820px column. */
+  .app-header-sticky {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    background: var(--paper);
+    padding-top: 10px;
+    width: 100vw;
+    margin-left: 50%;
+    transform: translateX(-50%);
+  }
+  .app-header-inner { max-width: 860px; margin: 0 auto; padding: 0 20px; }
+/* ---------- slide-out menu ---------- */
+.menu-btn { width: 34px; height: 34px; padding: 0; flex: none; display: inline-flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; border: 1.5px solid var(--ink); border-radius: 8px; background: none; cursor: pointer; }
+.menu-btn:hover { background: var(--paper-line); }
+.menu-btn span { display: block; width: 16px; height: 2px; border-radius: 1px; background: var(--ink); }
+.side-overlay { position: fixed; inset: 0; background: rgba(0, 0, 0, 0.35); opacity: 0; pointer-events: none; transition: opacity .25s ease; z-index: 200; }
+.side-menu { position: fixed; top: 0; left: 0; bottom: 0; width: 260px; max-width: 80vw; padding: 20px 14px; background: var(--paper); border-right: 1.5px solid var(--ink); transform: translateX(-100%); visibility: hidden; transition: transform .25s ease, visibility 0s linear .25s; z-index: 201; font-family: var(--font-body); }
+body.menu-open .side-overlay { opacity: 1; pointer-events: auto; }
+body.menu-open .side-menu { transform: none; visibility: visible; transition-delay: 0s; }
+.side-title { font-size: 12px; letter-spacing: .06em; text-transform: uppercase; color: var(--ink-soft); margin: 0 8px 12px; }
+.side-link { display: block; padding: 11px 12px; border-radius: 8px; color: var(--ink); text-decoration: none; font-size: 16px; font-weight: 600; }
+  .side-link[hidden] { display: none; }
+  .side-link:hover { background: var(--paper-line); }
+.side-link[aria-current="page"] { background: var(--paper-line); }
+@media print { .menu-btn, .side-menu, .side-overlay { display: none !important; } }
+
+  /* ---------- fixed totals window ---------- */
+  .summary-bar { padding-bottom: 12px; border-bottom: 2px solid var(--ink); }
+  .sum-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px 10px; }
+  .sum-grid.multi { grid-template-columns: minmax(60px, auto) repeat(3, minmax(0, 1fr)); }
+  .sum-label { font-size: 11px; text-transform: uppercase; letter-spacing: .05em; color: var(--ink-soft); }
+  .sum-val { background: var(--gold-bg); border-radius: 10px; padding: 8px 12px; font-family: var(--font-mono); font-size: 20px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .sum-val.income { color: var(--income); }
+  .sum-val.net { color: var(--gold); }
+  .sum-name { align-self: center; font-size: 13px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .sum-grid.multi .sum-val { padding: 5px 12px; font-size: 17px; }
+  @media (max-width: 560px) { .sum-val, .sum-grid.multi .sum-val { font-size: 13px; padding: 6px 8px; } .sum-name { font-size: 11px; } .sum-grid.multi { grid-template-columns: minmax(48px, auto) repeat(3, minmax(0, 1fr)); } }
+
+  /* ---------- single-scroll cards ---------- */
+  #app-content { padding-top: 6px; }
+  .tab-panel { max-width: 860px; margin: 18px auto 0; padding: 16px 20px 10px; border: 1px solid var(--paper-line); border-radius: 12px; background: rgba(255, 255, 255, 0.28); }
+  @media (max-width: 560px) { .tab-panel { padding: 12px 10px 8px; } }
+  .card-title { font-family: var(--font-header); font-size: 18px; font-weight: 600; margin: 0 0 12px; color: var(--ink); }
+  #app-content .tab-panel .page, #app-content .tab-panel .sheet { max-width: none; }
+
+  .save-bar { display: flex; align-items: flex-start; justify-content: flex-start; flex-wrap: wrap; gap: 12px; margin-bottom: 13px; }
+  .tool-controls { display: flex; align-items: center; flex-wrap: wrap; gap: 12px; margin-left: auto; }
+  .tool-controls[hidden] { display: none; }
+  .save-btn {
+    height: 34px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--ink);
+    color: var(--paper);
+    border: none;
+    font-family: var(--font-body);
+    font-size: 14px;
+    font-weight: 600;
+    padding: 0 20px;
+    border-radius: 6px;
+    cursor: pointer;
+  }
+  .save-btn:hover { opacity: 0.88; }
+  .save-btn[hidden] { display: none; }
+  .save-btn.export-btn {
+    background: none;
+    color: var(--ink);
+    border: 1.5px solid var(--ink);
+  }
+  .save-btn.export-btn:hover { opacity: 1; background: var(--paper-line); }
+  .save-status { font-size: 13px; color: var(--income); min-height: 16px; }
+  .app-footnote {
+    max-width: 820px;
+    margin: 30px auto 0;
+    font-size: 12px;
+    color: var(--ink-soft);
+    text-align: center;
+  }
+
+  /* ================= Budget tab (scoped) ================= */
+  #tab-budget .sheet { max-width: 640px; margin: 0 auto; }
+  #tab-budget h1 {
+    font-family: var(--font-header);
+    font-weight: 600;
+    font-size: 28px;
+    margin: 0 0 28px;
+    letter-spacing: var(--letter-spacing-header);
+  }
+  /* The lone income row (Income has no scenarios, so it isn't part of the grid below)
+     stands in for a section header, so it's styled like one rather than a locked chip. */
+  #tab-budget .section.income .row.locked {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    row-gap: 6px;
+    gap: 10px;
+    padding: 0 0 8px;
+    margin: 0 0 24px;
+    border-bottom: 2px solid var(--ink);
+  }
+  #tab-budget .section.income .row-main { display: flex; align-items: center; gap: 8px; flex: 1 1 200px; min-width: 0; }
+  #tab-budget .section.income .row-actions { display: flex; align-items: center; gap: 8px; flex: 0 0 auto; }
+  #tab-budget .section.income input[type="text"] {
+    flex: 1;
+    border: none;
+    background: transparent;
+    font-family: var(--font-header);
+    font-size: 16px;
+    color: var(--income);
+    cursor: pointer;
+    padding: 4px 2px;
+  }
+  #tab-budget .section.income .amount-wrap { display: flex; align-items: center; justify-content: flex-end; font-family: var(--font-mono); font-size: 15px; }
+  #tab-budget .section.income .amount-wrap span { color: var(--income); margin-right: 1px; }
+  #tab-budget .section.income input[type="number"] {
+    width: 4ch;
+    min-width: 0;
+    text-align: right;
+    border: none;
+    background: transparent;
+    font-family: var(--font-mono);
+    font-size: 15px;
+    font-weight: 500;
+    color: var(--income);
+    cursor: pointer;
+    padding: 4px 0;
+    -moz-appearance: textfield;
+  }
+  #tab-budget input[type="number"]::-webkit-outer-spin-button,
+  #tab-budget input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+
+  /* Scenario grid — the Expenses section below, one column per shared scenario. */
+  #tab-budget .page { max-width: 900px; margin: 0 auto; }
+  #tab-budget .table-scroll { overflow-x: auto; padding-bottom: 4px; }
+  #tab-budget .add-btn {
+    flex-shrink: 0;
+    align-self: center;
+    background: none;
+    border: 1px dashed var(--ink-soft);
+    color: var(--ink-soft);
+    font-family: var(--font-body);
+    font-size: 13px;
+    font-weight: 600;
+    padding: 8px 16px;
+    border-radius: 6px;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+  #tab-budget .add-btn:hover { border-color: var(--expense); color: var(--expense); }
+  #tab-budget .flex-row { display: flex; align-items: center; min-width: max-content; }
+  #tab-budget .row-label { width: 190px; flex: 0 0 190px; padding-right: 10px; display: flex; align-items: center; gap: 4px; }
+  #tab-budget .row-label .field-label { font-size: 14px; color: var(--ink); }
+  #tab-budget .row-values { display: flex; gap: 34px; }
+  #tab-budget .value-cell { width: 118px; flex: 0 0 118px; }
+  #tab-budget .col-head-row { padding-bottom: 12px; margin-bottom: 6px; border-bottom: 2px solid var(--ink); }
+  #tab-budget .col-head-cell { position: relative; text-align: right; }
+  #tab-budget .col-head-cell .name-row { display: flex; align-items: center; justify-content: flex-end; gap: 6px; }
+  #tab-budget .col-head-cell input.name {
+    font-family: var(--font-header);
+    font-weight: 600;
+    font-size: 14px;
+    border: none;
+    background: transparent;
+    color: var(--ink);
+    text-align: right;
+    flex: 1 1 auto;
+    min-width: 0;
+    padding: 2px 0;
+  }
+  #tab-budget .col-head-cell input.name:focus { outline: none; border-bottom: 1px solid var(--ink-soft); }
+  #tab-budget .col-head-cell .col-head-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 3px; }
+  #tab-budget .col-head-cell .remove-btn,
+  #tab-budget .col-head-cell .clone-btn {
+    background: none; border: none;
+    color: var(--ink-soft); font-size: 12px; cursor: pointer; padding: 0;
+  }
+  #tab-budget .col-head-cell .remove-btn:hover { color: var(--expense); }
+  #tab-budget .col-head-cell .clone-btn:hover { color: var(--gold); }
+  #tab-budget .section { margin-bottom: 26px; }
+  #tab-budget .section-head { border-bottom: 2px solid var(--ink); padding-bottom: 6px; margin-bottom: 2px; }
+  #tab-budget .section-head h2 { font-family: var(--font-header); font-size: 15px; font-weight: 600; margin: 0; color: var(--expense); }
+  #tab-budget .row { padding: 11px 0; border-bottom: 1px solid var(--paper-line); }
+  #tab-budget .row.locked { background: var(--gold-bg); border-radius: 6px; padding: 9px 8px; margin: 2px -8px; border-bottom-color: transparent; }
+  #tab-budget .row.locked .row-label input.row-name { color: var(--gold); font-weight: 600; cursor: pointer; }
+  #tab-budget .row.locked .value-text { color: var(--gold); cursor: pointer; }
+  #tab-budget .row-label input.row-name {
+    flex: 1 1 auto;
+    min-width: 0;
+    font-family: var(--font-body);
+    font-size: 14px;
+    color: var(--ink);
+    border: none;
+    background: transparent;
+    padding: 2px 0;
+  }
+  #tab-budget .row-label input.row-name[readonly] { cursor: pointer; }
+  #tab-budget .row-label input.row-name::placeholder { color: var(--ink-soft); }
+  #tab-budget .row-label input.row-name:focus { outline: none; border-bottom: 1px solid var(--ink-soft); }
+  #tab-budget .row-label .row-remove-btn {
+    flex-shrink: 0;
+    background: none; border: none; color: var(--ink-soft);
+    font-size: 16px; line-height: 1; cursor: pointer; padding: 2px 4px; border-radius: 4px;
+  }
+  #tab-budget .row-label .row-remove-btn:hover { color: var(--danger); background: var(--expense-bg); }
+  #tab-budget .field { display: flex; align-items: center; justify-content: flex-end; font-family: var(--font-mono); font-size: 14px; }
+  #tab-budget .field span { color: var(--ink-soft); margin: 0 1px; }
+  #tab-budget .field input[type="number"] {
+    width: 4ch;
+    min-width: 0;
+    text-align: right;
+    border: none;
+    background: transparent;
+    font-family: var(--font-mono);
+    font-size: 14px;
+    color: var(--ink);
+    padding: 4px 0;
+  }
+  #tab-budget .field input:focus { outline: none; border-bottom: 1px solid var(--ink-soft); }
+  #tab-budget .add-row-btn {
+    margin-top: 12px;
+    background: none;
+    border: 1px dashed var(--ink-soft);
+    color: var(--ink-soft);
+    font-family: var(--font-body);
+    font-size: 13px;
+    padding: 7px 14px;
+    border-radius: 6px;
+    cursor: pointer;
+  }
+  #tab-budget .add-row-btn:hover { border-color: var(--expense); color: var(--expense); }
+  #tab-budget .summary-block { margin-top: 18px; padding-top: 12px; border-top: 2px solid var(--ink); }
+  #tab-budget .value-text { font-family: var(--font-mono); font-weight: 500; text-align: right; font-size: 14px; display: block; }
+  #tab-budget .payment-row { padding: 16px 18px; border-radius: 8px; background: var(--gold-bg); margin-bottom: 6px; }
+  #tab-budget .payment-row .field-label { font-family: var(--font-header); font-weight: 600; font-size: 14px; color: var(--gold); }
+  #tab-budget .payment-row .value-text { font-size: 17px; }
+  #tab-budget .footnote { margin-top: 14px; font-size: 12px; color: var(--ink-soft); text-align: center; }
+
+  /* ================= Income tab (scoped) ================= */
+  #tab-income .sheet { max-width: 760px; margin: 0 auto; }
+  #tab-income h1 {
+    font-family: var(--font-header);
+    font-weight: 600;
+    font-size: 28px;
+    margin: 0 0 28px;
+    letter-spacing: var(--letter-spacing-header);
+  }
+  #tab-income .section { margin-bottom: 28px; }
+  #tab-income .section-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    border-bottom: 2px solid var(--ink);
+    padding-bottom: 8px;
+    margin-bottom: 4px;
+  }
+  #tab-income .section-head h2 { font-family: var(--font-header); font-size: 16px; font-weight: 600; margin: 0; color: var(--income); }
+  #tab-income .section-total { font-family: var(--font-mono); font-size: 15px; font-weight: 500; }
+  #tab-income .row {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    row-gap: 6px;
+    gap: 10px;
+    padding: 9px 0;
+    border-bottom: 1px solid var(--paper-line);
+  }
+  #tab-income .row-main { display: flex; align-items: center; gap: 8px; flex: 1 1 200px; min-width: 0; }
+  #tab-income .row-actions { display: flex; align-items: center; flex-wrap: wrap; justify-content: flex-end; gap: 8px; flex: 1 1 auto; min-width: 0; }
+  #tab-income .row input[type="text"] {
+    flex: 1;
+    min-width: 0;
+    border: none;
+    background: transparent;
+    font-family: var(--font-body);
+    font-size: 15px;
+    color: var(--ink);
+    padding: 4px 2px;
+  }
+  #tab-income .row input[type="text"]:focus { outline: none; border-bottom: 1px solid var(--ink-soft); }
+  #tab-income .freq-select {
+    flex-shrink: 0;
+    border: none;
+    background: var(--paper-line);
+    border-radius: 5px;
+    font-family: var(--font-body);
+    font-size: 13px;
+    color: var(--ink);
+    padding: 5px 6px;
+    max-width: 118px;
+  }
+  #tab-income .freq-select:focus { outline: none; }
+  #tab-income .amount-wrap { display: flex; align-items: center; justify-content: flex-end; font-family: var(--font-mono); font-size: 15px; flex-shrink: 0; }
+  #tab-income .amount-wrap span { color: var(--ink-soft); margin-right: 1px; }
+  #tab-income .row input[type="number"] {
+    width: 4ch;
+    min-width: 0;
+    text-align: right;
+    border: none;
+    background: transparent;
+    font-family: var(--font-mono);
+    font-size: 15px;
+    color: var(--ink);
+    padding: 4px 0;
+    -moz-appearance: textfield;
+  }
+  #tab-income .row input[type="number"]::-webkit-outer-spin-button,
+  #tab-income .row input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+  #tab-income .row input[type="number"]:focus { outline: none; border-bottom: 1px solid var(--ink-soft); }
+  #tab-income .monthly-equiv {
+    flex-shrink: 0;
+    width: 108px;
+    text-align: right;
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--income);
+  }
+  #tab-income .remove-btn {
+    margin-left: auto;
+    background: none;
+    border: 1px solid var(--paper-line);
+    color: var(--ink-soft);
+    font-family: var(--font-body);
+    font-size: 12px;
+    font-weight: 600;
+    line-height: 1;
+    cursor: pointer;
+    padding: 6px 12px;
+    border-radius: 6px;
+    flex-shrink: 0;
+  }
+  #tab-income .remove-btn:hover { color: var(--danger); background: var(--expense-bg); border-color: var(--danger); }
+  #tab-income .add-row-btn {
+    margin-top: 10px;
+    background: none;
+    border: 1px dashed var(--ink-soft);
+    color: var(--ink-soft);
+    font-family: var(--font-body);
+    font-size: 13px;
+    padding: 7px 14px;
+    border-radius: 6px;
+    cursor: pointer;
+  }
+  #tab-income .add-row-btn:hover { border-color: var(--income); color: var(--income); }
+  #tab-income .summary { margin-top: 20px; padding-top: 20px; border-top: 2px solid var(--ink); }
+  #tab-income .net-line {
+    display: flex;
+    flex-wrap: wrap;
+    row-gap: 4px;
+    column-gap: 10px;
+    justify-content: space-between;
+    align-items: center;
+    padding: 16px 18px;
+    border-radius: 8px;
+    background: var(--gold-bg);
+  }
+  #tab-income .net-line .label { font-family: var(--font-header); font-weight: 600; font-size: 16px; color: var(--gold); }
+  #tab-income .net-line .value { font-family: var(--font-mono); font-weight: 500; font-size: 22px; color: var(--gold); }
+  #tab-income .footnote { margin-top: 14px; font-size: 12px; color: var(--ink-soft); text-align: center; }
+
+  /* ================= Subscriptions tab (scoped) ================= */
+  #tab-subscriptions .page { max-width: 820px; margin: 0 auto; }
+  #tab-subscriptions .header-bar { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 28px; gap: 16px; }
+  #tab-subscriptions h1 {
+    font-family: var(--font-header);
+    font-weight: 600;
+    font-size: 28px;
+    margin: 0 0 28px;
+    letter-spacing: var(--letter-spacing-header);
+  }
+  #tab-subscriptions .add-btn {
+    flex-shrink: 0;
+    align-self: center;
+    background: none;
+    border: 1px dashed var(--ink-soft);
+    color: var(--ink-soft);
+    font-family: var(--font-body);
+    font-size: 13px;
+    font-weight: 600;
+    padding: 8px 16px;
+    border-radius: 6px;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+  #tab-subscriptions .add-btn:hover { border-color: var(--expense); color: var(--expense); }
+  #tab-subscriptions .table-scroll { overflow-x: auto; padding-bottom: 4px; }
+  #tab-subscriptions .flex-row { display: flex; align-items: center; min-width: max-content; }
+  #tab-subscriptions .row-label { width: 190px; flex: 0 0 190px; padding-right: 10px; display: flex; align-items: center; gap: 4px; }
+  #tab-subscriptions .row-label input.row-name {
+    flex: 1 1 auto;
+    min-width: 0;
+    font-family: var(--font-body);
+    font-size: 14px;
+    color: var(--ink);
+    border: none;
+    background: transparent;
+    padding: 2px 0;
+  }
+  #tab-subscriptions .row-label input.row-name::placeholder { color: var(--ink-soft); }
+  #tab-subscriptions .row-label input.row-name:focus { outline: none; border-bottom: 1px solid var(--ink-soft); }
+  #tab-subscriptions .row-label .row-remove-btn {
+    flex-shrink: 0;
+    background: none; border: none; color: var(--ink-soft);
+    font-size: 16px; line-height: 1; cursor: pointer; padding: 2px 4px; border-radius: 4px;
+  }
+  #tab-subscriptions .row-label .row-remove-btn:hover { color: var(--danger); background: var(--expense-bg); }
+  #tab-subscriptions .row-values { display: flex; gap: 34px; }
+  #tab-subscriptions .value-cell { width: 118px; flex: 0 0 118px; }
+  #tab-subscriptions .col-head-row { padding-bottom: 12px; margin-bottom: 6px; border-bottom: 2px solid var(--ink); }
+  #tab-subscriptions .col-head-cell { position: relative; text-align: right; }
+  #tab-subscriptions .col-head-cell .name-row { display: flex; align-items: center; justify-content: flex-end; gap: 6px; }
+  #tab-subscriptions .col-head-cell input.name {
+    font-family: var(--font-header);
+    font-weight: 600;
+    font-size: 14px;
+    border: none;
+    background: transparent;
+    color: var(--ink);
+    text-align: right;
+    flex: 1 1 auto;
+    min-width: 0;
+    padding: 2px 0;
+  }
+  #tab-subscriptions .col-head-cell input.name:focus { outline: none; border-bottom: 1px solid var(--ink-soft); }
+  #tab-subscriptions .col-head-cell .remove-btn {
+    display: block; margin: 3px 0 0 auto; background: none; border: none;
+    color: var(--ink-soft); font-size: 12px; cursor: pointer; padding: 0;
+  }
+  #tab-subscriptions .col-head-cell .remove-btn:hover { color: var(--expense); }
+  #tab-subscriptions .section { margin-bottom: 26px; }
+  #tab-subscriptions .section-head { border-bottom: 2px solid var(--ink); padding-bottom: 6px; margin-bottom: 2px; }
+  #tab-subscriptions .section-head h2 { font-family: var(--font-header); font-size: 15px; font-weight: 600; margin: 0; color: var(--expense); }
+  #tab-subscriptions .row { padding: 11px 0; border-bottom: 1px solid var(--paper-line); }
+  #tab-subscriptions .field { display: flex; align-items: center; justify-content: flex-end; font-family: var(--font-mono); font-size: 14px; }
+  #tab-subscriptions .field span { color: var(--ink-soft); margin: 0 1px; }
+  #tab-subscriptions .field input[type="number"] {
+    width: 4ch;
+    min-width: 0;
+    text-align: right;
+    border: none;
+    background: transparent;
+    font-family: var(--font-mono);
+    font-size: 14px;
+    color: var(--ink);
+    padding: 4px 0;
+    -moz-appearance: textfield;
+  }
+  #tab-subscriptions .field input::-webkit-outer-spin-button,
+  #tab-subscriptions .field input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+  #tab-subscriptions .field input:focus { outline: none; border-bottom: 1px solid var(--ink-soft); }
+  #tab-subscriptions .add-row-btn {
+    margin-top: 12px;
+    background: none;
+    border: 1px dashed var(--ink-soft);
+    color: var(--ink-soft);
+    font-family: var(--font-body);
+    font-size: 13px;
+    padding: 7px 14px;
+    border-radius: 6px;
+    cursor: pointer;
+  }
+  #tab-subscriptions .add-row-btn:hover { border-color: var(--expense); color: var(--expense); }
+  #tab-subscriptions .summary-block { margin-top: 18px; padding-top: 12px; border-top: 2px solid var(--ink); }
+  #tab-subscriptions .payment-block { margin-top: 4px; }
+  #tab-subscriptions .value-text { font-family: var(--font-mono); font-weight: 500; text-align: right; font-size: 14px; display: block; }
+  #tab-subscriptions .payment-row { padding: 16px 18px; border-radius: 8px; background: var(--gold-bg); margin-bottom: 6px; }
+  #tab-subscriptions .payment-row .field-label { font-family: var(--font-header); font-weight: 600; font-size: 14px; color: var(--gold); }
+  #tab-subscriptions .payment-row .value-text { font-size: 17px; color: var(--gold); }
+  #tab-subscriptions .footnote { margin-top: 30px; font-size: 12px; color: var(--ink-soft); text-align: center; }
+
+  /* ================= Mortgage tab (scoped) ================= */
+  #tab-mortgage .page { max-width: 820px; margin: 0 auto; }
+  #tab-mortgage .header-bar { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 28px; gap: 16px; }
+  #tab-mortgage h1 {
+    font-family: var(--font-header);
+    font-weight: 600;
+    font-size: 28px;
+    margin: 0 0 28px;
+    letter-spacing: var(--letter-spacing-header);
+  }
+  #tab-mortgage .add-btn {
+    flex-shrink: 0;
+    align-self: center;
+    background: none;
+    border: 1px dashed var(--ink-soft);
+    color: var(--ink-soft);
+    font-family: var(--font-body);
+    font-size: 13px;
+    font-weight: 600;
+    padding: 8px 16px;
+    border-radius: 6px;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+  #tab-mortgage .add-btn:hover { border-color: var(--gold); color: var(--gold); }
+  #tab-mortgage .table-scroll { overflow-x: auto; padding-bottom: 4px; }
+  #tab-mortgage .flex-row { display: flex; align-items: center; min-width: max-content; }
+  #tab-mortgage .row-label { width: 180px; flex: 0 0 180px; padding-right: 10px; }
+  #tab-mortgage .row-label .field-label { font-size: 14px; color: var(--ink); }
+  #tab-mortgage .row-label .hint { display: block; font-size: 11px; color: var(--ink-soft); margin-top: 2px; }
+  #tab-mortgage .row-values { display: flex; gap: 34px; }
+  #tab-mortgage .value-cell { width: 118px; flex: 0 0 118px; }
+  #tab-mortgage .col-head-row { padding-bottom: 12px; margin-bottom: 6px; border-bottom: 2px solid var(--ink); }
+  #tab-mortgage .col-head-cell { position: relative; text-align: right; }
+  #tab-mortgage .col-head-cell .name-row { display: flex; align-items: center; justify-content: flex-end; gap: 6px; }
+  #tab-mortgage .col-head-cell input.name {
+    font-family: var(--font-header);
+    font-weight: 600;
+    font-size: 14px;
+    border: none;
+    background: transparent;
+    color: var(--ink);
+    text-align: right;
+    flex: 1 1 auto;
+    min-width: 0;
+    padding: 2px 0;
+  }
+  #tab-mortgage .col-head-cell input.name:focus { outline: none; border-bottom: 1px solid var(--ink-soft); }
+  #tab-mortgage .col-head-cell .remove-btn {
+    display: block; margin: 3px 0 0 auto; background: none; border: none;
+    color: var(--ink-soft); font-size: 12px; cursor: pointer; padding: 0;
+  }
+  #tab-mortgage .col-head-cell .remove-btn:hover { color: var(--expense); }
+  #tab-mortgage .section { margin-bottom: 26px; }
+  #tab-mortgage .section-head { border-bottom: 2px solid var(--ink); padding-bottom: 6px; margin-bottom: 2px; }
+  #tab-mortgage .section-head h2 { font-family: var(--font-header); font-size: 15px; font-weight: 600; margin: 0; }
+  #tab-mortgage .row { padding: 11px 0; border-bottom: 1px solid var(--paper-line); }
+  #tab-mortgage .field { display: flex; align-items: center; justify-content: flex-end; font-family: var(--font-mono); font-size: 14px; }
+  #tab-mortgage .field span { color: var(--ink-soft); margin: 0 1px; }
+  #tab-mortgage .field input[type="number"] {
+    width: 4ch;
+    min-width: 0;
+    text-align: right;
+    border: none;
+    background: transparent;
+    font-family: var(--font-mono);
+    font-size: 14px;
+    color: var(--ink);
+    padding: 4px 0;
+    -moz-appearance: textfield;
+  }
+  #tab-mortgage .field input::-webkit-outer-spin-button,
+  #tab-mortgage .field input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+  #tab-mortgage .field input:focus { outline: none; border-bottom: 1px solid var(--ink-soft); }
+  #tab-mortgage .field select {
+    border: none;
+    background: transparent;
+    font-family: var(--font-mono);
+    font-size: 13px;
+    color: var(--ink);
+    padding: 4px 2px;
+    text-align: right;
+    width: 100%;
+  }
+  #tab-mortgage .field select:focus { outline: none; }
+  #tab-mortgage .summary-block { margin-top: 18px; padding-top: 12px; border-top: 2px solid var(--ink); }
+  #tab-mortgage .summary-block .row { padding: 8px 0; border-bottom: none; }
+  #tab-mortgage .value-text { font-family: var(--font-mono); font-weight: 500; text-align: right; font-size: 14px; display: block; }
+  #tab-mortgage .principal-row .value-text { color: var(--income); }
+  #tab-mortgage .interest-row .value-text { color: var(--expense); }
+  #tab-mortgage .payment-block { margin-top: 22px; }
+  #tab-mortgage .payment-row { padding: 16px 18px; border-radius: 8px; background: var(--gold-bg); margin-bottom: 6px; }
+  #tab-mortgage .payment-row .field-label { font-family: var(--font-header); font-weight: 600; font-size: 14px; color: var(--gold); }
+  #tab-mortgage .payment-row .value-text { font-size: 17px; color: var(--gold); }
+  #tab-mortgage .footnote { margin-top: 30px; font-size: 12px; color: var(--ink-soft); text-align: center; }
+  #tab-mortgage .fill-rates-status { margin: 10px 0 0; font-size: 12px; color: var(--danger); text-align: right; }
+  #tab-mortgage .fill-rates-status:empty { display: none; }
+
+  /* ================= Food tab (scoped) ================= */
+  #tab-food .page { max-width: 820px; margin: 0 auto; }
+  #tab-food .header-bar { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 28px; gap: 16px; }
+  #tab-food h1 {
+    font-family: var(--font-header);
+    font-weight: 600;
+    font-size: 28px;
+    margin: 0 0 28px;
+    letter-spacing: var(--letter-spacing-header);
+  }
+  #tab-food .add-btn {
+    flex-shrink: 0;
+    align-self: center;
+    background: none;
+    border: 1px dashed var(--ink-soft);
+    color: var(--ink-soft);
+    font-family: var(--font-body);
+    font-size: 13px;
+    font-weight: 600;
+    padding: 8px 16px;
+    border-radius: 6px;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+  #tab-food .add-btn:hover { border-color: var(--expense); color: var(--expense); }
+  #tab-food .table-scroll { overflow-x: auto; padding-bottom: 4px; }
+  #tab-food .flex-row { display: flex; align-items: center; min-width: max-content; }
+  #tab-food .row-label { width: 150px; flex: 0 0 150px; padding-right: 10px; }
+  #tab-food .row-label .field-label { font-size: 14px; color: var(--ink); }
+  #tab-food .row-values { display: flex; gap: 34px; }
+  #tab-food .value-cell { width: 118px; flex: 0 0 118px; }
+  #tab-food .col-head-row { padding-bottom: 12px; margin-bottom: 6px; border-bottom: 2px solid var(--ink); }
+  #tab-food .col-head-cell { position: relative; text-align: right; }
+  #tab-food .col-head-cell .name-row { display: flex; align-items: center; justify-content: flex-end; gap: 6px; }
+  #tab-food .col-head-cell input.name {
+    font-family: var(--font-header);
+    font-weight: 600;
+    font-size: 14px;
+    border: none;
+    background: transparent;
+    color: var(--ink);
+    text-align: right;
+    flex: 1 1 auto;
+    min-width: 0;
+    padding: 2px 0;
+  }
+  #tab-food .col-head-cell input.name:focus { outline: none; border-bottom: 1px solid var(--ink-soft); }
+  #tab-food .col-head-cell .remove-btn {
+    display: block; margin: 3px 0 0 auto; background: none; border: none;
+    color: var(--ink-soft); font-size: 12px; cursor: pointer; padding: 0;
+  }
+  #tab-food .col-head-cell .remove-btn:hover { color: var(--expense); }
+  #tab-food .section { margin-bottom: 26px; }
+  #tab-food .section-head { border-bottom: 2px solid var(--ink); padding-bottom: 6px; margin-bottom: 2px; }
+  #tab-food .section-head h2 { font-family: var(--font-header); font-size: 15px; font-weight: 600; margin: 0; color: var(--expense); }
+  #tab-food .row { padding: 11px 0; border-bottom: 1px solid var(--paper-line); }
+  #tab-food .field { display: flex; align-items: center; justify-content: flex-end; font-family: var(--font-mono); font-size: 14px; }
+  #tab-food .field span { color: var(--ink-soft); margin: 0 1px; }
+  #tab-food .field input[type="number"] {
+    width: 4ch;
+    min-width: 0;
+    text-align: right;
+    border: none;
+    background: transparent;
+    font-family: var(--font-mono);
+    font-size: 14px;
+    color: var(--ink);
+    padding: 4px 0;
+    -moz-appearance: textfield;
+  }
+  #tab-food .field input::-webkit-outer-spin-button,
+  #tab-food .field input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+  #tab-food .field input:focus { outline: none; border-bottom: 1px solid var(--ink-soft); }
+  #tab-food .summary-block { margin-top: 18px; padding-top: 12px; border-top: 2px solid var(--ink); }
+  #tab-food .payment-block { margin-top: 4px; }
+  #tab-food .value-text { font-family: var(--font-mono); font-weight: 500; text-align: right; font-size: 14px; display: block; }
+  #tab-food .payment-row { padding: 16px 18px; border-radius: 8px; background: var(--gold-bg); margin-bottom: 6px; }
+  #tab-food .payment-row .field-label { font-family: var(--font-header); font-weight: 600; font-size: 14px; color: var(--gold); }
+  #tab-food .payment-row .value-text { font-size: 17px; color: var(--gold); }
+  #tab-food .footnote { margin-top: 30px; font-size: 12px; color: var(--ink-soft); text-align: center; }
+
+  /* ================= Car tab (scoped) ================= */
+  #tab-car .page { max-width: 820px; margin: 0 auto; }
+  #tab-car .header-bar { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 28px; gap: 16px; }
+  #tab-car h1 {
+    font-family: var(--font-header);
+    font-weight: 600;
+    font-size: 28px;
+    margin: 0 0 28px;
+    letter-spacing: var(--letter-spacing-header);
+  }
+  #tab-car .add-btn {
+    flex-shrink: 0;
+    align-self: center;
+    background: none;
+    border: 1px dashed var(--ink-soft);
+    color: var(--ink-soft);
+    font-family: var(--font-body);
+    font-size: 13px;
+    font-weight: 600;
+    padding: 8px 16px;
+    border-radius: 6px;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+  #tab-car .add-btn:hover { border-color: var(--expense); color: var(--expense); }
+  #tab-car .table-scroll { overflow-x: auto; padding-bottom: 4px; }
+  #tab-car .flex-row { display: flex; align-items: center; min-width: max-content; }
+  #tab-car .row-label { width: 190px; flex: 0 0 190px; padding-right: 10px; }
+  #tab-car .row-label .field-label { font-size: 14px; color: var(--ink); }
+  #tab-car .row-label .hint { display: block; font-size: 11px; color: var(--ink-soft); margin-top: 2px; }
+  #tab-car .row-values { display: flex; gap: 34px; }
+  #tab-car .value-cell { width: 118px; flex: 0 0 118px; }
+  #tab-car .col-head-row { padding-bottom: 12px; margin-bottom: 6px; border-bottom: 2px solid var(--ink); }
+  #tab-car .col-head-cell { position: relative; text-align: right; }
+  #tab-car .col-head-cell .name-row { display: flex; align-items: center; justify-content: flex-end; gap: 6px; }
+  #tab-car .col-head-cell input.name {
+    font-family: var(--font-header);
+    font-weight: 600;
+    font-size: 14px;
+    border: none;
+    background: transparent;
+    color: var(--ink);
+    text-align: right;
+    flex: 1 1 auto;
+    min-width: 0;
+    padding: 2px 0;
+  }
+  #tab-car .col-head-cell input.name:focus { outline: none; border-bottom: 1px solid var(--ink-soft); }
+  #tab-car .col-head-cell .remove-btn {
+    display: block; margin: 3px 0 0 auto; background: none; border: none;
+    color: var(--ink-soft); font-size: 12px; cursor: pointer; padding: 0;
+  }
+  #tab-car .col-head-cell .remove-btn:hover { color: var(--expense); }
+  #tab-car .section { margin-bottom: 26px; }
+  #tab-car .section-head { border-bottom: 2px solid var(--ink); padding-bottom: 6px; margin-bottom: 2px; }
+  #tab-car .section-head h2 { font-family: var(--font-header); font-size: 15px; font-weight: 600; margin: 0; color: var(--expense); }
+  #tab-car .row { padding: 11px 0; border-bottom: 1px solid var(--paper-line); }
+  #tab-car .field { display: flex; align-items: center; justify-content: flex-end; font-family: var(--font-mono); font-size: 14px; }
+  #tab-car .field span { color: var(--ink-soft); margin: 0 1px; }
+  #tab-car .field input[type="number"] {
+    width: 4ch;
+    min-width: 0;
+    text-align: right;
+    border: none;
+    background: transparent;
+    font-family: var(--font-mono);
+    font-size: 14px;
+    color: var(--ink);
+    padding: 4px 0;
+    -moz-appearance: textfield;
+  }
+  #tab-car .field input::-webkit-outer-spin-button,
+  #tab-car .field input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+  #tab-car .field input:focus { outline: none; border-bottom: 1px solid var(--ink-soft); }
+  #tab-car .summary-block { margin-top: 18px; padding-top: 12px; border-top: 2px solid var(--ink); }
+  #tab-car .payment-block { margin-top: 4px; }
+  #tab-car .value-text { font-family: var(--font-mono); font-weight: 500; text-align: right; font-size: 14px; display: block; }
+  #tab-car .payment-row { padding: 16px 18px; border-radius: 8px; background: var(--gold-bg); margin-bottom: 6px; }
+  #tab-car .payment-row .field-label { font-family: var(--font-header); font-weight: 600; font-size: 14px; color: var(--gold); }
+  #tab-car .payment-row .value-text { font-size: 17px; color: var(--gold); }
+  #tab-car .footnote { margin-top: 30px; font-size: 12px; color: var(--ink-soft); text-align: center; }
+
+  /* ================= Utilities tab (scoped) ================= */
+  #tab-utilities .page { max-width: 820px; margin: 0 auto; }
+  #tab-utilities .header-bar { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 28px; gap: 16px; }
+  #tab-utilities h1 {
+    font-family: var(--font-header);
+    font-weight: 600;
+    font-size: 28px;
+    margin: 0 0 28px;
+    letter-spacing: var(--letter-spacing-header);
+  }
+  #tab-utilities .add-btn {
+    flex-shrink: 0;
+    align-self: center;
+    background: none;
+    border: 1px dashed var(--ink-soft);
+    color: var(--ink-soft);
+    font-family: var(--font-body);
+    font-size: 13px;
+    font-weight: 600;
+    padding: 8px 16px;
+    border-radius: 6px;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+  #tab-utilities .add-btn:hover { border-color: var(--expense); color: var(--expense); }
+  #tab-utilities .table-scroll { overflow-x: auto; padding-bottom: 4px; }
+  #tab-utilities .flex-row { display: flex; align-items: center; min-width: max-content; }
+  #tab-utilities .row-label { width: 190px; flex: 0 0 190px; padding-right: 10px; }
+  #tab-utilities .row-label .field-label { font-size: 14px; color: var(--ink); }
+  #tab-utilities .row-values { display: flex; gap: 34px; }
+  #tab-utilities .value-cell { width: 118px; flex: 0 0 118px; }
+  #tab-utilities .col-head-row { padding-bottom: 12px; margin-bottom: 6px; border-bottom: 2px solid var(--ink); }
+  #tab-utilities .col-head-cell { position: relative; text-align: right; }
+  #tab-utilities .col-head-cell .name-row { display: flex; align-items: center; justify-content: flex-end; gap: 6px; }
+  #tab-utilities .col-head-cell input.name {
+    font-family: var(--font-header);
+    font-weight: 600;
+    font-size: 14px;
+    border: none;
+    background: transparent;
+    color: var(--ink);
+    text-align: right;
+    flex: 1 1 auto;
+    min-width: 0;
+    padding: 2px 0;
+  }
+  #tab-utilities .col-head-cell input.name:focus { outline: none; border-bottom: 1px solid var(--ink-soft); }
+  #tab-utilities .col-head-cell .remove-btn {
+    display: block; margin: 3px 0 0 auto; background: none; border: none;
+    color: var(--ink-soft); font-size: 12px; cursor: pointer; padding: 0;
+  }
+  #tab-utilities .col-head-cell .remove-btn:hover { color: var(--expense); }
+  #tab-utilities .section { margin-bottom: 26px; }
+  #tab-utilities .section-head { border-bottom: 2px solid var(--ink); padding-bottom: 6px; margin-bottom: 2px; }
+  #tab-utilities .section-head h2 { font-family: var(--font-header); font-size: 15px; font-weight: 600; margin: 0; color: var(--expense); }
+  #tab-utilities .row { padding: 11px 0; border-bottom: 1px solid var(--paper-line); }
+  #tab-utilities .field { display: flex; align-items: center; justify-content: flex-end; font-family: var(--font-mono); font-size: 14px; }
+  #tab-utilities .field span { color: var(--ink-soft); margin: 0 1px; }
+  #tab-utilities .field input[type="number"] {
+    width: 4ch;
+    min-width: 0;
+    text-align: right;
+    border: none;
+    background: transparent;
+    font-family: var(--font-mono);
+    font-size: 14px;
+    color: var(--ink);
+    padding: 4px 0;
+    -moz-appearance: textfield;
+  }
+  #tab-utilities .field input::-webkit-outer-spin-button,
+  #tab-utilities .field input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+  #tab-utilities .field input:focus { outline: none; border-bottom: 1px solid var(--ink-soft); }
+  #tab-utilities .summary-block { margin-top: 18px; padding-top: 12px; border-top: 2px solid var(--ink); }
+  #tab-utilities .payment-block { margin-top: 4px; }
+  #tab-utilities .value-text { font-family: var(--font-mono); font-weight: 500; text-align: right; font-size: 14px; display: block; }
+  #tab-utilities .payment-row { padding: 16px 18px; border-radius: 8px; background: var(--gold-bg); margin-bottom: 6px; }
+  #tab-utilities .payment-row .field-label { font-family: var(--font-header); font-weight: 600; font-size: 14px; color: var(--gold); }
+  #tab-utilities .payment-row .value-text { font-size: 17px; color: var(--gold); }
+  #tab-utilities .footnote { margin-top: 30px; font-size: 12px; color: var(--ink-soft); text-align: center; }
+
+  /* ================= Savings tab (scoped) ================= */
+  #tab-savings .page { max-width: 820px; margin: 0 auto; }
+  #tab-savings .header-bar { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 28px; gap: 16px; }
+  #tab-savings h1 {
+    font-family: var(--font-header);
+    font-weight: 600;
+    font-size: 28px;
+    margin: 0 0 28px;
+    letter-spacing: var(--letter-spacing-header);
+  }
+  #tab-savings .add-btn {
+    flex-shrink: 0;
+    align-self: center;
+    background: none;
+    border: 1px dashed var(--ink-soft);
+    color: var(--ink-soft);
+    font-family: var(--font-body);
+    font-size: 13px;
+    font-weight: 600;
+    padding: 8px 16px;
+    border-radius: 6px;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+  #tab-savings .add-btn:hover { border-color: var(--income); color: var(--income); }
+  #tab-savings .table-scroll { overflow-x: auto; padding-bottom: 4px; }
+  #tab-savings .flex-row { display: flex; align-items: center; min-width: max-content; }
+  #tab-savings .row-label { width: 190px; flex: 0 0 190px; padding-right: 10px; }
+  #tab-savings .row-label .field-label { font-size: 14px; color: var(--ink); }
+  #tab-savings .row-label .hint { display: block; font-size: 11px; color: var(--ink-soft); margin-top: 2px; }
+  #tab-savings .row-values { display: flex; gap: 34px; }
+  #tab-savings .value-cell { width: 118px; flex: 0 0 118px; }
+  #tab-savings .col-head-row { padding-bottom: 12px; margin-bottom: 6px; border-bottom: 2px solid var(--ink); }
+  #tab-savings .col-head-cell { position: relative; text-align: right; }
+  #tab-savings .col-head-cell .name-row { display: flex; align-items: center; justify-content: flex-end; gap: 6px; }
+  #tab-savings .col-head-cell input.name {
+    font-family: var(--font-header);
+    font-weight: 600;
+    font-size: 14px;
+    border: none;
+    background: transparent;
+    color: var(--ink);
+    text-align: right;
+    flex: 1 1 auto;
+    min-width: 0;
+    padding: 2px 0;
+  }
+  #tab-savings .col-head-cell input.name:focus { outline: none; border-bottom: 1px solid var(--ink-soft); }
+  #tab-savings .col-head-cell .remove-btn {
+    display: block; margin: 3px 0 0 auto; background: none; border: none;
+    color: var(--ink-soft); font-size: 12px; cursor: pointer; padding: 0;
+  }
+  #tab-savings .col-head-cell .remove-btn:hover { color: var(--expense); }
+  #tab-savings .section { margin-bottom: 26px; }
+  #tab-savings .section-head { border-bottom: 2px solid var(--ink); padding-bottom: 6px; margin-bottom: 2px; }
+  #tab-savings .section-head h2 { font-family: var(--font-header); font-size: 15px; font-weight: 600; margin: 0; color: var(--income); }
+  #tab-savings .row { padding: 11px 0; border-bottom: 1px solid var(--paper-line); }
+  #tab-savings .field { display: flex; align-items: center; justify-content: flex-end; font-family: var(--font-mono); font-size: 14px; }
+  #tab-savings .field span { color: var(--ink-soft); margin: 0 1px; }
+  #tab-savings .field input[type="number"] {
+    width: 4ch;
+    min-width: 0;
+    text-align: right;
+    border: none;
+    background: transparent;
+    font-family: var(--font-mono);
+    font-size: 14px;
+    color: var(--ink);
+    padding: 4px 0;
+    -moz-appearance: textfield;
+  }
+  #tab-savings .field input::-webkit-outer-spin-button,
+  #tab-savings .field input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+  #tab-savings .field input:focus { outline: none; border-bottom: 1px solid var(--ink-soft); }
+  #tab-savings .summary-block { margin-top: 18px; padding-top: 12px; border-top: 2px solid var(--ink); }
+  #tab-savings .summary-block .row { padding: 8px 0; border-bottom: none; }
+  #tab-savings .payment-block { margin-top: 4px; }
+  #tab-savings .value-text { font-family: var(--font-mono); font-weight: 500; text-align: right; font-size: 14px; display: block; }
+  #tab-savings .payment-row { padding: 16px 18px; border-radius: 8px; background: var(--gold-bg); margin-bottom: 6px; }
+  #tab-savings .payment-row .field-label { font-family: var(--font-header); font-weight: 600; font-size: 14px; color: var(--gold); }
+  #tab-savings .payment-row .value-text { font-size: 17px; color: var(--gold); }
+  #tab-savings .footnote { margin-top: 30px; font-size: 12px; color: var(--ink-soft); text-align: center; }
+</style>
+</head>
+<body>
+<div class="side-overlay" id="side-overlay"></div>
+<nav class="side-menu" id="side-menu" aria-label="Tools">
+  <div class="side-title">Ry's Tools</div>
+  <a class="side-link" href="budget.html" aria-current="page">Budget Planner</a>
+  <a class="side-link" href="homecost.html" id="side-home-link" hidden>Home Cost Explorer</a>
+</nav>
+<script id="saved-data" type="application/json"></script>
+
+<div class="app-shell">
+  <div class="app-header-sticky">
+  <div class="app-header-inner">
+  <div class="save-bar">
+    <button type="button" class="menu-btn" id="menu-btn" aria-label="Open menu" aria-expanded="false" aria-controls="side-menu"><span></span><span></span><span></span></button>
+    <div class="tool-controls" id="tool-controls">
+      <button class="save-btn export-btn" id="google-signin-btn" onclick="handleAccountButton()">Google Sign-In</button>
+      <span class="save-status" id="save-status"></span>
+    </div>
+  </div>
+  <div class="summary-bar" id="summary-bar"></div>
+  </div>
+  </div>
+
+  <div id="app-content">
+  <div id="tab-income" class="tab-panel">
+    <div class="sheet">
+      <div class="section income" id="income-sources-section">
+        <div class="section-head">
+          <h2>Income sources</h2>
+          <span class="section-total" id="income-sources-total">$10,374.00</span>
+        </div>
+        <div id="income-source-rows"></div>
+        <button class="add-row-btn" onclick="IncomeApp.addSource()">+ Add income source</button>
+      </div>
+
+      <div class="summary">
+        <div class="net-line" id="income-net-line">
+          <span class="label">Total monthly income</span>
+          <span class="value" id="income-total-value">$10,374.00</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="tab-mortgage" class="tab-panel">
+    <h2 class="card-title">Housing</h2>
+    <div class="page">
+      <div class="table-scroll">
+        <div id="table-root"></div>
+      </div>
+      <p class="fill-rates-status" id="mortgage-fill-rates-status"></p>
+
+    </div>
+  </div>
+
+  <div id="tab-food" class="tab-panel">
+    <h2 class="card-title">Food</h2>
+    <div class="page">
+      <div class="table-scroll">
+        <div id="food-table-root"></div>
+      </div>
+
+    </div>
+  </div>
+
+  <div id="tab-car" class="tab-panel">
+    <h2 class="card-title">Car</h2>
+    <div class="page">
+      <div class="table-scroll">
+        <div id="car-table-root"></div>
+      </div>
+
+    </div>
+  </div>
+
+  <div id="tab-utilities" class="tab-panel">
+    <h2 class="card-title">Utilities</h2>
+    <div class="page">
+      <div class="table-scroll">
+        <div id="utilities-table-root"></div>
+      </div>
+
+    </div>
+  </div>
+
+  <div id="tab-savings" class="tab-panel">
+    <h2 class="card-title">Savings</h2>
+    <div class="page">
+      <div class="table-scroll">
+        <div id="savings-table-root"></div>
+      </div>
+
+    </div>
+  </div>
+
+  <div id="tab-subscriptions" class="tab-panel">
+    <h2 class="card-title">Subscriptions</h2>
+    <div class="page">
+      <div class="table-scroll">
+        <div id="subscriptions-table-root"></div>
+      </div>
+
+    </div>
+  </div>
+  <div id="tab-budget" class="tab-panel">
+    <div class="page">
+      <div class="table-scroll">
+        <div id="budget-table-root"></div>
+      </div>
+    </div>
+  </div>
+  </div>
+  <p class="app-footnote">Ry's Tools</p>
+</div>
+
+<script>
+  /* ================= currency input sizing (shared across tabs) ================= */
+  // Every "$"-prefixed (or "%"-suffixed) amount field is a <span> plus a fixed-width
+  // <input type="number">, which used to leave a big gap between the "$" and the
+  // right-aligned digits. Sizing each input to its own content keeps the "$"/"%" snug
+  // against the number while still right-aligning the whole thing like a ledger column.
+  function sizeCurrencyInput(input) {
+    const len = Math.max(String(input.value || '').length, String(input.placeholder || '').length, 1);
+    input.style.width = len + 'ch';
+  }
+  function sizeAllCurrencyInputs() {
+    document.querySelectorAll('.amount-wrap input[type="number"], .field input[type="number"]').forEach(sizeCurrencyInput);
+  }
+  document.addEventListener('input', function (e) {
+    if (e.target.matches && e.target.matches('.amount-wrap input[type="number"], .field input[type="number"]')) {
+      sizeCurrencyInput(e.target);
+    }
+  });
+
+  /* ================= Shared scenario registry ================= */
+  // A single, synced list of scenario names shared by every expense tab (Housing, Food, Car,
+  // Utilities, Savings, Subscriptions) — adding, removing, or renaming a scenario in any one
+  // tab does the same everywhere else. Each tab keeps only its own per-scenario dollar values,
+  // keyed by these shared ids. rename() itself doesn't notify: the input being typed into stays
+  // the visible source of truth for its own tab while the user is still mid-keystroke, so a
+  // notify()-triggered re-render there can't fight the cursor. Each tab's name <input> calls
+  // commitRename() on blur (and Enter) instead, once typing is actually done, which both
+  // notifies (pushing the new name out to every other tab's next render) and saves.
+  const ScenarioRegistry = (function () {
+    let scenarios = [{ id: 'sc1', name: 'Scenario A' }];
+    let nextLetter = 66; // 'B'
+    const listeners = [];
+
+    function list() { return scenarios; }
+
+    function subscribe(fn) { listeners.push(fn); }
+
+    // Every subscriber gets the same event object, so a tab can tell a plain
+    // add/remove/load apart from a clone (which needs to copy a source scenario's
+    // values instead of just defaulting the new column blank).
+    function notify(event) { listeners.forEach(fn => fn(event || { type: 'change' })); }
+
+    function add() {
+      const id = 'sc' + Date.now();
+      scenarios.push({ id, name: 'Scenario ' + String.fromCharCode(nextLetter) });
+      nextLetter++;
+      notify({ type: 'add', id });
+      return id;
+    }
+
+    function remove(id) {
+      if (scenarios.length <= 1) return;
+      scenarios = scenarios.filter(s => s.id !== id);
+      notify({ type: 'remove', id });
+    }
+
+    // Picks "<name> copy", or "<name> copy 2", "<name> copy 3", ... if that's taken —
+    // stripping any existing " copy"/" copy N" suffix first, so cloning a clone doesn't
+    // pile up into "Scenario A copy copy copy".
+    function cloneName(baseName) {
+      const stripped = baseName.replace(/\s+copy(\s+\d+)?$/i, '');
+      const taken = new Set(scenarios.map(s => s.name));
+      if (!taken.has(stripped + ' copy')) return stripped + ' copy';
+      let n = 2;
+      while (taken.has(stripped + ' copy ' + n)) n++;
+      return stripped + ' copy ' + n;
+    }
+
+    function clone(sourceId) {
+      const source = scenarios.find(s => s.id === sourceId);
+      if (!source) return;
+      const id = 'sc' + Date.now();
+      scenarios.push({ id, name: cloneName(source.name) });
+      notify({ type: 'clone', id, sourceId });
+      return id;
+    }
+
+    function rename(id, name) {
+      const s = scenarios.find(s => s.id === id);
+      if (s) s.name = name;
+    }
+
+    // Called once the user is done typing a scenario name (blur/Enter) — pushes the
+    // new name out to every other tab's next render and saves it.
+    function commitRename() {
+      notify({ type: 'rename' });
+    }
+
+    function getState() {
+      return { scenarios: JSON.parse(JSON.stringify(scenarios)), nextLetter };
+    }
+
+    function setState(state) {
+      if (state && Array.isArray(state.scenarios) && state.scenarios.length) {
+        scenarios = state.scenarios.map(s => ({ id: s.id, name: s.name }));
+        nextLetter = state.nextLetter || nextLetter;
+      } else {
+        scenarios = [{ id: 'sc1', name: 'Scenario A' }];
+        nextLetter = 66;
+      }
+      notify({ type: 'load' });
+    }
+
+    return { list, subscribe, add, remove, clone, rename, commitRename, getState, setState };
+  })();
+
+  /* ================= Budget app (namespaced) ================= */
+  const BudgetApp = (function () {
+    // Locked rows are driven entirely from another tab and can't be typed into here.
+    const LOCKED_FIELDS = [
+      { key: 'house-payment', label: 'Housing', tabName: 'mortgage', legacy: /^rent.*mortgage$/i },
+      { key: 'food', label: 'Food', tabName: 'food', legacy: /^food$/i },
+      { key: 'car', label: 'Car', tabName: 'car', legacy: /^car$/i },
+      { key: 'utilities', label: 'Utilities', tabName: 'utilities', legacy: /^utilities$/i },
+      { key: 'savings', label: 'Savings', tabName: 'savings', legacy: /^savings$/i },
+      { key: 'subscriptions', label: 'Subscriptions', tabName: 'subscriptions', legacy: /^subscriptions$/i }
+    ];
+
+    let nextCustomRowId = 1;
+    let incomeAmount = 0;
+    // lockedAmounts[key][scenarioId] = amount, fed in by each expense tab.
+    let lockedAmounts = {};
+    LOCKED_FIELDS.forEach(f => { lockedAmounts[f.key] = {}; });
+    // Ad-hoc expenses entered directly on this tab, each carrying its own amount per
+    // scenario column (e.g. a one-off cost that only applies under "Scenario B").
+    let customRows = []; // { id, label, values: { scenarioId: amountString } }
+
+    function currency(n) {
+      return '$' + n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    }
+
+    function el(tag, cls, html) {
+      const e = document.createElement('div');
+      e.className = cls || '';
+      if (html !== undefined) e.innerHTML = html;
+      return e;
+    }
+
+    // Income has no scenarios; the summary bar shows it once next to every scenario's totals.
+    function renderSummary() {
+      const bar = document.getElementById('summary-bar');
+      if (!bar) return;
+      const scenarios = ScenarioRegistry.list();
+      const multi = scenarios.length > 1;
+      let html = '<div class="sum-grid' + (multi ? ' multi' : '') + '">';
+      html += (multi ? '<div></div>' : '') +
+        '<div class="sum-label">Income</div><div class="sum-label">Expenses</div><div class="sum-label">Net</div>';
+      scenarios.forEach(s => {
+        html += (multi ? '<div class="sum-name"></div>' : '') +
+          '<div class="sum-val income" id="sum-income-' + s.id + '">$0.00</div>' +
+          '<div class="sum-val" id="sum-exp-' + s.id + '">$0.00</div>' +
+          '<div class="sum-val net" id="sum-net-' + s.id + '">$0.00</div>';
+      });
+      bar.innerHTML = html + '</div>';
+      if (multi) {
+        bar.querySelectorAll('.sum-name').forEach((n, i) => { n.textContent = scenarios[i].name; });
+      }
+    }
+
+    function setIncomeAmount(amount) {
+      incomeAmount = parseFloat(amount) || 0;
+      recalculateAll();
+    }
+
+    // Keeps every locked/custom row's per-scenario values in step with the shared
+    // registry whenever a scenario is added or removed elsewhere.
+    function ensureScenarioColumns() {
+      const ids = ScenarioRegistry.list().map(s => s.id);
+      customRows.forEach(row => {
+        ids.forEach(id => { if (!(id in row.values)) row.values[id] = ''; });
+        Object.keys(row.values).forEach(id => { if (ids.indexOf(id) === -1) delete row.values[id]; });
+      });
+      LOCKED_FIELDS.forEach(f => {
+        const amounts = lockedAmounts[f.key];
+        Object.keys(amounts).forEach(id => { if (ids.indexOf(id) === -1) delete amounts[id]; });
+      });
+    }
+
+    function setLockedAmount(key, scenarioId, amount) {
+      if (!lockedAmounts[key]) lockedAmounts[key] = {};
+      lockedAmounts[key][scenarioId] = parseFloat(amount) || 0;
+      recalculateAll();
+    }
+
+    function addCustomRow(label) {
+      const id = 'exp' + (nextCustomRowId++);
+      const values = {};
+      ScenarioRegistry.list().forEach(s => { values[s.id] = ''; });
+      customRows.push({ id, label: label || '', values });
+      render();
+    }
+
+    function removeCustomRow(id) {
+      customRows = customRows.filter(r => r.id !== id);
+      render();
+    }
+
+    function updateCustomValue(rowId, scenarioId, raw) {
+      const row = customRows.find(r => r.id === rowId);
+      if (!row) return;
+      row.values[scenarioId] = raw;
+      recalculateAll();
+    }
+
+    // Adding, removing, and cloning scenarios all live here on the Budget tab only —
+    // the other tabs just display and edit whatever scenarios already exist.
+    function buildHeaderRow() {
+      const row = el('div', 'flex-row col-head-row');
+      row.appendChild(el('div', 'row-label'));
+      const values = el('div', 'row-values');
+      const scenarios = ScenarioRegistry.list();
+      scenarios.forEach(scenario => {
+        const cell = el('div', 'value-cell col-head-cell');
+        const nameRow = el('div', 'name-row');
+        const input = document.createElement('input');
+        input.className = 'name';
+        input.value = scenario.name;
+        input.addEventListener('input', e => ScenarioRegistry.rename(scenario.id, e.target.value));
+        input.addEventListener('blur', () => ScenarioRegistry.commitRename());
+        input.addEventListener('keydown', e => { if (e.key === 'Enter') input.blur(); });
+        nameRow.appendChild(input);
+        cell.appendChild(nameRow);
+
+        const actions = el('div', 'col-head-actions');
+        const cloneBtn = document.createElement('button');
+        cloneBtn.className = 'clone-btn';
+        cloneBtn.textContent = 'Clone';
+        cloneBtn.title = 'Duplicate this scenario, with all its numbers, to tweak the copy for comparison';
+        cloneBtn.onclick = () => ScenarioRegistry.clone(scenario.id);
+        actions.appendChild(cloneBtn);
+        if (scenarios.length > 1) {
+          const removeBtn = document.createElement('button');
+          removeBtn.className = 'remove-btn';
+          removeBtn.textContent = 'Remove';
+          removeBtn.onclick = () => ScenarioRegistry.remove(scenario.id);
+          actions.appendChild(removeBtn);
+        }
+        cell.appendChild(actions);
+        values.appendChild(cell);
+      });
+      const addBtn = document.createElement('button');
+      addBtn.className = 'add-btn';
+      addBtn.textContent = '+ Add scenario';
+      addBtn.onclick = () => ScenarioRegistry.add();
+      values.appendChild(addBtn);
+      row.appendChild(values);
+      return row;
+    }
+
+    function buildCustomRow(rowData) {
+      const row = el('div', 'row flex-row');
+      const label = el('div', 'row-label');
+      const labelInput = document.createElement('input');
+      labelInput.className = 'row-name';
+      labelInput.type = 'text';
+      labelInput.placeholder = 'Expense name';
+      labelInput.value = rowData.label || '';
+      labelInput.addEventListener('input', e => { rowData.label = e.target.value; });
+      label.appendChild(labelInput);
+
+      const removeRowBtn = document.createElement('button');
+      removeRowBtn.className = 'row-remove-btn';
+      removeRowBtn.innerHTML = '&times;';
+      removeRowBtn.setAttribute('aria-label', 'Remove expense');
+      removeRowBtn.onclick = () => removeCustomRow(rowData.id);
+      label.appendChild(removeRowBtn);
+      row.appendChild(label);
+
+      const values = el('div', 'row-values');
+      ScenarioRegistry.list().forEach(scenario => {
+        const cell = el('div', 'value-cell');
+        const wrap = el('div', 'field');
+        const dollar = document.createElement('span');
+        dollar.textContent = '$';
+        wrap.appendChild(dollar);
+        const input = document.createElement('input');
+        input.type = 'number';
+        input.min = '0';
+        input.step = '0.01';
+        input.value = rowData.values[scenario.id] !== undefined ? rowData.values[scenario.id] : '';
+        input.addEventListener('input', e => updateCustomValue(rowData.id, scenario.id, e.target.value));
+        wrap.appendChild(input);
+        cell.appendChild(wrap);
+        values.appendChild(cell);
+      });
+      row.appendChild(values);
+      return row;
+    }
+
+    function render() {
+      ensureScenarioColumns();
+      const root = document.getElementById('budget-table-root');
+      root.innerHTML = '';
+      root.appendChild(buildHeaderRow());
+
+      const section = el('div', 'section');
+      section.appendChild(el('div', 'section-head', '<h2>Other expenses</h2>'));
+      customRows.forEach(r => section.appendChild(buildCustomRow(r)));
+      root.appendChild(section);
+
+      const addRowBtn = document.createElement('button');
+      addRowBtn.className = 'add-row-btn';
+      addRowBtn.textContent = '+ Add expense';
+      addRowBtn.onclick = () => addCustomRow();
+      root.appendChild(addRowBtn);
+
+      renderSummary();
+      recalculateAll();
+      sizeAllCurrencyInputs();
+    }
+
+    function recalculateAll() {
+      ScenarioRegistry.list().forEach(scenario => {
+        let expenseTotal = 0;
+        LOCKED_FIELDS.forEach(field => {
+          expenseTotal += (lockedAmounts[field.key] && lockedAmounts[field.key][scenario.id]) || 0;
+        });
+        customRows.forEach(row => {
+          expenseTotal += parseFloat(row.values[scenario.id]) || 0;
+        });
+        const net = incomeAmount - expenseTotal;
+        const set = (id, text, color) => {
+          const e = document.getElementById(id + scenario.id);
+          if (e) { e.textContent = text; if (color) e.style.color = color; }
+        };
+        set('sum-income-', currency(incomeAmount));
+        set('sum-exp-', currency(expenseTotal));
+        set('sum-net-', (net < 0 ? '-' : '') + currency(Math.abs(net)), net < 0 ? 'var(--expense)' : '');
+      });
+
+      sizeAllCurrencyInputs();
+    }
+
+    function getState() {
+      return {
+        customRows: customRows.map(r => ({ id: r.id, label: r.label, values: Object.assign({}, r.values) })),
+        nextCustomRowId,
+        lockedAmounts: JSON.parse(JSON.stringify(lockedAmounts))
+      };
+    }
+
+    function setState(state) {
+      if (state && Array.isArray(state.customRows)) {
+        // Current format: rows already carry their own per-scenario values.
+        customRows = state.customRows.map(r => ({ id: r.id, label: r.label, values: Object.assign({}, r.values) }));
+        nextCustomRowId = state.nextCustomRowId || 1;
+        LOCKED_FIELDS.forEach(f => { lockedAmounts[f.key] = (state.lockedAmounts && state.lockedAmounts[f.key]) || {}; });
+      } else if (state && Array.isArray(state.expense) && state.expense.length) {
+        // Migrate the older single-column format — only the un-locked ad-hoc rows carry
+        // real data worth keeping, and the same amount is applied to every scenario column
+        // since the old format never varied these by scenario. Locked amounts are left
+        // empty; each expense tab overwrites them moments later, in this same load pass,
+        // with its own real per-scenario totals.
+        customRows = [];
+        LOCKED_FIELDS.forEach(f => { lockedAmounts[f.key] = {}; });
+        const scenarioIds = ScenarioRegistry.list().map(s => s.id);
+        state.expense.filter(item => !item.locked).forEach(item => {
+          const values = {};
+          scenarioIds.forEach(sid => { values[sid] = item.amount; });
+          customRows.push({ id: 'exp' + (nextCustomRowId++), label: item.label, values });
+        });
+      } else {
+        // Brand-new file — seed the same example row the old Budget tab used to.
+        LOCKED_FIELDS.forEach(f => { lockedAmounts[f.key] = {}; });
+        const values = {};
+        ScenarioRegistry.list().forEach(s => { values[s.id] = ''; });
+        customRows = [{ id: 'exp' + (nextCustomRowId++), label: 'Transportation', values }];
+      }
+      render();
+    }
+
+    ScenarioRegistry.subscribe(event => {
+      if (event && event.type === 'clone' && event.sourceId) {
+        customRows.forEach(row => {
+          if (row.values[event.sourceId] !== undefined) row.values[event.id] = row.values[event.sourceId];
+        });
+      }
+      render();
+    });
+
+    return { addCustomRow, removeCustomRow, getState, setState, setLockedAmount, setIncomeAmount };
+  })();
+
+  /* ================= Income app (namespaced) ================= */
+  const IncomeApp = (function () {
+    let rowCounter = 0;
+    const FREQUENCIES = [
+      { value: 'weekly', label: 'Weekly', perYear: 52 },
+      { value: 'biweekly', label: 'Bi-Weekly', perYear: 26 },
+      { value: 'semimonthly', label: 'Semi-Monthly', perYear: 24 },
+      { value: 'monthly', label: 'Monthly', perYear: 12 },
+      { value: 'quarterly', label: 'Quarterly', perYear: 4 },
+      { value: 'annually', label: 'Annually', perYear: 1 }
+    ];
+
+    function currency(n) {
+      return '$' + n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    }
+
+    function frequencyInfo(value) {
+      return FREQUENCIES.find(f => f.value === value) || FREQUENCIES[3];
+    }
+
+    function monthlyEquivalent(amount, frequencyValue) {
+      return (parseFloat(amount) || 0) * frequencyInfo(frequencyValue).perYear / 12;
+    }
+
+    function addSource(name, amount, frequency) {
+      rowCounter++;
+      const id = 'income-src-' + rowCounter;
+      const container = document.getElementById('income-source-rows');
+      const row = document.createElement('div');
+      row.className = 'row';
+      row.id = id;
+
+      const main = document.createElement('div');
+      main.className = 'row-main';
+      const nameInput = document.createElement('input');
+      nameInput.type = 'text';
+      nameInput.placeholder = 'Source of income';
+      nameInput.value = name || '';
+      nameInput.addEventListener('input', recalculate);
+      main.appendChild(nameInput);
+      row.appendChild(main);
+
+      const actions = document.createElement('div');
+      actions.className = 'row-actions';
+
+      const select = document.createElement('select');
+      select.className = 'freq-select';
+      FREQUENCIES.forEach(f => {
+        const opt = document.createElement('option');
+        opt.value = f.value;
+        opt.textContent = f.label;
+        if ((frequency || 'monthly') === f.value) opt.selected = true;
+        select.appendChild(opt);
+      });
+      select.addEventListener('change', recalculate);
+      actions.appendChild(select);
+
+      const amountWrap = document.createElement('div');
+      amountWrap.className = 'amount-wrap';
+      const dollar = document.createElement('span');
+      dollar.textContent = '$';
+      amountWrap.appendChild(dollar);
+      const amountInput = document.createElement('input');
+      amountInput.type = 'number';
+      amountInput.placeholder = '0.00';
+      amountInput.step = '0.01';
+      amountInput.min = '0';
+      amountInput.value = amount !== undefined ? amount : '';
+      amountInput.addEventListener('input', recalculate);
+      amountWrap.appendChild(amountInput);
+      actions.appendChild(amountWrap);
+
+      const equiv = document.createElement('span');
+      equiv.className = 'monthly-equiv';
+      actions.appendChild(equiv);
+
+      const removeBtn = document.createElement('button');
+      removeBtn.className = 'remove-btn';
+      removeBtn.textContent = 'Remove';
+      removeBtn.setAttribute('aria-label', 'Remove row');
+      removeBtn.onclick = () => { row.remove(); recalculate(); };
+      actions.appendChild(removeBtn);
+
+      row.appendChild(actions);
+      container.appendChild(row);
+      recalculate();
+    }
+
+    function readRow(row) {
+      return {
+        name: row.querySelector('input[type="text"]').value,
+        amount: row.querySelector('input[type="number"]').value,
+        frequency: row.querySelector('select').value
+      };
+    }
+
+    function recalculate() {
+      const rows = document.querySelectorAll('#income-source-rows .row');
+      let total = 0;
+      rows.forEach(row => {
+        const r = readRow(row);
+        const monthly = monthlyEquivalent(r.amount, r.frequency);
+        total += monthly;
+        const equivEl = row.querySelector('.monthly-equiv');
+        if (equivEl) equivEl.textContent = r.amount !== '' ? ('≈ ' + currency(monthly) + '/mo') : '';
+      });
+      document.getElementById('income-sources-total').textContent = currency(total);
+      document.getElementById('income-total-value').textContent = currency(total);
+      BudgetApp.setIncomeAmount(total);
+      sizeAllCurrencyInputs();
+    }
+
+    function getState() {
+      const rows = document.querySelectorAll('#income-source-rows .row');
+      const sources = [];
+      rows.forEach(row => sources.push(readRow(row)));
+      return { sources };
+    }
+
+    function setState(state) {
+      document.getElementById('income-source-rows').innerHTML = '';
+      rowCounter = 0;
+      if (state && Array.isArray(state.sources)) {
+        state.sources.forEach(s => addSource(s.name, s.amount, s.frequency));
+      } else {
+        addSource('Paycheck', '', 'monthly');
+        addSource('Freelance / side income', '', 'monthly');
+      }
+      recalculate();
+    }
+
+    return { addSource, getState, setState, recalculate };
+  })();
+
+  /* ================= Mortgage app (namespaced) ================= */
+  const MortgageApp = (function () {
+    const LOAN_FIELDS = [
+      { key: 'price', label: 'Purchase price', type: 'currency' },
+      { key: 'down', label: 'Down payment', type: 'percent' },
+      { key: 'rate', label: 'Interest rate', type: 'percent' },
+      { key: 'term', label: 'Loan term', type: 'select' }
+    ];
+    const TAX_FIELDS = [
+      { key: 'tax', label: 'Property tax', type: 'currency', hint: 'per year' },
+      { key: 'insurance', label: 'Home insurance', type: 'currency', hint: 'per year' }
+    ];
+    const DEFAULTS = { price: 0, down: 20, rate: 0, term: '30', tax: 0, insurance: 0 };
+    const TERM_OPTIONS = [30, 20, 15, 10];
+
+    // valuesByScenario[scenarioId] = this tab's own field values for that shared scenario.
+    let valuesByScenario = {};
+
+    function ensureValues() {
+      ScenarioRegistry.list().forEach(s => {
+        if (!valuesByScenario[s.id]) valuesByScenario[s.id] = Object.assign({}, DEFAULTS);
+      });
+    }
+
+    function currency(n, decimals) {
+      return '$' + n.toLocaleString('en-US', { minimumFractionDigits: decimals || 0, maximumFractionDigits: decimals || 0 });
+    }
+
+    function el(tag, cls, html) {
+      const e = document.createElement('div');
+      e.className = cls || '';
+      if (html !== undefined) e.innerHTML = html;
+      return e;
+    }
+
+    function updateValue(scenarioId, key, raw) {
+      const values = valuesByScenario[scenarioId];
+      if (!values) return;
+      values[key] = raw;
+      recalculateAll();
+    }
+
+    // "Fill" reads mortgage-rates.json, a same-origin file that a scheduled GitHub Actions
+    // workflow (.github/workflows/update-mortgage-rates.yml) regenerates daily by fetching
+    // Freddie Mac's Primary Mortgage Market Survey average (30yr/15yr fixed) from FRED
+    // server-side. Same-origin means no CORS and nothing for a browser/extension to block.
+    // 20yr/10yr aren't part of that survey, so they're estimated by linear interpolation/
+    // extrapolation along the 15yr-to-30yr line.
+    const FILL_BTN_DEFAULT_TITLE = 'Fill every scenario\'s interest rate with this week\'s average rate for its loan term, from Freddie Mac\'s national survey';
+    const STALE_RATE_DATA_DAYS = 12; // survey publishes weekly; this gives a couple of missed-update cycles of slack
+
+    async function fillMarketRates() {
+      const btn = document.getElementById('mortgage-fill-rates-btn');
+      const status = document.getElementById('mortgage-fill-rates-status');
+      if (!btn) return;
+      btn.disabled = true;
+      btn.textContent = 'Fetching…';
+      btn.title = FILL_BTN_DEFAULT_TITLE;
+      if (status) status.textContent = '';
+      try {
+        const res = await fetch('/mortgage-rates.json', { cache: 'no-store' });
+        if (!res.ok) throw new Error('HTTP ' + res.status + ' loading mortgage-rates.json');
+        const data = await res.json();
+        const rate30 = parseFloat(data.rate30);
+        const rate15 = parseFloat(data.rate15);
+        if (isNaN(rate30) || isNaN(rate15)) throw new Error('mortgage-rates.json is missing rate data');
+
+        const slopePerFiveYears = (rate30 - rate15) / 3; // (30 - 15) years = three 5-year steps
+        const ratesByTerm = {
+          '30': rate30,
+          '20': rate15 + slopePerFiveYears,
+          '15': rate15,
+          '10': rate15 - slopePerFiveYears
+        };
+        ScenarioRegistry.list().forEach(scenario => {
+          const values = valuesByScenario[scenario.id];
+          const rate = ratesByTerm[String(values.term)];
+          if (rate !== undefined) values.rate = Math.round(rate * 100) / 100;
+        });
+        render();
+
+        const ageDays = data.asOf ? (Date.now() - new Date(data.asOf + 'T00:00:00Z').getTime()) / 86400000 : null;
+        const stale = ageDays !== null && ageDays > STALE_RATE_DATA_DAYS;
+
+        const freshBtn = document.getElementById('mortgage-fill-rates-btn');
+        if (freshBtn) {
+          freshBtn.textContent = stale ? ('Filled (stale, as of ' + data.asOf + ')') : 'Filled ✓';
+          setTimeout(() => { const b = document.getElementById('mortgage-fill-rates-btn'); if (b) b.textContent = 'Fill'; }, stale ? 5000 : 2500);
+        }
+        const freshStatus = document.getElementById('mortgage-fill-rates-status');
+        if (freshStatus && stale) {
+          freshStatus.textContent = 'Rates are from ' + data.asOf + ' — the daily updater may be stuck; check the GitHub Actions tab.';
+        }
+      } catch (e) {
+        console.error('fillMarketRates failed:', e.message);
+        btn.disabled = false;
+        btn.textContent = 'Fetch failed — retry';
+        btn.title = e.message;
+        if (status) status.textContent = e.message;
+        setTimeout(() => { if (btn.textContent === 'Fetch failed — retry') btn.textContent = 'Fill'; }, 4000);
+      }
+    }
+
+    // Adding, removing, and cloning scenarios only happens on the Budget tab — this
+    // header just displays each scenario's name (still editable/renamable here).
+    function buildHeaderRow() {
+      const row = el('div', 'flex-row col-head-row');
+      row.appendChild(el('div', 'row-label'));
+      const values = el('div', 'row-values');
+      const scenarios = ScenarioRegistry.list();
+      scenarios.forEach(scenario => {
+        const cell = el('div', 'value-cell col-head-cell');
+        const nameRow = el('div', 'name-row');
+        const input = document.createElement('input');
+        input.className = 'name';
+        input.value = scenario.name;
+        input.addEventListener('input', e => ScenarioRegistry.rename(scenario.id, e.target.value));
+        input.addEventListener('blur', () => ScenarioRegistry.commitRename());
+        input.addEventListener('keydown', e => { if (e.key === 'Enter') input.blur(); });
+        nameRow.appendChild(input);
+        cell.appendChild(nameRow);
+        values.appendChild(cell);
+      });
+      row.appendChild(values);
+      return row;
+    }
+
+    function buildInputRow(field) {
+      const row = el('div', 'row flex-row');
+      const label = el('div', 'row-label');
+      label.innerHTML = '<span class="field-label">' + field.label + '</span>' +
+        (typeof field.hint === 'string' ? '<span class="hint">' + field.hint + '</span>' : '');
+      row.appendChild(label);
+
+      const values = el('div', 'row-values');
+      ScenarioRegistry.list().forEach(scenario => {
+        const cell = el('div', 'value-cell');
+        const wrap = el('div', 'field');
+        const v = valuesByScenario[scenario.id];
+
+        if (field.type === 'select') {
+          const select = document.createElement('select');
+          TERM_OPTIONS.forEach(y => {
+            const opt = document.createElement('option');
+            opt.value = String(y);
+            opt.textContent = y + ' years';
+            if (String(v.term) === String(y)) opt.selected = true;
+            select.appendChild(opt);
+          });
+          select.addEventListener('change', e => updateValue(scenario.id, 'term', e.target.value));
+          wrap.appendChild(select);
+        } else {
+          if (field.type === 'currency') {
+            const dollar = document.createElement('span');
+            dollar.textContent = '$';
+            wrap.appendChild(dollar);
+          }
+          const input = document.createElement('input');
+          input.type = 'number';
+          input.min = '0';
+          input.step = field.key === 'down' ? '1' : field.type === 'percent' ? '0.05' : '50';
+          input.value = v[field.key];
+          input.dataset.scenario = scenario.id;
+          input.dataset.field = field.key;
+          input.addEventListener('input', e => updateValue(scenario.id, field.key, parseFloat(e.target.value) || 0));
+          wrap.appendChild(input);
+          if (field.type === 'percent') {
+            const pct = document.createElement('span');
+            pct.textContent = '%';
+            wrap.appendChild(pct);
+          }
+        }
+        cell.appendChild(wrap);
+        values.appendChild(cell);
+      });
+      if (field.key === 'rate') {
+        const fillBtn = document.createElement('button');
+        fillBtn.type = 'button';
+        fillBtn.id = 'mortgage-fill-rates-btn';
+        fillBtn.className = 'add-btn';
+        fillBtn.textContent = 'Fill';
+        fillBtn.title = FILL_BTN_DEFAULT_TITLE;
+        fillBtn.onclick = () => fillMarketRates();
+        values.appendChild(fillBtn);
+      }
+      row.appendChild(values);
+      return row;
+    }
+
+    function buildOutputRow(label, idPrefix, extraClass) {
+      const row = el('div', 'row flex-row' + (extraClass ? ' ' + extraClass : ''));
+      const lbl = el('div', 'row-label', '<span class="field-label">' + label + '</span>');
+      row.appendChild(lbl);
+      const values = el('div', 'row-values');
+      ScenarioRegistry.list().forEach(scenario => {
+        const cell = el('div', 'value-cell');
+        const span = document.createElement('span');
+        span.className = 'value-text';
+        span.id = idPrefix + '-' + scenario.id;
+        span.textContent = '$0';
+        cell.appendChild(span);
+        values.appendChild(cell);
+      });
+      row.appendChild(values);
+      return row;
+    }
+
+    function buildPaymentRow() {
+      const row = el('div', 'flex-row payment-row');
+      const lbl = el('div', 'row-label', '<span class="field-label">Monthly payment</span>');
+      row.appendChild(lbl);
+      const values = el('div', 'row-values');
+      ScenarioRegistry.list().forEach(scenario => {
+        const cell = el('div', 'value-cell');
+        const span = document.createElement('span');
+        span.className = 'value-text';
+        span.id = 'monthly-payment-' + scenario.id;
+        span.textContent = '$0';
+        cell.appendChild(span);
+        values.appendChild(cell);
+      });
+      row.appendChild(values);
+      return row;
+    }
+
+    function render() {
+      const root = document.getElementById('table-root');
+      root.innerHTML = '';
+      root.appendChild(buildHeaderRow());
+
+      const loanSection = el('div', 'section');
+      loanSection.appendChild(el('div', 'section-head', '<h2>Loan details</h2>'));
+      LOAN_FIELDS.forEach(f => loanSection.appendChild(buildInputRow(f)));
+      loanSection.appendChild(buildOutputRow('Down payment needed', 'down-amount', 'down-row'));
+      loanSection.appendChild(buildOutputRow('Loan amount', 'loan-amount'));
+      root.appendChild(loanSection);
+
+      const taxSection = el('div', 'section');
+      taxSection.appendChild(el('div', 'section-head', '<h2>Taxes and insurance</h2>'));
+      TAX_FIELDS.forEach(f => taxSection.appendChild(buildInputRow(f)));
+      root.appendChild(taxSection);
+
+      const totalsBlock = el('div', 'summary-block');
+      totalsBlock.appendChild(buildOutputRow('Total interest', 'total-interest', 'interest-row'));
+      totalsBlock.appendChild(buildOutputRow('Total paid (P&amp;I)', 'total-paid'));
+      root.appendChild(totalsBlock);
+
+      const monthlyBlock = el('div', 'summary-block payment-block');
+      monthlyBlock.appendChild(buildOutputRow('Principal and interest', 'pi-monthly'));
+      monthlyBlock.appendChild(buildOutputRow('Property tax', 'tax-monthly'));
+      monthlyBlock.appendChild(buildOutputRow('Home insurance', 'insurance-monthly'));
+      monthlyBlock.appendChild(buildPaymentRow());
+      root.appendChild(monthlyBlock);
+
+      recalculateAll();
+      sizeAllCurrencyInputs();
+    }
+
+    function recalculateAll() {
+      ScenarioRegistry.list().forEach(scenario => {
+        const v = valuesByScenario[scenario.id];
+        const price = parseFloat(v.price) || 0;
+        const downPct = Math.min(Math.max(parseFloat(v.down) || 0, 0), 100);
+        const downAmount = price * downPct / 100;
+        const loanAmount = price - downAmount;
+        const annualRate = parseFloat(v.rate) || 0;
+        const years = parseInt(v.term, 10) || 30;
+
+        const n = years * 12;
+        const monthlyRate = annualRate / 100 / 12;
+
+        let monthlyPayment;
+        if (monthlyRate === 0) {
+          monthlyPayment = n > 0 ? loanAmount / n : 0;
+        } else {
+          const factor = Math.pow(1 + monthlyRate, n);
+          monthlyPayment = loanAmount * (monthlyRate * factor) / (factor - 1);
+        }
+        if (!isFinite(monthlyPayment)) monthlyPayment = 0;
+
+        const totalPaid = monthlyPayment * n;
+        const totalInterest = Math.max(totalPaid - loanAmount, 0);
+
+        const annualTax = parseFloat(v.tax) || 0;
+        const annualInsurance = parseFloat(v.insurance) || 0;
+        const taxMonthly = annualTax / 12;
+        const insuranceMonthly = annualInsurance / 12;
+        const totalMonthly = monthlyPayment + taxMonthly + insuranceMonthly;
+
+        const setText = (idPrefix, text) => {
+          const elx = document.getElementById(idPrefix + '-' + scenario.id);
+          if (elx) elx.textContent = text;
+        };
+
+        setText('down-amount', currency(downAmount));
+        setText('loan-amount', currency(loanAmount));
+        setText('total-interest', currency(totalInterest));
+        setText('total-paid', currency(totalPaid));
+        setText('pi-monthly', currency(monthlyPayment));
+        setText('tax-monthly', currency(taxMonthly));
+        setText('insurance-monthly', currency(insuranceMonthly));
+        setText('monthly-payment', currency(totalMonthly));
+
+        BudgetApp.setLockedAmount('house-payment', scenario.id, totalMonthly);
+      });
+    }
+
+    function getState() {
+      return { valuesByScenario: JSON.parse(JSON.stringify(valuesByScenario)) };
+    }
+
+    function setState(state) {
+      valuesByScenario = (state && state.valuesByScenario) ? state.valuesByScenario : {};
+      // Older saves stored a loan amount directly; convert it to the purchase price that
+      // would give that loan at the default down payment.
+      Object.keys(valuesByScenario).forEach(id => {
+        const v = valuesByScenario[id];
+        if (v.price === undefined) {
+          const down = v.down === undefined ? DEFAULTS.down : v.down;
+          v.down = down;
+          v.price = v.loanAmount ? Math.round(v.loanAmount / (1 - down / 100)) : 0;
+        }
+        delete v.loanAmount;
+        delete v.rent;
+        delete v.rentersInsurance;
+      });
+      ensureValues();
+      render();
+    }
+
+    ScenarioRegistry.subscribe(event => {
+      if (event && event.type === 'clone' && valuesByScenario[event.sourceId]) {
+        valuesByScenario[event.id] = JSON.parse(JSON.stringify(valuesByScenario[event.sourceId]));
+      }
+      ensureValues();
+      render();
+    });
+
+    return { getState, setState };
+  })();
+
+  /* ================= Food app (namespaced) ================= */
+  const FoodApp = (function () {
+    const FOOD_FIELDS = [
+      { key: 'groceries', label: 'Groceries' },
+      { key: 'eatingOut', label: 'Eating out' }
+    ];
+    const DEFAULTS = { groceries: 0, eatingOut: 0 };
+
+    // valuesByScenario[scenarioId] = this tab's own field values for that shared scenario.
+    let valuesByScenario = {};
+
+    function ensureValues() {
+      ScenarioRegistry.list().forEach(s => {
+        if (!valuesByScenario[s.id]) valuesByScenario[s.id] = Object.assign({}, DEFAULTS);
+      });
+    }
+
+    function currency(n) {
+      return '$' + n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    }
+
+    function el(tag, cls, html) {
+      const e = document.createElement('div');
+      e.className = cls || '';
+      if (html !== undefined) e.innerHTML = html;
+      return e;
+    }
+
+    function updateValue(scenarioId, key, raw) {
+      const values = valuesByScenario[scenarioId];
+      if (!values) return;
+      values[key] = raw;
+      recalculateAll();
+    }
+
+    // Adding, removing, and cloning scenarios only happens on the Budget tab — this
+    // header just displays each scenario's name (still editable/renamable here).
+    function buildHeaderRow() {
+      const row = el('div', 'flex-row col-head-row');
+      row.appendChild(el('div', 'row-label'));
+      const values = el('div', 'row-values');
+      const scenarios = ScenarioRegistry.list();
+      scenarios.forEach(scenario => {
+        const cell = el('div', 'value-cell col-head-cell');
+        const nameRow = el('div', 'name-row');
+        const input = document.createElement('input');
+        input.className = 'name';
+        input.value = scenario.name;
+        input.addEventListener('input', e => ScenarioRegistry.rename(scenario.id, e.target.value));
+        input.addEventListener('blur', () => ScenarioRegistry.commitRename());
+        input.addEventListener('keydown', e => { if (e.key === 'Enter') input.blur(); });
+        nameRow.appendChild(input);
+        cell.appendChild(nameRow);
+        values.appendChild(cell);
+      });
+      row.appendChild(values);
+      return row;
+    }
+
+    function buildInputRow(field) {
+      const row = el('div', 'row flex-row');
+      row.appendChild(el('div', 'row-label', '<span class="field-label">' + field.label + '</span>'));
+
+      const values = el('div', 'row-values');
+      ScenarioRegistry.list().forEach(scenario => {
+        const cell = el('div', 'value-cell');
+        const wrap = el('div', 'field');
+        const dollar = document.createElement('span');
+        dollar.textContent = '$';
+        wrap.appendChild(dollar);
+        const input = document.createElement('input');
+        input.type = 'number';
+        input.min = '0';
+        input.step = '1';
+        input.value = valuesByScenario[scenario.id][field.key];
+        input.addEventListener('input', e => updateValue(scenario.id, field.key, parseFloat(e.target.value) || 0));
+        wrap.appendChild(input);
+        cell.appendChild(wrap);
+        values.appendChild(cell);
+      });
+      row.appendChild(values);
+      return row;
+    }
+
+    function buildTotalRow() {
+      const row = el('div', 'flex-row payment-row');
+      row.appendChild(el('div', 'row-label', '<span class="field-label">Total food expense</span>'));
+      const values = el('div', 'row-values');
+      ScenarioRegistry.list().forEach(scenario => {
+        const cell = el('div', 'value-cell');
+        const span = document.createElement('span');
+        span.className = 'value-text';
+        span.id = 'food-total-' + scenario.id;
+        span.textContent = '$0';
+        cell.appendChild(span);
+        values.appendChild(cell);
+      });
+      row.appendChild(values);
+      return row;
+    }
+
+    function render() {
+      const root = document.getElementById('food-table-root');
+      root.innerHTML = '';
+      root.appendChild(buildHeaderRow());
+
+      const section = el('div', 'section');
+      section.appendChild(el('div', 'section-head', '<h2>Food spending</h2>'));
+      FOOD_FIELDS.forEach(f => section.appendChild(buildInputRow(f)));
+      root.appendChild(section);
+
+      const totalBlock = el('div', 'summary-block payment-block');
+      totalBlock.appendChild(buildTotalRow());
+      root.appendChild(totalBlock);
+
+      recalculateAll();
+      sizeAllCurrencyInputs();
+    }
+
+    function recalculateAll() {
+      ScenarioRegistry.list().forEach(scenario => {
+        const v = valuesByScenario[scenario.id];
+        const groceries = parseFloat(v.groceries) || 0;
+        const eatingOut = parseFloat(v.eatingOut) || 0;
+        const total = groceries + eatingOut;
+
+        const totalEl = document.getElementById('food-total-' + scenario.id);
+        if (totalEl) totalEl.textContent = currency(total);
+
+        BudgetApp.setLockedAmount('food', scenario.id, total);
+      });
+    }
+
+    function getState() {
+      return { valuesByScenario: JSON.parse(JSON.stringify(valuesByScenario)) };
+    }
+
+    function setState(state) {
+      if (state && state.valuesByScenario) {
+        valuesByScenario = state.valuesByScenario;
+      } else if (state && (state.groceries !== undefined || state.eatingOut !== undefined)) {
+        // Ancient single-scenario format, from before Food had scenarios at all.
+        const id = ScenarioRegistry.list()[0].id;
+        valuesByScenario = {};
+        valuesByScenario[id] = { groceries: parseFloat(state.groceries) || 0, eatingOut: parseFloat(state.eatingOut) || 0 };
+      } else {
+        valuesByScenario = {};
+      }
+      ensureValues();
+      render();
+    }
+
+    ScenarioRegistry.subscribe(event => {
+      if (event && event.type === 'clone' && valuesByScenario[event.sourceId]) {
+        valuesByScenario[event.id] = JSON.parse(JSON.stringify(valuesByScenario[event.sourceId]));
+      }
+      ensureValues();
+      render();
+    });
+
+    return { getState, setState };
+  })();
+
+  /* ================= Car app (namespaced) ================= */
+  const CarApp = (function () {
+    const CAR_FIELDS = [
+      { key: 'loan', label: 'Loan / lease payment' },
+      { key: 'gas', label: 'Gas' },
+      { key: 'insurance', label: 'Insurance' },
+      { key: 'maintenance', label: 'Maintenance & repairs', annual: true, hint: 'per year' },
+      { key: 'registration', label: 'Registration & fees', annual: true, hint: 'per year' }
+    ];
+    const DEFAULTS = { loan: 0, gas: 0, insurance: 0, maintenance: 0, registration: 0 };
+
+    // valuesByScenario[scenarioId] = this tab's own field values for that shared scenario.
+    let valuesByScenario = {};
+
+    function ensureValues() {
+      ScenarioRegistry.list().forEach(s => {
+        if (!valuesByScenario[s.id]) valuesByScenario[s.id] = Object.assign({}, DEFAULTS);
+      });
+    }
+
+    function currency(n) {
+      return '$' + n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    }
+
+    function el(tag, cls, html) {
+      const e = document.createElement('div');
+      e.className = cls || '';
+      if (html !== undefined) e.innerHTML = html;
+      return e;
+    }
+
+    function updateValue(scenarioId, key, raw) {
+      const values = valuesByScenario[scenarioId];
+      if (!values) return;
+      values[key] = raw;
+      recalculateAll();
+    }
+
+    // Adding, removing, and cloning scenarios only happens on the Budget tab — this
+    // header just displays each scenario's name (still editable/renamable here).
+    function buildHeaderRow() {
+      const row = el('div', 'flex-row col-head-row');
+      row.appendChild(el('div', 'row-label'));
+      const values = el('div', 'row-values');
+      const scenarios = ScenarioRegistry.list();
+      scenarios.forEach(scenario => {
+        const cell = el('div', 'value-cell col-head-cell');
+        const nameRow = el('div', 'name-row');
+        const input = document.createElement('input');
+        input.className = 'name';
+        input.value = scenario.name;
+        input.addEventListener('input', e => ScenarioRegistry.rename(scenario.id, e.target.value));
+        input.addEventListener('blur', () => ScenarioRegistry.commitRename());
+        input.addEventListener('keydown', e => { if (e.key === 'Enter') input.blur(); });
+        nameRow.appendChild(input);
+        cell.appendChild(nameRow);
+        values.appendChild(cell);
+      });
+      row.appendChild(values);
+      return row;
+    }
+
+    function buildInputRow(field) {
+      const row = el('div', 'row flex-row');
+      const label = el('div', 'row-label');
+      label.innerHTML = '<span class="field-label">' + field.label + '</span>' +
+        (typeof field.hint === 'string' ? '<span class="hint">' + field.hint + '</span>' : '');
+      row.appendChild(label);
+
+      const values = el('div', 'row-values');
+      ScenarioRegistry.list().forEach(scenario => {
+        const cell = el('div', 'value-cell');
+        const wrap = el('div', 'field');
+        const dollar = document.createElement('span');
+        dollar.textContent = '$';
+        wrap.appendChild(dollar);
+        const input = document.createElement('input');
+        input.type = 'number';
+        input.min = '0';
+        input.step = '1';
+        input.value = valuesByScenario[scenario.id][field.key];
+        input.addEventListener('input', e => updateValue(scenario.id, field.key, parseFloat(e.target.value) || 0));
+        wrap.appendChild(input);
+        cell.appendChild(wrap);
+        values.appendChild(cell);
+      });
+      row.appendChild(values);
+      return row;
+    }
+
+    function buildTotalRow() {
+      const row = el('div', 'flex-row payment-row');
+      row.appendChild(el('div', 'row-label', '<span class="field-label">Total car expense</span>'));
+      const values = el('div', 'row-values');
+      ScenarioRegistry.list().forEach(scenario => {
+        const cell = el('div', 'value-cell');
+        const span = document.createElement('span');
+        span.className = 'value-text';
+        span.id = 'car-total-' + scenario.id;
+        span.textContent = '$0';
+        cell.appendChild(span);
+        values.appendChild(cell);
+      });
+      row.appendChild(values);
+      return row;
+    }
+
+    function render() {
+      const root = document.getElementById('car-table-root');
+      root.innerHTML = '';
+      root.appendChild(buildHeaderRow());
+
+      const section = el('div', 'section');
+      section.appendChild(el('div', 'section-head', '<h2>Car spending</h2>'));
+      CAR_FIELDS.forEach(f => section.appendChild(buildInputRow(f)));
+      root.appendChild(section);
+
+      const totalBlock = el('div', 'summary-block payment-block');
+      totalBlock.appendChild(buildTotalRow());
+      root.appendChild(totalBlock);
+
+      recalculateAll();
+      sizeAllCurrencyInputs();
+    }
+
+    function recalculateAll() {
+      ScenarioRegistry.list().forEach(scenario => {
+        const v = valuesByScenario[scenario.id];
+        let total = 0;
+        CAR_FIELDS.forEach(f => {
+          const val = parseFloat(v[f.key]) || 0;
+          total += f.annual ? val / 12 : val;
+        });
+
+        const totalEl = document.getElementById('car-total-' + scenario.id);
+        if (totalEl) totalEl.textContent = currency(total);
+
+        BudgetApp.setLockedAmount('car', scenario.id, total);
+      });
+    }
+
+    function getState() {
+      return { valuesByScenario: JSON.parse(JSON.stringify(valuesByScenario)) };
+    }
+
+    function setState(state) {
+      valuesByScenario = (state && state.valuesByScenario) ? state.valuesByScenario : {};
+      ensureValues();
+      render();
+    }
+
+    ScenarioRegistry.subscribe(event => {
+      if (event && event.type === 'clone' && valuesByScenario[event.sourceId]) {
+        valuesByScenario[event.id] = JSON.parse(JSON.stringify(valuesByScenario[event.sourceId]));
+      }
+      ensureValues();
+      render();
+    });
+
+    return { getState, setState };
+  })();
+
+  /* ================= Utilities app (namespaced) ================= */
+  const UtilitiesApp = (function () {
+    const UTILITIES_FIELDS = [
+      { key: 'electricity', label: 'Electricity' },
+      { key: 'gasHeating', label: 'Gas / heating' },
+      { key: 'water', label: 'Water & sewer' },
+      { key: 'internet', label: 'Internet' },
+      { key: 'mobilePhone', label: 'Mobile Phone' }
+    ];
+    const DEFAULTS = { electricity: 0, gasHeating: 0, water: 0, internet: 0, mobilePhone: 0 };
+
+    // valuesByScenario[scenarioId] = this tab's own field values for that shared scenario.
+    let valuesByScenario = {};
+
+    function ensureValues() {
+      ScenarioRegistry.list().forEach(s => {
+        if (!valuesByScenario[s.id]) valuesByScenario[s.id] = Object.assign({}, DEFAULTS);
+      });
+    }
+
+    function currency(n) {
+      return '$' + n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    }
+
+    function el(tag, cls, html) {
+      const e = document.createElement('div');
+      e.className = cls || '';
+      if (html !== undefined) e.innerHTML = html;
+      return e;
+    }
+
+    function updateValue(scenarioId, key, raw) {
+      const values = valuesByScenario[scenarioId];
+      if (!values) return;
+      values[key] = raw;
+      recalculateAll();
+    }
+
+    // Adding, removing, and cloning scenarios only happens on the Budget tab — this
+    // header just displays each scenario's name (still editable/renamable here).
+    function buildHeaderRow() {
+      const row = el('div', 'flex-row col-head-row');
+      row.appendChild(el('div', 'row-label'));
+      const values = el('div', 'row-values');
+      const scenarios = ScenarioRegistry.list();
+      scenarios.forEach(scenario => {
+        const cell = el('div', 'value-cell col-head-cell');
+        const nameRow = el('div', 'name-row');
+        const input = document.createElement('input');
+        input.className = 'name';
+        input.value = scenario.name;
+        input.addEventListener('input', e => ScenarioRegistry.rename(scenario.id, e.target.value));
+        input.addEventListener('blur', () => ScenarioRegistry.commitRename());
+        input.addEventListener('keydown', e => { if (e.key === 'Enter') input.blur(); });
+        nameRow.appendChild(input);
+        cell.appendChild(nameRow);
+        values.appendChild(cell);
+      });
+      row.appendChild(values);
+      return row;
+    }
+
+    function buildInputRow(field) {
+      const row = el('div', 'row flex-row');
+      row.appendChild(el('div', 'row-label', '<span class="field-label">' + field.label + '</span>'));
+
+      const values = el('div', 'row-values');
+      ScenarioRegistry.list().forEach(scenario => {
+        const cell = el('div', 'value-cell');
+        const wrap = el('div', 'field');
+        const dollar = document.createElement('span');
+        dollar.textContent = '$';
+        wrap.appendChild(dollar);
+        const input = document.createElement('input');
+        input.type = 'number';
+        input.min = '0';
+        input.step = '1';
+        input.value = valuesByScenario[scenario.id][field.key];
+        input.addEventListener('input', e => updateValue(scenario.id, field.key, parseFloat(e.target.value) || 0));
+        wrap.appendChild(input);
+        cell.appendChild(wrap);
+        values.appendChild(cell);
+      });
+      row.appendChild(values);
+      return row;
+    }
+
+    function buildTotalRow() {
+      const row = el('div', 'flex-row payment-row');
+      row.appendChild(el('div', 'row-label', '<span class="field-label">Total utilities expense</span>'));
+      const values = el('div', 'row-values');
+      ScenarioRegistry.list().forEach(scenario => {
+        const cell = el('div', 'value-cell');
+        const span = document.createElement('span');
+        span.className = 'value-text';
+        span.id = 'utilities-total-' + scenario.id;
+        span.textContent = '$0';
+        cell.appendChild(span);
+        values.appendChild(cell);
+      });
+      row.appendChild(values);
+      return row;
+    }
+
+    function render() {
+      const root = document.getElementById('utilities-table-root');
+      root.innerHTML = '';
+      root.appendChild(buildHeaderRow());
+
+      const section = el('div', 'section');
+      section.appendChild(el('div', 'section-head', '<h2>Utilities spending</h2>'));
+      UTILITIES_FIELDS.forEach(f => section.appendChild(buildInputRow(f)));
+      root.appendChild(section);
+
+      const totalBlock = el('div', 'summary-block payment-block');
+      totalBlock.appendChild(buildTotalRow());
+      root.appendChild(totalBlock);
+
+      recalculateAll();
+      sizeAllCurrencyInputs();
+    }
+
+    function recalculateAll() {
+      ScenarioRegistry.list().forEach(scenario => {
+        const v = valuesByScenario[scenario.id];
+        let total = 0;
+        UTILITIES_FIELDS.forEach(f => { total += parseFloat(v[f.key]) || 0; });
+
+        const totalEl = document.getElementById('utilities-total-' + scenario.id);
+        if (totalEl) totalEl.textContent = currency(total);
+
+        BudgetApp.setLockedAmount('utilities', scenario.id, total);
+      });
+    }
+
+    function getState() {
+      return { valuesByScenario: JSON.parse(JSON.stringify(valuesByScenario)) };
+    }
+
+    function setState(state) {
+      valuesByScenario = (state && state.valuesByScenario) ? state.valuesByScenario : {};
+      ensureValues();
+      render();
+    }
+
+    ScenarioRegistry.subscribe(event => {
+      if (event && event.type === 'clone' && valuesByScenario[event.sourceId]) {
+        valuesByScenario[event.id] = JSON.parse(JSON.stringify(valuesByScenario[event.sourceId]));
+      }
+      ensureValues();
+      render();
+    });
+
+    return { getState, setState };
+  })();
+
+  /* ================= Savings app (namespaced) ================= */
+  const SavingsApp = (function () {
+    const SAVINGS_FIELDS = [
+      { key: 'retirement', label: 'Retirement', hint: 'per year' },
+      { key: 'emergency', label: 'Emergency fund', hint: 'per year' },
+      { key: 'vacation', label: 'Vacation', hint: 'per year' },
+      { key: 'children', label: 'Children / education', hint: 'per year' },
+      { key: 'homeMaintenance', label: 'Home Maintenance', hint: 'per year' },
+      { key: 'general', label: 'General savings', hint: 'per year' }
+    ];
+    const DEFAULTS = { retirement: 0, emergency: 0, vacation: 0, children: 0, homeMaintenance: 0, general: 0 };
+
+    // valuesByScenario[scenarioId] = this tab's own field values for that shared scenario.
+    let valuesByScenario = {};
+
+    function ensureValues() {
+      ScenarioRegistry.list().forEach(s => {
+        if (!valuesByScenario[s.id]) valuesByScenario[s.id] = Object.assign({}, DEFAULTS);
+      });
+    }
+
+    function currency(n) {
+      return '$' + n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    }
+
+    function el(tag, cls, html) {
+      const e = document.createElement('div');
+      e.className = cls || '';
+      if (html !== undefined) e.innerHTML = html;
+      return e;
+    }
+
+    function updateValue(scenarioId, key, raw) {
+      const values = valuesByScenario[scenarioId];
+      if (!values) return;
+      values[key] = raw;
+      recalculateAll();
+    }
+
+    // Adding, removing, and cloning scenarios only happens on the Budget tab — this
+    // header just displays each scenario's name (still editable/renamable here).
+    function buildHeaderRow() {
+      const row = el('div', 'flex-row col-head-row');
+      row.appendChild(el('div', 'row-label'));
+      const values = el('div', 'row-values');
+      const scenarios = ScenarioRegistry.list();
+      scenarios.forEach(scenario => {
+        const cell = el('div', 'value-cell col-head-cell');
+        const nameRow = el('div', 'name-row');
+        const input = document.createElement('input');
+        input.className = 'name';
+        input.value = scenario.name;
+        input.addEventListener('input', e => ScenarioRegistry.rename(scenario.id, e.target.value));
+        input.addEventListener('blur', () => ScenarioRegistry.commitRename());
+        input.addEventListener('keydown', e => { if (e.key === 'Enter') input.blur(); });
+        nameRow.appendChild(input);
+        cell.appendChild(nameRow);
+        values.appendChild(cell);
+      });
+      row.appendChild(values);
+      return row;
+    }
+
+    function buildInputRow(field) {
+      const row = el('div', 'row flex-row');
+      const label = el('div', 'row-label');
+      label.innerHTML = '<span class="field-label">' + field.label + '</span>' +
+        (typeof field.hint === 'string' ? '<span class="hint">' + field.hint + '</span>' : '');
+      row.appendChild(label);
+
+      const values = el('div', 'row-values');
+      ScenarioRegistry.list().forEach(scenario => {
+        const cell = el('div', 'value-cell');
+        const wrap = el('div', 'field');
+        const dollar = document.createElement('span');
+        dollar.textContent = '$';
+        wrap.appendChild(dollar);
+        const input = document.createElement('input');
+        input.type = 'number';
+        input.min = '0';
+        input.step = '1';
+        input.value = valuesByScenario[scenario.id][field.key];
+        input.addEventListener('input', e => updateValue(scenario.id, field.key, parseFloat(e.target.value) || 0));
+        wrap.appendChild(input);
+        cell.appendChild(wrap);
+        values.appendChild(cell);
+      });
+      row.appendChild(values);
+      return row;
+    }
+
+    function buildOutputRow(label, idPrefix) {
+      const row = el('div', 'row flex-row');
+      row.appendChild(el('div', 'row-label', '<span class="field-label">' + label + '</span>'));
+      const values = el('div', 'row-values');
+      ScenarioRegistry.list().forEach(scenario => {
+        const cell = el('div', 'value-cell');
+        const span = document.createElement('span');
+        span.className = 'value-text';
+        span.id = idPrefix + '-' + scenario.id;
+        span.textContent = '$0';
+        cell.appendChild(span);
+        values.appendChild(cell);
+      });
+      row.appendChild(values);
+      return row;
+    }
+
+    function buildMonthlyRow() {
+      const row = el('div', 'flex-row payment-row');
+      row.appendChild(el('div', 'row-label', '<span class="field-label">Monthly contribution</span>'));
+      const values = el('div', 'row-values');
+      ScenarioRegistry.list().forEach(scenario => {
+        const cell = el('div', 'value-cell');
+        const span = document.createElement('span');
+        span.className = 'value-text';
+        span.id = 'savings-monthly-' + scenario.id;
+        span.textContent = '$0';
+        cell.appendChild(span);
+        values.appendChild(cell);
+      });
+      row.appendChild(values);
+      return row;
+    }
+
+    function render() {
+      const root = document.getElementById('savings-table-root');
+      root.innerHTML = '';
+      root.appendChild(buildHeaderRow());
+
+      const section = el('div', 'section');
+      section.appendChild(el('div', 'section-head', '<h2>Yearly savings goals</h2>'));
+      SAVINGS_FIELDS.forEach(f => section.appendChild(buildInputRow(f)));
+      root.appendChild(section);
+
+      const totalsBlock = el('div', 'summary-block');
+      totalsBlock.appendChild(buildOutputRow('Total yearly goal', 'savings-yearly'));
+      root.appendChild(totalsBlock);
+
+      const monthlyBlock = el('div', 'summary-block payment-block');
+      monthlyBlock.appendChild(buildMonthlyRow());
+      root.appendChild(monthlyBlock);
+
+      recalculateAll();
+      sizeAllCurrencyInputs();
+    }
+
+    function recalculateAll() {
+      ScenarioRegistry.list().forEach(scenario => {
+        const v = valuesByScenario[scenario.id];
+        let yearlyTotal = 0;
+        SAVINGS_FIELDS.forEach(f => { yearlyTotal += parseFloat(v[f.key]) || 0; });
+        const monthlyTotal = yearlyTotal / 12;
+
+        const yearlyEl = document.getElementById('savings-yearly-' + scenario.id);
+        if (yearlyEl) yearlyEl.textContent = currency(yearlyTotal);
+        const monthlyEl = document.getElementById('savings-monthly-' + scenario.id);
+        if (monthlyEl) monthlyEl.textContent = currency(monthlyTotal);
+
+        BudgetApp.setLockedAmount('savings', scenario.id, monthlyTotal);
+      });
+    }
+
+    function getState() {
+      return { valuesByScenario: JSON.parse(JSON.stringify(valuesByScenario)) };
+    }
+
+    function setState(state) {
+      valuesByScenario = (state && state.valuesByScenario) ? state.valuesByScenario : {};
+      ensureValues();
+      render();
+    }
+
+    ScenarioRegistry.subscribe(event => {
+      if (event && event.type === 'clone' && valuesByScenario[event.sourceId]) {
+        valuesByScenario[event.id] = JSON.parse(JSON.stringify(valuesByScenario[event.sourceId]));
+      }
+      ensureValues();
+      render();
+    });
+
+    return { getState, setState };
+  })();
+
+  /* ================= Subscriptions app (namespaced) ================= */
+  const SubscriptionsApp = (function () {
+    let rows = [];
+    let nextRowId = 1;
+    // valuesByScenario[scenarioId][rowId] = amount, for this tab's own subscription rows.
+    let valuesByScenario = {};
+
+    function ensureValues() {
+      ScenarioRegistry.list().forEach(s => {
+        if (!valuesByScenario[s.id]) {
+          const values = {};
+          rows.forEach(r => { values[r.id] = ''; });
+          valuesByScenario[s.id] = values;
+        }
+      });
+    }
+
+    function currency(n) {
+      return '$' + n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    }
+
+    function el(tag, cls, html) {
+      const e = document.createElement('div');
+      e.className = cls || '';
+      if (html !== undefined) e.innerHTML = html;
+      return e;
+    }
+
+    function updateValue(scenarioId, rowId, raw) {
+      const values = valuesByScenario[scenarioId];
+      if (!values) return;
+      values[rowId] = raw;
+      recalculateAll();
+    }
+
+    function addSubscriptionRow(label) {
+      const id = 'r' + (nextRowId++);
+      rows.push({ id, label: label || '' });
+      ScenarioRegistry.list().forEach(s => { valuesByScenario[s.id][id] = ''; });
+      render();
+    }
+
+    function removeSubscriptionRow(rowId) {
+      rows = rows.filter(r => r.id !== rowId);
+      Object.keys(valuesByScenario).forEach(sid => { delete valuesByScenario[sid][rowId]; });
+      render();
+    }
+
+    // Adding, removing, and cloning scenarios only happens on the Budget tab — this
+    // header just displays each scenario's name (still editable/renamable here).
+    function buildHeaderRow() {
+      const row = el('div', 'flex-row col-head-row');
+      row.appendChild(el('div', 'row-label'));
+      const values = el('div', 'row-values');
+      const scenarios = ScenarioRegistry.list();
+      scenarios.forEach(scenario => {
+        const cell = el('div', 'value-cell col-head-cell');
+        const nameRow = el('div', 'name-row');
+        const input = document.createElement('input');
+        input.className = 'name';
+        input.value = scenario.name;
+        input.addEventListener('input', e => ScenarioRegistry.rename(scenario.id, e.target.value));
+        input.addEventListener('blur', () => ScenarioRegistry.commitRename());
+        input.addEventListener('keydown', e => { if (e.key === 'Enter') input.blur(); });
+        nameRow.appendChild(input);
+        cell.appendChild(nameRow);
+        values.appendChild(cell);
+      });
+      row.appendChild(values);
+      return row;
+    }
+
+    function buildInputRow(rowData) {
+      const row = el('div', 'row flex-row');
+      const label = el('div', 'row-label');
+      const labelInput = document.createElement('input');
+      labelInput.className = 'row-name';
+      labelInput.type = 'text';
+      labelInput.placeholder = 'Subscription name';
+      labelInput.value = rowData.label || '';
+      labelInput.addEventListener('input', e => { rowData.label = e.target.value; });
+      label.appendChild(labelInput);
+
+      const removeRowBtn = document.createElement('button');
+      removeRowBtn.className = 'row-remove-btn';
+      removeRowBtn.innerHTML = '&times;';
+      removeRowBtn.setAttribute('aria-label', 'Remove subscription');
+      removeRowBtn.onclick = () => removeSubscriptionRow(rowData.id);
+      label.appendChild(removeRowBtn);
+      row.appendChild(label);
+
+      const values = el('div', 'row-values');
+      ScenarioRegistry.list().forEach(scenario => {
+        const cell = el('div', 'value-cell');
+        const wrap = el('div', 'field');
+        const dollar = document.createElement('span');
+        dollar.textContent = '$';
+        wrap.appendChild(dollar);
+        const input = document.createElement('input');
+        input.type = 'number';
+        input.min = '0';
+        input.step = '0.01';
+        const scenarioValues = valuesByScenario[scenario.id];
+        input.value = scenarioValues[rowData.id] !== undefined ? scenarioValues[rowData.id] : '';
+        input.addEventListener('input', e => updateValue(scenario.id, rowData.id, e.target.value));
+        wrap.appendChild(input);
+        cell.appendChild(wrap);
+        values.appendChild(cell);
+      });
+      row.appendChild(values);
+      return row;
+    }
+
+    function buildTotalRow() {
+      const row = el('div', 'flex-row payment-row');
+      row.appendChild(el('div', 'row-label', '<span class="field-label">Total monthly subscriptions</span>'));
+      const values = el('div', 'row-values');
+      ScenarioRegistry.list().forEach(scenario => {
+        const cell = el('div', 'value-cell');
+        const span = document.createElement('span');
+        span.className = 'value-text';
+        span.id = 'sub-total-' + scenario.id;
+        span.textContent = '$0';
+        cell.appendChild(span);
+        values.appendChild(cell);
+      });
+      row.appendChild(values);
+      return row;
+    }
+
+    function render() {
+      ensureValues();
+      const root = document.getElementById('subscriptions-table-root');
+      root.innerHTML = '';
+      root.appendChild(buildHeaderRow());
+
+      const section = el('div', 'section');
+      section.appendChild(el('div', 'section-head', '<h2>Subscriptions</h2>'));
+      rows.forEach(r => section.appendChild(buildInputRow(r)));
+      root.appendChild(section);
+
+      const addRowBtn = document.createElement('button');
+      addRowBtn.className = 'add-row-btn';
+      addRowBtn.textContent = '+ Add subscription';
+      addRowBtn.onclick = () => addSubscriptionRow();
+      root.appendChild(addRowBtn);
+
+      const totalBlock = el('div', 'summary-block payment-block');
+      totalBlock.appendChild(buildTotalRow());
+      root.appendChild(totalBlock);
+
+      recalculateAll();
+      sizeAllCurrencyInputs();
+    }
+
+    function recalculateAll() {
+      ScenarioRegistry.list().forEach(scenario => {
+        const values = valuesByScenario[scenario.id];
+        let total = 0;
+        rows.forEach(r => { total += parseFloat(values[r.id]) || 0; });
+        const totalEl = document.getElementById('sub-total-' + scenario.id);
+        if (totalEl) totalEl.textContent = currency(total);
+        BudgetApp.setLockedAmount('subscriptions', scenario.id, total);
+      });
+    }
+
+    function getState() {
+      return {
+        rows: rows.map(r => ({ id: r.id, label: r.label })),
+        nextRowId,
+        valuesByScenario: JSON.parse(JSON.stringify(valuesByScenario))
+      };
+    }
+
+    function setState(state) {
+      if (state && Array.isArray(state.rows) && state.valuesByScenario) {
+        // Current format: shared rows (subscriptions) x shared-scenario columns.
+        rows = state.rows.map(r => ({ id: r.id, label: r.label }));
+        nextRowId = state.nextRowId || nextRowId;
+        valuesByScenario = state.valuesByScenario;
+      } else if (state && Array.isArray(state.scenarios) && state.scenarios.length && Array.isArray(state.scenarios[0].items)) {
+        // Ancient short-lived per-scenario-list format (each scenario had its own named
+        // items, from before scenarios were synced at all) — collapses everything into
+        // the one scenario the shared registry starts with, matching items by name into
+        // shared rows so nothing typed gets lost.
+        const rowByLabel = new Map();
+        rows = [];
+        const values = {};
+        state.scenarios.forEach(s => {
+          (s.items || []).forEach(item => {
+            const key = (item.name || '').trim().toLowerCase();
+            let rowId = key && rowByLabel.get(key);
+            if (!rowId) {
+              rowId = 'r' + (nextRowId++);
+              rows.push({ id: rowId, label: item.name || '' });
+              if (key) rowByLabel.set(key, rowId);
+            }
+            values[rowId] = item.amount;
+          });
+        });
+        valuesByScenario = {};
+        valuesByScenario[ScenarioRegistry.list()[0].id] = values;
+      } else if (state && Array.isArray(state.items)) {
+        // Legacy pre-scenarios save format: a single flat subscription list.
+        rows = state.items.map(i => ({ id: 'r' + (nextRowId++), label: i.name }));
+        const values = {};
+        rows.forEach((r, idx) => { values[r.id] = state.items[idx].amount; });
+        valuesByScenario = {};
+        valuesByScenario[ScenarioRegistry.list()[0].id] = values;
+      } else {
+        rows = [
+          { id: 'r' + (nextRowId++), label: 'Netflix' },
+          { id: 'r' + (nextRowId++), label: 'Spotify' }
+        ];
+        valuesByScenario = {};
+      }
+      ensureValues();
+      render();
+    }
+
+    ScenarioRegistry.subscribe(event => {
+      if (event && event.type === 'clone' && valuesByScenario[event.sourceId]) {
+        valuesByScenario[event.id] = JSON.parse(JSON.stringify(valuesByScenario[event.sourceId]));
+      }
+      render();
+    });
+
+    return { getState, setState };
+  })();
+
+  /* ================= GitHub sync (namespaced) ================= */
+  const GoogleDriveSync = (function () {
+    // Client IDs are meant to be public (unlike API tokens) — the real gate is the
+    // Google sign-in + consent screen each user goes through, not a hidden secret.
+    const CLIENT_ID = '575902569700-4l05lkmf0kbrgq5kdr58canigcvafv3j.apps.googleusercontent.com';
+    // Only what this page needs: Drive (app-created files) for saving, and the account
+    // email shown on the Save button.
+    const SCOPE = 'https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/userinfo.email';
+    const FILE_NAME = 'munny-data.json';
+    const FILE_ID_KEY = 'munny_drive_file_id';
+    const TOKEN_KEY = 'munny_google_token';
+
+    let tokenClient = null;
+    let accessToken = null;
+    let refreshTimer = null;
+
+    function getCachedFileId() {
+      try { return localStorage.getItem(FILE_ID_KEY) || ''; } catch (e) { return ''; }
+    }
+    function setCachedFileId(id) {
+      try {
+        if (id) localStorage.setItem(FILE_ID_KEY, id);
+        else localStorage.removeItem(FILE_ID_KEY);
+      } catch (e) {}
+    }
+
+    // Re-arms itself every time a token is (re)persisted, a few minutes ahead of that
+    // token's real expiry, so an open tab silently refreshes itself via trySilentSignIn
+    // well before anything actually 401s — the "indefinite" feel comes from this timer,
+    // not just from restoreSession() at page load.
+    function scheduleProactiveRefresh(expiresInSeconds) {
+      if (refreshTimer) { clearTimeout(refreshTimer); refreshTimer = null; }
+      const bufferMs = 5 * 60 * 1000;
+      const delay = Math.max((expiresInSeconds || 3600) * 1000 - bufferMs, 30000);
+      refreshTimer = setTimeout(() => { trySilentSignIn(); }, delay);
+    }
+
+    function persistToken(token, expiresInSeconds) {
+      try {
+        localStorage.setItem(TOKEN_KEY, JSON.stringify({
+          access_token: token,
+          expires_at: Date.now() + (expiresInSeconds || 3600) * 1000
+        }));
+      } catch (e) {}
+      scheduleProactiveRefresh(expiresInSeconds);
+    }
+    function clearPersistedToken() {
+      try { localStorage.removeItem(TOKEN_KEY); } catch (e) {}
+    }
+    // Google's token client never restores a session on its own after a reload — a
+    // still-valid access token has to be saved and re-hydrated by hand. Once the real
+    // expiry passes (usually ~1hr), the next Drive request 401s and clears it — though
+    // in practice scheduleProactiveRefresh should silently renew it well before then.
+    function restoreSession() {
+      let stored;
+      try { stored = JSON.parse(localStorage.getItem(TOKEN_KEY) || 'null'); } catch (e) { stored = null; }
+      if (!stored || !stored.access_token || !stored.expires_at) return false;
+      if (Date.now() > stored.expires_at - 60000) { clearPersistedToken(); return false; }
+      accessToken = stored.access_token;
+      scheduleProactiveRefresh((stored.expires_at - Date.now()) / 1000);
+      return true;
+    }
+
+    function isSignedIn() {
+      return !!accessToken;
+    }
+
+    function signIn() {
+      return new Promise((resolve, reject) => {
+        if (!window.google || !google.accounts || !google.accounts.oauth2) {
+          reject(new Error('Google sign-in script hasn\'t loaded yet — try again in a moment.'));
+          return;
+        }
+        if (!tokenClient) {
+          tokenClient = google.accounts.oauth2.initTokenClient({
+            client_id: CLIENT_ID,
+            scope: SCOPE,
+            callback: () => {} // replaced per-request below
+          });
+        }
+        let settled = false;
+        // If the popup gets closed/dismissed without Google ever calling back
+        // (e.g. blocked, or the user closes it), don't hang forever.
+        const timer = setTimeout(() => {
+          if (settled) return;
+          settled = true;
+          reject(new Error('Sign-in timed out — the popup may have been closed or blocked. Try again.'));
+        }, 60000);
+        tokenClient.callback = (resp) => {
+          if (settled) return;
+          settled = true;
+          clearTimeout(timer);
+          if (resp.error) { reject(new Error(resp.error)); return; }
+          accessToken = resp.access_token;
+          persistToken(accessToken, resp.expires_in);
+          resolve(accessToken);
+        };
+        // prompt:'' asks Google to try a silent, invisible sign-in first — in Safari this
+        // seems to open the popup, fail to complete quietly, and close itself before you
+        // can interact with it. Forcing consent every time is a little more friction but
+        // actually shows the real interactive screen instead of a flash-and-close window.
+        // (trySilentSignIn below uses prompt:'' anyway, for the automatic — not clicked —
+        // reauth path, where there's no interactive screen to lose in the first place.)
+        tokenClient.requestAccessToken({ prompt: 'consent' });
+      });
+    }
+
+    // Like signIn(), but prompt:'' instead of prompt:'consent' — a silent, invisible
+    // reauth attempt that relies on the browser still having an active Google session
+    // plus this app's prior consent on file. Called automatically (not from a click), on
+    // page load when there's no valid cached session and proactively before the current
+    // one expires (see scheduleProactiveRefresh), so a browser that's still logged into
+    // Google never needs an explicit re-sign-in click, the same way Gmail itself doesn't.
+    // Resolves to false instead of rejecting on any failure (no existing Google session,
+    // consent revoked, popup blocked since this isn't a real click, timeout, script not
+    // loaded yet) — every one of those just means falling back to the ordinary "click
+    // Google Sign-In" experience, not a real error worth surfacing.
+    function trySilentSignIn() {
+      return new Promise((resolve) => {
+        if (!window.google || !google.accounts || !google.accounts.oauth2) { resolve(false); return; }
+        if (!tokenClient) {
+          tokenClient = google.accounts.oauth2.initTokenClient({
+            client_id: CLIENT_ID,
+            scope: SCOPE,
+            callback: () => {}
+          });
+        }
+        let settled = false;
+        const timer = setTimeout(() => {
+          if (settled) return;
+          settled = true;
+          resolve(false);
+        }, 8000);
+        tokenClient.callback = (resp) => {
+          if (settled) return;
+          settled = true;
+          clearTimeout(timer);
+          if (resp.error) { resolve(false); return; }
+          accessToken = resp.access_token;
+          persistToken(accessToken, resp.expires_in);
+          resolve(true);
+        };
+        try {
+          tokenClient.requestAccessToken({ prompt: '' });
+        } catch (e) {
+          settled = true;
+          clearTimeout(timer);
+          resolve(false);
+        }
+      });
+    }
+
+    async function api(url, options) {
+      if (!accessToken) throw new Error('not signed in');
+      const headers = Object.assign({ 'Authorization': 'Bearer ' + accessToken }, (options && options.headers) || {});
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), 15000);
+      let resp;
+      try {
+        resp = await fetch(url, Object.assign({ cache: 'no-store' }, options, { headers, signal: controller.signal }));
+      } catch (e) {
+        if (e.name === 'AbortError') throw new Error('Google Drive request timed out — check your connection and try again.');
+        throw new Error('Network error talking to Google Drive: ' + e.message);
+      } finally {
+        clearTimeout(timer);
+      }
+      if (resp.status === 401) { accessToken = null; clearPersistedToken(); } // expired/revoked — isSignedIn() will now correctly report false
+      return resp;
+    }
+
+    async function findFileId() {
+      const cached = getCachedFileId();
+      if (cached) return cached;
+      const q = encodeURIComponent("name='" + FILE_NAME + "' and trashed=false");
+      const resp = await api('https://www.googleapis.com/drive/v3/files?q=' + q + '&fields=files(id,name)&spaces=drive');
+      if (!resp.ok) throw new Error('HTTP ' + resp.status);
+      const json = await resp.json();
+      if (json.files && json.files.length) {
+        setCachedFileId(json.files[0].id);
+        return json.files[0].id;
+      }
+      return null;
+    }
+
+    async function createFile(dataObj) {
+      const metadata = { name: FILE_NAME, mimeType: 'application/json' };
+      const boundary = 'munnyboundary' + Date.now();
+      const body =
+        '--' + boundary + '\r\n' +
+        'Content-Type: application/json; charset=UTF-8\r\n\r\n' +
+        JSON.stringify(metadata) + '\r\n' +
+        '--' + boundary + '\r\n' +
+        'Content-Type: application/json\r\n\r\n' +
+        JSON.stringify(dataObj, null, 2) + '\r\n' +
+        '--' + boundary + '--';
+      const resp = await api('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id', {
+        method: 'POST',
+        headers: { 'Content-Type': 'multipart/related; boundary=' + boundary },
+        body
+      });
+      if (!resp.ok) throw new Error('HTTP ' + resp.status);
+      const json = await resp.json();
+      setCachedFileId(json.id);
+      return json.id;
+    }
+
+    async function load() {
+      if (!accessToken) return null;
+      const fileId = await findFileId();
+      if (!fileId) return null;
+      const resp = await api('https://www.googleapis.com/drive/v3/files/' + fileId + '?alt=media');
+      if (resp.status === 404) {
+        setCachedFileId('');
+        return null;
+      }
+      if (!resp.ok) throw new Error('HTTP ' + resp.status);
+      return resp.json();
+    }
+
+    async function save(dataObj) {
+      if (!accessToken) throw new Error('not signed in');
+      let fileId = getCachedFileId() || await findFileId();
+      if (!fileId) {
+        await createFile(dataObj);
+        return true;
+      }
+      const resp = await api('https://www.googleapis.com/upload/drive/v3/files/' + fileId + '?uploadType=media', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(dataObj, null, 2)
+      });
+      if (resp.status === 404) {
+        setCachedFileId('');
+        await createFile(dataObj);
+        return true;
+      }
+      if (!resp.ok) throw new Error('HTTP ' + resp.status);
+      return true;
+    }
+
+    async function getUserEmail() {
+      const resp = await api('https://www.googleapis.com/oauth2/v3/userinfo');
+      if (!resp.ok) throw new Error('HTTP ' + resp.status);
+      const json = await resp.json();
+      return json.email || '';
+    }
+
+    return { isSignedIn, signIn, trySilentSignIn, load, save, getUserEmail, restoreSession };
+  })();
+
+  /* ================= combined save / load ================= */
+  function collectAllData() {
+    return { scenarios: ScenarioRegistry.getState(), budget: BudgetApp.getState(), income: IncomeApp.getState(), mortgage: MortgageApp.getState(), food: FoodApp.getState(), car: CarApp.getState(), utilities: UtilitiesApp.getState(), savings: SavingsApp.getState(), subscriptions: SubscriptionsApp.getState() };
+  }
+
+  // All tools share one Drive file (one sign-in, one Google account), each keeping its
+  // own slice under `tools[CURRENT_TOOL]` so saving from one tool's page never touches
+  // another tool's data. Pre-multi-tool saves have no `tools` wrapper at all — Budget
+  // Planner was the only tool back then, so an unwrapped file is treated as its data.
+  // Kept in sync with the same helpers in every other tool page.
+  function withToolsWrapper(remote) {
+    if (!remote) return {};
+    if (remote.tools) return Object.assign({}, remote.tools);
+    return { budget: remote };
+  }
+
+  function extractOwnToolData(remote) {
+    return withToolsWrapper(remote)[CURRENT_TOOL] || null;
+  }
+
+  async function mergeAndSave(toolData) {
+    const remote = await GoogleDriveSync.load();
+    const tools = withToolsWrapper(remote);
+    tools[CURRENT_TOOL] = toolData;
+    await GoogleDriveSync.save({ tools: tools });
+  }
+
+  const CURRENT_TOOL = 'budget';
+
+  // One button in the header does double duty: "Google Sign-In" while signed out, and
+  // "Save to <account email>" once signed in. Saving is manual: nothing is written to
+  // Drive until that button is clicked.
+  let accountEmail = '';
+
+  // Only these accounts get the Home Cost Explorer link in the menu. Stored as SHA-256 hashes
+  // of the lowercased emails so the addresses aren't printed in the page source. This only
+  // controls what the menu shows; that tool's data is never in the site's files, it's loaded
+  // from the signed-in user's own Drive file.
+  const HOME_ACCESS_HASHES = ["7632439ab9eed19264bc3e1aa4ad1a2c4a0cfcbd0334a6a3d9d1ef5231bec8b7", "d86c22090aa6b4f235012ebb9376f1651f6e26bf33879165000a6075b661928b", "08d75589e1d251a55018e1f5c3e769f40720a44bef0dc28f689b5dbd067e26e5", "9aba2ffbc6f32a548f8b91fdab8e456cadb68b5a851aff20b5b8fb1d0ec122d5"];
+  async function hasHomeAccess(email) {
+    if (!email || !window.crypto || !crypto.subtle) return false;
+    const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(email.trim().toLowerCase()));
+    const hex = Array.from(new Uint8Array(buf)).map(x => x.toString(16).padStart(2, '0')).join('');
+    return HOME_ACCESS_HASHES.indexOf(hex) !== -1;
+  }
+  async function updateMenuAccess() {
+    const link = document.getElementById('side-home-link');
+    if (link) link.hidden = !(GoogleDriveSync.isSignedIn() && await hasHomeAccess(accountEmail));
+  }
+
+  function updateAccountButton() {
+    const btn = document.getElementById('google-signin-btn');
+    if (!btn) return;
+    btn.textContent = GoogleDriveSync.isSignedIn()
+      ? (accountEmail ? 'Save to ' + accountEmail : 'Save to Google Drive')
+      : 'Google Sign-In';
+    updateMenuAccess();
+  }
+
+  function setGoogleSignedInUi(signedIn) {
+    if (!signedIn) accountEmail = '';
+    updateAccountButton();
+  }
+
+  async function loadAccountEmail() {
+    try { accountEmail = (await GoogleDriveSync.getUserEmail()) || ''; } catch (e) { accountEmail = ''; }
+    updateAccountButton();
+  }
+
+  function handleAccountButton() {
+    if (GoogleDriveSync.isSignedIn()) saveToDrive(); else handleGoogleSignIn();
+  }
+
+  async function saveToDrive() {
+    const btn = document.getElementById('google-signin-btn');
+    const status = document.getElementById('save-status');
+    if (btn) btn.disabled = true;
+    status.style.color = 'var(--gold)';
+    status.textContent = 'Saving…';
+    try {
+      await mergeAndSave(collectAllData());
+      status.style.color = 'var(--income)';
+      status.textContent = 'Saved';
+      setTimeout(() => { if (status.textContent === 'Saved') status.textContent = ''; }, 2500);
+    } catch (e) {
+      status.style.color = 'var(--expense)';
+      status.textContent = GoogleDriveSync.isSignedIn() ? 'Save failed: ' + e.message : 'Session expired. Click Google Sign-In, then Save again.';
+      updateAccountButton();
+    } finally {
+      if (btn) btn.disabled = false;
+    }
+  }
+
+  async function handleGoogleSignIn() {
+    const status = document.getElementById('save-status');
+    status.style.color = 'var(--gold)';
+    status.textContent = 'Signing in to Google…';
+    try {
+      await GoogleDriveSync.signIn();
+      setGoogleSignedInUi(true);
+      status.textContent = 'Loading your data from Drive…';
+      const remote = await GoogleDriveSync.load();
+      applyLoadedData(extractOwnToolData(remote)); // null (brand-new Drive file, or no saved data for this tool yet) leaves fields at their default
+      status.textContent = '';
+      await loadAccountEmail();
+    } catch (e) {
+      status.style.color = 'var(--expense)';
+      status.textContent = 'Google sign-in failed: ' + e.message;
+    }
+  }
+
+  function applyLoadedData(saved) {
+    // Migrate the old flat Income list (from the Monthly Budget tab) into the new Income tab,
+    // for files saved before Income got its own tab.
+    let incomeState = saved ? saved.income : null;
+    if (!incomeState && saved && saved.budget && Array.isArray(saved.budget.income) && saved.budget.income.length) {
+      incomeState = {
+        sources: saved.budget.income.map(item => ({
+          name: item.label || 'Income',
+          amount: item.amount,
+          frequency: 'monthly'
+        }))
+      };
+    }
+
+    const EXPENSE_TAB_KEYS = ['mortgage', 'food', 'car', 'utilities', 'savings', 'subscriptions'];
+    let scenarioState = saved ? saved.scenarios : null;
+    const tabData = {};
+    EXPENSE_TAB_KEYS.forEach(k => { tabData[k] = saved ? saved[k] : null; });
+
+    // Migrate the old per-tab scenario format — each of the six expense tabs used to keep
+    // its own independent scenario list — into one shared registry, the first time a file
+    // saved before scenarios were synced loads here. Scenarios are matched across tabs by
+    // name (Housing's list first, then any new names Food/Car/Utilities/Savings/Subscriptions
+    // add), so "Scenario B" ends up meaning the same thing everywhere, and nothing anyone
+    // already typed gets lost — a tab that never had that name just starts it blank.
+    const needsScenarioMigration = !(scenarioState && Array.isArray(scenarioState.scenarios) && scenarioState.scenarios.length);
+    if (needsScenarioMigration) {
+      const names = [];
+      EXPENSE_TAB_KEYS.forEach(k => {
+        const old = tabData[k];
+        if (old && Array.isArray(old.scenarios) && old.scenarios.length && old.scenarios[0].values !== undefined) {
+          old.scenarios.forEach(s => { if (names.indexOf(s.name) === -1) names.push(s.name); });
+        }
+      });
+      if (!names.length) names.push('Scenario A');
+
+      const nameToId = {};
+      const scenarios = names.map((name, i) => {
+        const id = 'sc' + (i + 1);
+        nameToId[name] = id;
+        return { id, name };
+      });
+      scenarioState = { scenarios, nextLetter: 65 + names.length };
+
+      EXPENSE_TAB_KEYS.forEach(k => {
+        const old = tabData[k];
+        if (old && Array.isArray(old.scenarios) && old.scenarios.length && old.scenarios[0].values !== undefined) {
+          const valuesByScenario = {};
+          old.scenarios.forEach(s => { valuesByScenario[nameToId[s.name]] = s.values; });
+          tabData[k] = (k === 'subscriptions')
+            ? { rows: old.rows, nextRowId: old.nextRowId, valuesByScenario }
+            : { valuesByScenario };
+        }
+      });
+    }
+
+    ScenarioRegistry.setState(scenarioState);
+
+    BudgetApp.setState(saved ? saved.budget : null);
+    IncomeApp.setState(incomeState);
+    MortgageApp.setState(tabData.mortgage);
+    FoodApp.setState(tabData.food);
+    CarApp.setState(tabData.car);
+    UtilitiesApp.setState(tabData.utilities);
+    SavingsApp.setState(tabData.savings);
+    SubscriptionsApp.setState(tabData.subscriptions);
+    sizeAllCurrencyInputs();
+  }
+
+  async function loadApp() {
+    // A still-valid access token from an earlier sign-in (saved in localStorage) can be
+    // restored without any popup — so a refresh doesn't force signing in again until that
+    // token actually expires. If it already has, trySilentSignIn attempts a silent,
+    // invisible reauth before falling back to requiring an explicit "Google Sign-In"
+    // click — so a browser that's still logged into Google (and has granted this app
+    // access before) stays signed in indefinitely, same as Gmail itself.
+    applyLoadedData(null);
+    setGoogleSignedInUi(false);
+
+    let signedIn = GoogleDriveSync.restoreSession();
+    if (!signedIn) signedIn = await GoogleDriveSync.trySilentSignIn();
+    if (signedIn) {
+      setGoogleSignedInUi(true);
+      const status = document.getElementById('save-status');
+      status.style.color = 'var(--gold)';
+      status.textContent = 'Loading your data from Drive…';
+      try {
+        const remote = await GoogleDriveSync.load();
+        applyLoadedData(extractOwnToolData(remote));
+        status.textContent = '';
+        await loadAccountEmail();
+      } catch (e) {
+        status.style.color = 'var(--expense)';
+        status.textContent = 'Google Drive load failed: ' + e.message;
+        setGoogleSignedInUi(false);
+      }
+    }
+  }
+
+  loadApp();
+</script>
+
+<script>
+(function () {
+  var btn = document.getElementById('menu-btn'), body = document.body;
+  function setOpen(open) {
+    body.classList.toggle('menu-open', open);
+    btn.setAttribute('aria-expanded', open ? 'true' : 'false');
+    btn.setAttribute('aria-label', open ? 'Close menu' : 'Open menu');
+  }
+  btn.addEventListener('click', function () { setOpen(!body.classList.contains('menu-open')); });
+  document.getElementById('side-overlay').addEventListener('click', function () { setOpen(false); });
+  document.addEventListener('keydown', function (e) { if (e.key === 'Escape') setOpen(false); });
+})();
+</script>
+
+</body></html>

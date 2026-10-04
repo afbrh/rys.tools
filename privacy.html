@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Privacy Policy — Ry's Tools</title>
+<link rel="icon" type="image/png" href="logo.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
+<link href="https://fonts.googleapis.com/css2?family=Lora:wght@500;600&family=Source+Sans+Pro:wght@400;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --paper: #F6F4EC;
+    --paper-line: #E4DFCE;
+    --ink: #23261F;
+    --ink-soft: #6B6C5F;
+    --gold: #9C7A2E;
+    --gold-bg: #F1E9D2;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--paper);
+    color: var(--ink);
+    font-family: 'Source Sans Pro', sans-serif;
+    font-size: 16px;
+    line-height: 1.6;
+    padding: 40px 20px 80px;
+  }
+  .sheet { max-width: 720px; margin: 0 auto; }
+  .back-link {
+    display: inline-block;
+    margin-bottom: 28px;
+    color: var(--ink-soft);
+    text-decoration: none;
+    font-size: 14px;
+  }
+  .back-link:hover { color: var(--ink); }
+  h1 {
+    font-family: 'Lora', serif;
+    font-weight: 600;
+    font-size: 32px;
+    margin: 0 0 4px;
+    letter-spacing: -0.01em;
+  }
+  .updated { color: var(--ink-soft); font-size: 14px; margin: 0 0 36px; }
+  h2 {
+    font-family: 'Lora', serif;
+    font-weight: 600;
+    font-size: 20px;
+    margin: 36px 0 12px;
+    border-bottom: 2px solid var(--ink);
+    padding-bottom: 8px;
+  }
+  p { margin: 0 0 16px; }
+  ul { margin: 0 0 16px; padding-left: 22px; }
+  li { margin-bottom: 8px; }
+  a { color: var(--gold); }
+  code {
+    background: var(--gold-bg);
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 14px;
+  }
+  .page-nav {
+    margin-top: 56px;
+    padding-top: 20px;
+    border-top: 1px solid var(--paper-line);
+    font-size: 14px;
+    color: var(--ink-soft);
+  }
+  .page-nav a { color: var(--ink-soft); text-decoration: underline; }
+</style>
+</head>
+<body>
+<div class="sheet">
+  <a class="back-link" href="/">&larr; Back to Ry's Tools</a>
+  <h1>Privacy Policy</h1>
+  <p class="updated">Last updated September 19, 2026</p>
+
+  <p>Ry's Tools is a personal budgeting tool. This page explains what data it touches and how.</p>
+
+  <h2>What Ry's Tools Is</h2>
+  <p>Ry's Tools is a static web app — there is no backend server. It runs entirely in your browser and, if you choose to sign in, stores your data directly in your own Google Drive.</p>
+
+  <h2>Information We Collect</h2>
+  <ul>
+    <li><strong>Your Google account email address</strong> — shown only to confirm you're signed in (e.g. "Signed in as you@example.com"). We use Google's <code>userinfo.email</code> scope for this, and nothing else about your Google account.</li>
+    <li><strong>The budget data you enter</strong> — income, housing, food, car, utilities, savings, and subscription figures you type into the app.</li>
+  </ul>
+
+  <h2>How Google Drive Access Works</h2>
+  <p>When you sign in, Ry's Tools requests Google's <code>drive.file</code> scope — the most restrictive Drive scope Google offers. This means Ry's Tools can only see and edit files it itself created (a single file named <code>munny-data.json</code>). It cannot browse, read, or modify any other file in your Drive, and never requests broader access.</p>
+
+  <h2>Where Your Data Lives</h2>
+  <p>Your budget data is stored only in that one file, in your own Google Drive. Ry's Tools has no database and no server — we never receive, see, or store a copy of your data ourselves.</p>
+
+  <h2>What's Stored in Your Browser</h2>
+  <ul>
+    <li>Your appearance/theme preference (Light, Dark, Elder, Machina).</li>
+    <li>A temporary Google sign-in token, cached only so you don't have to sign in again on every page reload. It expires automatically (about an hour) and is never sent anywhere except Google's own APIs.</li>
+  </ul>
+  <p>Nothing here is shared with us or any third party — it stays in your browser's local storage on your device.</p>
+
+  <h2>What We Don't Do</h2>
+  <p>Ry's Tools does not use analytics, tracking cookies, or advertising. We do not sell, rent, or share your data with any third party. We do not have access to your budget data at all — it never leaves your browser except to go directly to your own Google Drive.</p>
+
+  <h2>Deleting Your Data</h2>
+  <ul>
+    <li>Delete the <code>munny-data.json</code> file from your Google Drive, and/or</li>
+    <li>Revoke access for Ry's Tools at <a href="https://myaccount.google.com/permissions" target="_blank" rel="noopener">myaccount.google.com/permissions</a>, and/or</li>
+    <li>Clear your browser's local storage for this site.</li>
+  </ul>
+
+  <h2>Changes to This Policy</h2>
+  <p>If this policy changes, the update date above will change. Continued use of Ry's Tools after a change means you accept the updated policy.</p>
+
+  <h2>Contact</h2>
+  <p>Questions about this policy? Email <a href="mailto:noryanfound@gmail.com">noryanfound@gmail.com</a>.</p>
+
+  <div class="page-nav"><a href="terms.html">Terms of Service</a> &middot; <a href="/">Ry's Tools</a></div>
+</div>
+</body></html>
