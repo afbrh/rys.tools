@@ -581,6 +581,88 @@ body.menu-open .side-menu { transform: none; visibility: visible; transition-del
   #tab-food .payment-row .value-text { font-size: 17px; color: var(--gold); }
   #tab-food .footnote { margin-top: 30px; font-size: 12px; color: var(--ink-soft); text-align: center; }
 
+  /* ================= Housing tab (scoped) ================= */
+  #tab-housing .page { max-width: 820px; margin: 0 auto; }
+  #tab-housing .header-bar { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 28px; gap: 16px; }
+  #tab-housing h1 {
+    font-family: var(--font-header);
+    font-weight: 600;
+    font-size: 28px;
+    margin: 0 0 28px;
+    letter-spacing: var(--letter-spacing-header);
+  }
+  #tab-housing .add-btn {
+    flex-shrink: 0;
+    align-self: center;
+    background: none;
+    border: 1px dashed var(--ink-soft);
+    color: var(--ink-soft);
+    font-family: var(--font-body);
+    font-size: 13px;
+    font-weight: 600;
+    padding: 8px 16px;
+    border-radius: 6px;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+  #tab-housing .add-btn:hover { border-color: var(--expense); color: var(--expense); }
+  #tab-housing .table-scroll { overflow-x: auto; padding-bottom: 4px; }
+  #tab-housing .flex-row { display: flex; align-items: center; min-width: max-content; }
+  #tab-housing .row-label { width: 190px; flex: 0 0 190px; padding-right: 10px; }
+  #tab-housing .row-label .field-label { font-size: 14px; color: var(--ink); }
+  #tab-housing .row-label .hint { display: block; font-size: 11px; color: var(--ink-soft); margin-top: 2px; }
+  #tab-housing .row-values { display: flex; gap: 34px; }
+  #tab-housing .value-cell { width: 118px; flex: 0 0 118px; }
+  #tab-housing .col-head-row { padding-bottom: 12px; margin-bottom: 6px; border-bottom: 1px solid var(--paper-line); }
+  #tab-housing .col-head-cell { position: relative; text-align: right; }
+  #tab-housing .col-head-cell .name-row { display: flex; align-items: center; justify-content: flex-end; gap: 6px; }
+  #tab-housing .col-head-cell input.name {
+    font-family: var(--font-header);
+    font-weight: 600;
+    font-size: 14px;
+    border: none;
+    background: transparent;
+    color: var(--ink);
+    text-align: right;
+    flex: 1 1 auto;
+    min-width: 0;
+    padding: 2px 0;
+  }
+  #tab-housing .col-head-cell input.name:focus { outline: none; border-bottom: 1px solid var(--ink-soft); }
+  #tab-housing .col-head-cell .remove-btn {
+    display: block; margin: 3px 0 0 auto; background: none; border: none;
+    color: var(--ink-soft); font-size: 12px; cursor: pointer; padding: 0;
+  }
+  #tab-housing .col-head-cell .remove-btn:hover { color: var(--expense); }
+  #tab-housing .section { margin-bottom: 26px; }
+  #tab-housing .section-head { border-bottom: 1px solid var(--paper-line); padding-bottom: 6px; margin-bottom: 2px; }
+  #tab-housing .section-head h2 { font-family: var(--font-header); font-size: 15px; font-weight: 600; margin: 0; color: var(--expense); }
+  #tab-housing .row { padding: 11px 0; border-bottom: 1px solid var(--paper-line); }
+  #tab-housing .field { display: flex; align-items: center; justify-content: flex-end; font-family: var(--font-mono); font-size: 14px; }
+  #tab-housing .field span { color: var(--ink-soft); margin: 0 1px; }
+  #tab-housing .field input[type="number"] {
+    width: 4ch;
+    min-width: 0;
+    text-align: right;
+    border: none;
+    background: transparent;
+    font-family: var(--font-mono);
+    font-size: 14px;
+    color: var(--ink);
+    padding: 4px 0;
+    -moz-appearance: textfield;
+  }
+  #tab-housing .field input::-webkit-outer-spin-button,
+  #tab-housing .field input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+  #tab-housing .field input:focus { outline: none; border-bottom: 1px solid var(--ink-soft); }
+  #tab-housing .summary-block { margin-top: 18px; padding-top: 12px; border-top: 1px solid var(--paper-line); }
+  #tab-housing .payment-block { margin-top: 4px; }
+  #tab-housing .value-text { font-family: var(--font-mono); font-weight: 500; text-align: right; font-size: 14px; display: block; }
+  #tab-housing .payment-row { padding: 16px 18px; border-radius: 8px; background: var(--gold-bg); margin-bottom: 6px; }
+  #tab-housing .payment-row .field-label { font-family: var(--font-header); font-weight: 600; font-size: 14px; color: var(--gold); }
+  #tab-housing .payment-row .value-text { font-size: 17px; color: var(--gold); }
+  #tab-housing .footnote { margin-top: 30px; font-size: 12px; color: var(--ink-soft); text-align: center; }
+
   /* ================= Car tab (scoped) ================= */
   #tab-car .page { max-width: 820px; margin: 0 auto; }
   #tab-car .header-bar { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 28px; gap: 16px; }
@@ -875,6 +957,15 @@ body.menu-open .side-menu { transform: none; visibility: visible; transition-del
     </div>
   </div>
 
+  <div id="tab-housing" class="tab-panel">
+    <h2 class="card-title">Housing</h2>
+    <div class="page">
+      <div class="table-scroll">
+        <div id="housing-table-root"></div>
+      </div>
+    </div>
+  </div>
+
   <div id="tab-food" class="tab-panel">
     <h2 class="card-title">Food</h2>
     <div class="page">
@@ -1046,6 +1137,7 @@ body.menu-open .side-menu { transform: none; visibility: visible; transition-del
   const BudgetApp = (function () {
     // Locked rows are driven entirely from another tab and can't be typed into here.
     const LOCKED_FIELDS = [
+      { key: 'housing', label: 'Housing', tabName: 'housing', legacy: /^housing$/i },
       { key: 'food', label: 'Food', tabName: 'food', legacy: /^food$/i },
       { key: 'car', label: 'Car', tabName: 'car', legacy: /^car$/i },
       { key: 'utilities', label: 'Utilities', tabName: 'utilities', legacy: /^utilities$/i },
@@ -1449,6 +1541,167 @@ body.menu-open .side-menu { transform: none; visibility: visible; transition-del
     }
 
     return { addSource, getState, setState, recalculate };
+  })();
+
+  /* ================= Housing app (namespaced) ================= */
+  const HousingApp = (function () {
+    // Mortgage Payment is a monthly amount; Taxes and Homeowners Insurance are entered per year and counted monthly.
+    const HOUSING_FIELDS = [
+      { key: 'mortgage', label: 'Mortgage Payment' },
+      { key: 'taxes', label: 'Taxes', annual: true, hint: 'per year' },
+      { key: 'insurance', label: 'Homeowners Insurance', annual: true, hint: 'per year' }
+    ];
+    const DEFAULTS = { mortgage: 0, taxes: 0, insurance: 0 };
+
+    // valuesByScenario[scenarioId] = this tab's own field values for that shared scenario.
+    let valuesByScenario = {};
+
+    function ensureValues() {
+      ScenarioRegistry.list().forEach(s => {
+        if (!valuesByScenario[s.id]) valuesByScenario[s.id] = Object.assign({}, DEFAULTS);
+      });
+    }
+
+    function currency(n) {
+      return '$' + n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    }
+
+    function el(tag, cls, html) {
+      const e = document.createElement('div');
+      e.className = cls || '';
+      if (html !== undefined) e.innerHTML = html;
+      return e;
+    }
+
+    function updateValue(scenarioId, key, raw) {
+      const values = valuesByScenario[scenarioId];
+      if (!values) return;
+      values[key] = raw;
+      recalculateAll();
+    }
+
+    // Adding, removing, and cloning scenarios only happens on the Budget tab — this
+    // header just displays each scenario's name (still editable/renamable here).
+    function buildHeaderRow() {
+      const row = el('div', 'flex-row col-head-row');
+      row.appendChild(el('div', 'row-label'));
+      const values = el('div', 'row-values');
+      const scenarios = ScenarioRegistry.list();
+      scenarios.forEach(scenario => {
+        const cell = el('div', 'value-cell col-head-cell');
+        const nameRow = el('div', 'name-row');
+        const input = document.createElement('input');
+        input.className = 'name';
+        input.value = scenario.name;
+        input.addEventListener('input', e => ScenarioRegistry.rename(scenario.id, e.target.value));
+        input.addEventListener('blur', () => ScenarioRegistry.commitRename());
+        input.addEventListener('keydown', e => { if (e.key === 'Enter') input.blur(); });
+        nameRow.appendChild(input);
+        cell.appendChild(nameRow);
+        values.appendChild(cell);
+      });
+      row.appendChild(values);
+      return row;
+    }
+
+    function buildInputRow(field) {
+      const row = el('div', 'row flex-row');
+      const label = el('div', 'row-label');
+      label.innerHTML = '<span class="field-label">' + field.label + '</span>' +
+        (typeof field.hint === 'string' ? '<span class="hint">' + field.hint + '</span>' : '');
+      row.appendChild(label);
+
+      const values = el('div', 'row-values');
+      ScenarioRegistry.list().forEach(scenario => {
+        const cell = el('div', 'value-cell');
+        const wrap = el('div', 'field');
+        const dollar = document.createElement('span');
+        dollar.textContent = '$';
+        wrap.appendChild(dollar);
+        const input = document.createElement('input');
+        input.type = 'number';
+        input.min = '0';
+        input.step = '1';
+        input.value = valuesByScenario[scenario.id][field.key];
+        input.addEventListener('input', e => updateValue(scenario.id, field.key, parseFloat(e.target.value) || 0));
+        wrap.appendChild(input);
+        cell.appendChild(wrap);
+        values.appendChild(cell);
+      });
+      row.appendChild(values);
+      return row;
+    }
+
+    function buildTotalRow() {
+      const row = el('div', 'flex-row payment-row');
+      row.appendChild(el('div', 'row-label', '<span class="field-label">Total housing expense</span>'));
+      const values = el('div', 'row-values');
+      ScenarioRegistry.list().forEach(scenario => {
+        const cell = el('div', 'value-cell');
+        const span = document.createElement('span');
+        span.className = 'value-text';
+        span.id = 'housing-total-' + scenario.id;
+        span.textContent = '$0';
+        cell.appendChild(span);
+        values.appendChild(cell);
+      });
+      row.appendChild(values);
+      return row;
+    }
+
+    function render() {
+      const root = document.getElementById('housing-table-root');
+      root.innerHTML = '';
+      root.appendChild(buildHeaderRow());
+
+      const section = el('div', 'section');
+      section.appendChild(el('div', 'section-head', '<h2>Housing costs</h2>'));
+      HOUSING_FIELDS.forEach(f => section.appendChild(buildInputRow(f)));
+      root.appendChild(section);
+
+      const totalBlock = el('div', 'summary-block payment-block');
+      totalBlock.appendChild(buildTotalRow());
+      root.appendChild(totalBlock);
+
+      recalculateAll();
+      sizeAllCurrencyInputs();
+    }
+
+    function recalculateAll() {
+      ScenarioRegistry.list().forEach(scenario => {
+        const v = valuesByScenario[scenario.id];
+        let total = 0;
+        HOUSING_FIELDS.forEach(f => {
+          const val = parseFloat(v[f.key]) || 0;
+          total += f.annual ? val / 12 : val;
+        });
+
+        const totalEl = document.getElementById('housing-total-' + scenario.id);
+        if (totalEl) totalEl.textContent = currency(total);
+
+        BudgetApp.setLockedAmount('housing', scenario.id, total);
+      });
+    }
+
+    function getState() {
+      return { valuesByScenario: JSON.parse(JSON.stringify(valuesByScenario)) };
+    }
+
+    function setState(state) {
+      valuesByScenario = (state && state.valuesByScenario) ? state.valuesByScenario : {};
+      ensureValues();
+      render();
+    }
+
+    ScenarioRegistry.subscribe(event => {
+      if (event && event.type === 'clone' && valuesByScenario[event.sourceId]) {
+        valuesByScenario[event.id] = JSON.parse(JSON.stringify(valuesByScenario[event.sourceId]));
+      }
+      ensureValues();
+      render();
+    });
+
+    return { getState, setState };
   })();
 
   /* ================= Food app (namespaced) ================= */
@@ -2598,7 +2851,7 @@ body.menu-open .side-menu { transform: none; visibility: visible; transition-del
 
   /* ================= combined save / load ================= */
   function collectAllData() {
-    return { scenarios: ScenarioRegistry.getState(), budget: BudgetApp.getState(), income: IncomeApp.getState(), food: FoodApp.getState(), car: CarApp.getState(), utilities: UtilitiesApp.getState(), savings: SavingsApp.getState(), subscriptions: SubscriptionsApp.getState() };
+    return { scenarios: ScenarioRegistry.getState(), budget: BudgetApp.getState(), income: IncomeApp.getState(), housing: HousingApp.getState(), food: FoodApp.getState(), car: CarApp.getState(), utilities: UtilitiesApp.getState(), savings: SavingsApp.getState(), subscriptions: SubscriptionsApp.getState() };
   }
 
   // All tools share one Drive file (one sign-in, one Google account), each keeping its
@@ -2725,7 +2978,7 @@ body.menu-open .side-menu { transform: none; visibility: visible; transition-del
       };
     }
 
-    const EXPENSE_TAB_KEYS = ['food', 'car', 'utilities', 'savings', 'subscriptions'];
+    const EXPENSE_TAB_KEYS = ['housing', 'food', 'car', 'utilities', 'savings', 'subscriptions'];
     let scenarioState = saved ? saved.scenarios : null;
     const tabData = {};
     EXPENSE_TAB_KEYS.forEach(k => { tabData[k] = saved ? saved[k] : null; });
@@ -2771,6 +3024,7 @@ body.menu-open .side-menu { transform: none; visibility: visible; transition-del
 
     BudgetApp.setState(saved ? saved.budget : null);
     IncomeApp.setState(incomeState);
+    HousingApp.setState(tabData.housing);
     FoodApp.setState(tabData.food);
     CarApp.setState(tabData.car);
     UtilitiesApp.setState(tabData.utilities);
