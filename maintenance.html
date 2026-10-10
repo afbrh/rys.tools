@@ -142,6 +142,11 @@ body.menu-open .side-menu { transform: none; visibility: visible; transition-del
   .sdragging .rows { display:none; }
   section.dragging { box-shadow:0 2px 12px rgba(0,0,0,.22); background:var(--accent-soft); }
   .sh .sgrip { height:24px; }
+  .sh h2[data-rename] { cursor:text; }
+  .sname { flex:1; min-width:0; font:inherit; font-size:14px; font-weight:600; padding:3px 8px; border:1px solid var(--accent); border-radius:8px; background:var(--card); color:var(--ink); }
+  .sh .xs { color:#c0261b; border-color:#c0261b; }
+  .sh button { white-space:nowrap; }
+  @media (max-width:560px) { .sh { gap:6px; padding:8px 10px; } .sh .sub small { display:none; } .sh h2 { min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; } }
   .it { border-bottom:1px solid var(--line); background:var(--card); }
   .it:last-child { border-bottom:0; }
   .it.dragging { background:var(--accent-soft); box-shadow:0 2px 10px rgba(0,0,0,.18); position:relative; z-index:2; }
@@ -201,7 +206,7 @@ body.menu-open .side-menu { transform: none; visibility: visible; transition-del
 <main>
 <div class="wrap chips" id="chips" hidden></div>
 <div class="wrap"><section class="gate" id="gate"></section></div><div class="wrap" id="app" hidden></div>
-<div class="wrap bar" id="bar" hidden><button id="importBtn" type="button">Import data</button><input type="file" id="importFile" accept="application/json,.json" hidden><span class="hint">Drag a story's ⋮⋮ handle to reorder it or move it to another section, or a section's handle to reorder sections. Click a story to edit it. Click Save to store changes in your Google Drive.</span></div>
+<div class="wrap bar" id="bar" hidden><button type="button" id="addSecBtn">+ Add section</button><button id="importBtn" type="button">Import data</button><input type="file" id="importFile" accept="application/json,.json" hidden><span class="hint">Drag a story's ⋮⋮ handle to reorder it or move it to another section, or a section's handle to reorder sections. Click a story to edit it. Click Save to store changes in your Google Drive.</span></div>
 </main>
 
 <script>
@@ -492,7 +497,7 @@ const STATUSES = ["Backlog", "Planned", "Getting Bids", "In Progress", "Done"];
 const sKey = s => s.replace(/\s+/g, "");
 const PRIORITIES = ["", "High", "Med High", "Medium", "Low", "TBD"];
 const WHO = ["", "Hire Contractor", "DIY"];
-let groups = [], items = [], filter = null, openId = null;
+let groups = [], items = [], filter = null, openId = null, renaming = null;
 let accountEmail = "", allowed = false, dirty = false;
 const $ = id => document.getElementById(id);
 const esc = t => String(t == null ? "" : t).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
@@ -581,8 +586,8 @@ function render() {
   app.innerHTML = groups.map(g => {
     const all = items.filter(i => i.group === g.id), shown = filter ? all.filter(i => i.status === filter) : all;
     const sum = all.reduce((a, i) => a + (i.cost || 0), 0);
-    return `<section data-group="${g.id}"><div class="sh"><span class="grip sgrip" title="Drag to reorder sections">⋮⋮</span><h2>${esc(g.title)}</h2><span class="sub">${fmt0(sum)}<small>${all.length} ${all.length === 1 ? "story" : "stories"}</small></span>
-      <button type="button" data-add="${g.id}">+ Add</button></div>
+    return `<section data-group="${g.id}"><div class="sh"><span class="grip sgrip" title="Drag to reorder sections">⋮⋮</span>${renaming === g.id ? `<input type="text" class="sname" data-gid="${g.id}" value="${esc(g.title)}" maxlength="60">` : `<h2 data-rename="${g.id}" title="Click to rename">${esc(g.title)}</h2>`}<span class="sub">${fmt0(sum)}<small>${all.length} ${all.length === 1 ? "story" : "stories"}</small></span>
+      <button type="button" data-rename="${g.id}" title="Rename section">✎</button><button type="button" data-add="${g.id}">+ Add</button><button type="button" class="xs" data-delsec="${g.id}" title="Delete section">×</button></div>
       <div class="rows">${shown.map(rowHtml).join("") || (filter ? '<div class="empty">Nothing here with this status.</div>' : "")}</div></section>`;
   }).join("");
 }
@@ -601,6 +606,14 @@ app.addEventListener("change", e => {
 });
 app.addEventListener("click", e => {
   const d = e.target.dataset, tx = e.target.closest("[data-open]");
+  if (d.rename) { renaming = d.rename; keepScroll(() => {}); const i = app.querySelector(".sname"); if (i) { i.focus(); i.select(); } return; }
+  if (d.delsec) {
+    if (groups.length < 2) { alert("You need at least one section."); return; }
+    const g = groups.find(x => x.id === d.delsec), n = items.filter(i => i.group === d.delsec).length;
+    if (!confirm(n ? `Delete the section "${g.title}" and its ${n} ${n === 1 ? "story" : "stories"}?` : `Delete the section "${g.title}"?`)) return;
+    groups = groups.filter(x => x.id !== d.delsec); items = items.filter(i => i.group !== d.delsec); openId = null;
+    markDirty(); keepScroll(() => {}); return;
+  }
   if (d.close) { openId = null; keepScroll(() => {}); return; }
   if (tx) { openId = openId === tx.dataset.open ? null : tx.dataset.open; keepScroll(() => {}); return; }
   if (d.add) {
@@ -656,6 +669,25 @@ function endDrag(e) {
 }
 app.addEventListener("pointerup", endDrag);
 app.addEventListener("pointercancel", endDrag);
+
+function addSection() {
+  const g = { id: "g" + Date.now(), title: "New section" }; groups.push(g); renaming = g.id; markDirty(); render();
+  const i = app.querySelector(".sname"); if (i) { i.scrollIntoView({ block: "center" }); i.focus(); i.select(); }
+}
+function commitRename(input, cancel) {
+  const g = groups.find(x => x.id === input.dataset.gid); renaming = null;
+  const v = input.value.trim();
+  if (!cancel && g && v && v !== g.title) { g.title = v; markDirty(); }
+  keepScroll(() => {});
+}
+app.addEventListener("keydown", e => {
+  if (!e.target.classList.contains("sname")) return;
+  if (e.key === "Enter") { e.preventDefault(); e.target.blur(); }
+  if (e.key === "Escape") { e.target.dataset.cancel = "1"; e.target.blur(); }
+});
+app.addEventListener("focusout", e => {
+  if (e.target.classList.contains("sname") && renaming) commitRename(e.target, e.target.dataset.cancel === "1");
+});
 
 /* ---------- drag to reorder sections ---------- */
 let sdrag = null;
@@ -733,6 +765,7 @@ async function signInFlow() {
   catch (e) { setStatus("Google sign-in failed: " + e.message, "err"); }
 }
 $("acct-btn").addEventListener("click", () => { if (GoogleDriveSync.isSignedIn() && allowed) saveToDrive(); else signInFlow(); });
+$("addSecBtn").addEventListener("click", addSection);
 $("importBtn").addEventListener("click", () => $("importFile").click());
 $("importFile").addEventListener("change", async e => {
   const file = e.target.files && e.target.files[0];
