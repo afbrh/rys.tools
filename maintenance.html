@@ -171,6 +171,10 @@ body.menu-open .side-menu { transform: none; visibility: visible; transition-del
   select.s-Done { background:#c9dfc4; border-color:#97bf8e; }
   .det { padding:4px 14px 14px 44px; display:grid; grid-template-columns:repeat(auto-fill,minmax(180px,1fr)); gap:10px; background:var(--bg); border-top:1px solid var(--line); }
   .det label { display:flex; flex-direction:column; gap:3px; font-size:11px; text-transform:uppercase; letter-spacing:.04em; color:var(--muted); }
+  .det .fld { display:flex; flex-direction:column; gap:3px; font-size:11px; text-transform:uppercase; letter-spacing:.04em; color:var(--muted); }
+  .seg { display:flex; } .seg button { flex:1; border-radius:0; padding:5px 8px; text-transform:none; letter-spacing:0; font-size:13px; }
+  .seg button:first-child { border-radius:8px 0 0 8px; } .seg button:last-child { border-radius:0 8px 8px 0; margin-left:-1px; }
+  .seg button.on { background:var(--accent); color:#000; border-color:var(--accent); font-weight:600; }
   .det label.wide { grid-column:1/-1; }
   .det input, .det textarea, .det select { width:100%; text-transform:none; letter-spacing:0; }
   .det textarea { min-height:60px; resize:vertical; }
@@ -508,7 +512,7 @@ async function mergeAndSave(toolData) {
 // The page holds no data of its own. Groups and stories come from the signed-in user's Drive file.
 const STATUSES = ["Backlog", "Planned", "Getting Bids", "In Progress", "Done"];
 const sKey = s => s.replace(/\s+/g, "");
-const PRIORITIES = ["", "High", "Med High", "Medium", "Low", "TBD"];
+const PRIORITIES = ["", "High", "Medium", "Low"], TYPES = ["Maintain", "Upgrade"];
 const WHO = ["", "Hire Contractor", "DIY"];
 let groups = [], items = [], filter = null, openId = null, renaming = null;
 let accountEmail = "", allowed = false, dirty = false;
@@ -576,7 +580,7 @@ function rowHtml(it) {
       ${f("room", "Room / area")}
       <label>Section<select data-f="group">${groups.map(g => `<option value="${g.id}" ${g.id === it.group ? "selected" : ""}>${esc(g.title)}</option>`).join("")}</select></label>
       <label>Priority<select data-f="priority">${optionList(PRIORITIES, it.priority)}</select></label>
-      ${f("type", "Maintain / upgrade")}
+      <div class="fld">Maintain / upgrade<div class="seg">${TYPES.map(v => `<button type="button" data-type="${v}" class="${it.type === v ? "on" : ""}">${v}</button>`).join("")}</div></div>
       <label>Estimated cost<input type="text" inputmode="decimal" data-f="cost" value="${it.cost || 0}"></label>
       ${f("timing", "Target timing")}
       ${f("dependency", "Dependency / timing note")}
@@ -626,6 +630,11 @@ app.addEventListener("click", e => {
     if (!confirm(n ? `Delete the section "${g.title}" and its ${n} ${n === 1 ? "story" : "stories"}?` : `Delete the section "${g.title}"?`)) return;
     groups = groups.filter(x => x.id !== d.delsec); items = items.filter(i => i.group !== d.delsec); openId = null;
     markDirty(); keepScroll(() => {}); return;
+  }
+  if (d.type) {
+    const row = e.target.closest(".it"), it = row && byId(row.dataset.id);
+    if (it) { it.type = it.type === d.type ? "" : d.type; markDirty(); keepScroll(() => {}); }
+    return;
   }
   if (d.close) { openId = null; keepScroll(() => {}); return; }
   if (tx) { openId = openId === tx.dataset.open ? null : tx.dataset.open; keepScroll(() => {}); return; }
@@ -735,7 +744,14 @@ app.addEventListener("pointercancel", endSDrag);
 function applyData(d) {
   if (!d || !Array.isArray(d.items) || !Array.isArray(d.groups)) throw new Error("That file isn't a valid data file.");
   groups = d.groups; items = d.items;
-  items.forEach(i => { if (!STATUSES.includes(i.status)) i.status = "Backlog"; });
+  items.forEach(i => {
+    if (!STATUSES.includes(i.status)) i.status = "Backlog";
+    // Older data had extra priorities and types; fold them into the current options.
+    if (i.priority === "Med High") i.priority = "High";
+    if (!PRIORITIES.includes(i.priority)) i.priority = "";
+    if (i.type === "Replace") i.type = "Maintain";
+    if (!TYPES.includes(i.type)) i.type = "";
+  });
   filter = null; openId = null;
 }
 const getData = () => ({ groups, items });
