@@ -1,0 +1,740 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Maintenance &amp; Upgrades Tracker</title>
+<style>
+  :root {
+    color-scheme:light;
+    --bg:#f4ecd8; --card:#fbf6e9; --ink:#3b3226; --muted:#85796a; --line:#e2d7bd;
+    --accent:#6b4f2a; --accent-soft:#ecdfc0; --neg:#a8402a; --hide:#efe5cb;
+  }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--bg); color:var(--ink);
+    font:16px/1.45 "Palatino Linotype",Palatino,"Iowan Old Style",Georgia,serif;
+    font-variant-numeric:lining-nums; }
+  header { position:sticky; top:0; z-index:5; background:var(--card); border-bottom:1px solid var(--line);
+    padding:8px 16px 10px; }
+  .wrap { max-width:960px; margin:0 auto; }
+  h1 { font-size:16px; margin:0 0 8px; font-weight:600; }
+  h1 span { color:var(--muted); font-weight:400; }
+  .stats { display:grid; grid-template-columns:auto repeat(4,minmax(0,1fr)); gap:4px 8px; align-items:center; }
+  .stats .col { font-size:10.5px; text-transform:uppercase; letter-spacing:.05em; color:var(--muted); padding:0 10px; white-space:nowrap; }
+  .stats .corner { font-size:12px; color:var(--muted); white-space:nowrap; padding-right:6px; }
+  .stats .corner b { color:var(--ink); font-weight:650; }
+  .stats .rl { font-size:12px; color:var(--muted); padding-right:6px; }
+  .stats .rl.main { color:var(--accent); font-weight:600; }
+  .stats .v { background:var(--bg); border-radius:8px; padding:4px 10px; font-size:17px; font-weight:650; white-space:nowrap; }
+  .stats .v.main { background:var(--accent-soft); color:var(--accent); }
+  .stats .v, .stats .corner b, .row .c, .sh .sub, .addform .amt { font-family:-apple-system,"SF Pro Display",BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif; font-variant-numeric:lining-nums tabular-nums; }
+  #acct-btn { max-width:46vw; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  @media (max-width:560px) {
+    #acct-btn { max-width:30vw; } h1 { font-size:15px; white-space:nowrap; } .titlebar h1 .sub2 { display:none; }
+    .acct { flex-wrap:nowrap; } .acct .st { font-size:11px; max-width:30vw; }
+    .stats { grid-template-columns:auto repeat(3,minmax(0,1fr)); gap:3px 5px; }
+    .stats .adn { display:none; }
+    .stats .col { padding:0 4px; font-size:9px; letter-spacing:.02em; }
+    .stats .v { font-size:14px; padding:3px 6px; } .stats .rl, .stats .corner { font-size:10px; padding-right:2px; }
+  }
+  .bar { display:flex; gap:8px; margin-bottom:12px; flex-wrap:wrap; align-items:center; }
+  button { font:inherit; font-size:13px; padding:6px 12px; border-radius:8px; cursor:pointer;
+    border:1px solid var(--line); background:var(--card); color:var(--ink); }
+  button:hover { border-color:var(--accent); }
+  .hint { color:var(--muted); font-size:12px; margin-left:auto; }
+  main { padding:16px; }
+  section { background:var(--card); border:1px solid var(--line); border-radius:12px; margin-bottom:14px; overflow:hidden; }
+  .sh { display:flex; align-items:center; gap:10px; padding:10px 14px; background:var(--bg);
+    border-bottom:1px solid var(--line); }
+  .sh h2 { margin:0; font-size:14px; font-weight:600; flex:1; }
+  .sh .sub { font-variant-numeric:tabular-nums; font-weight:600; }
+  .sh .sub small { color:var(--muted); font-weight:400; margin-left:6px; }
+  .sh button { padding:3px 9px; font-size:12px; }
+  .row { display:flex; gap:12px; align-items:flex-start; padding:9px 14px; border-bottom:1px solid var(--line);
+    cursor:pointer; }
+  .row:last-child { border-bottom:0; }
+  .row:hover { background:var(--bg); }
+  .row input { margin-top:3px; accent-color:var(--accent); width:16px; height:16px; flex:none; }
+  .row .t { flex:1; min-width:0; }
+  .row .n { font-weight:500; }
+  .row .d { color:var(--muted); font-size:13px; }
+  .row .c { font-variant-numeric:tabular-nums; font-weight:600; white-space:nowrap; }
+  .row .c.neg { color:var(--neg); }
+  .row.off { background:var(--hide); }
+  .row.off .n, .row.off .d, .row.off .c { text-decoration:line-through; opacity:.45; }
+  .row.custom .n, .row.custom .c, .row.custom .d { color:#c0261b; }
+  .row.custom .d { font-size:12px; font-style:italic; }
+  .row .x { background:none; border:0; color:#c0261b; font-size:18px; line-height:1; padding:0 4px; opacity:.6; }
+  .row .x:hover { opacity:1; }
+  .addbar { padding:8px 14px; border-top:1px solid var(--line); }
+  .plus { width:30px; height:30px; padding:0; border-radius:50%; font-size:20px; line-height:1;
+    color:#c0261b; border-color:#c0261b; background:transparent; }
+  .plus:hover { background:#c0261b; color:#fff; }
+  .addform { display:flex; gap:8px; flex-wrap:wrap; align-items:center; padding:10px 14px;
+    border-top:1px solid var(--line); background:var(--hide); }
+  .addform input[type=text] { font:inherit; font-size:14px; padding:6px 9px; border:1px solid #c0261b;
+    border-radius:8px; background:var(--card); color:var(--ink); }
+  .addform .ttl { flex:2 1 200px; } .addform .amt { flex:1 1 110px; }
+  .addform .ok { background:#c0261b; color:#fff; border-color:#c0261b; }
+  .row .nb { background:none; border:0; padding:0 4px; font-size:15px; color:var(--muted); opacity:.55; }
+  .row .nb:hover { opacity:1; color:#c0261b; }
+  .note-t { color:#c0261b; font-size:13px; margin-top:2px; white-space:pre-wrap; }
+  .noteform { display:flex; gap:6px; flex-wrap:wrap; margin-top:5px; }
+  .noteform input { flex:1 1 200px; font:inherit; font-size:13px; padding:4px 8px; border:1px solid #c0261b;
+    border-radius:6px; background:var(--card); color:#c0261b; }
+  .noteform button { padding:3px 10px; font-size:12px; }
+  .th { width:64px; height:64px; object-fit:contain; background:#fff; border:1px solid var(--line); border-radius:6px; flex:none; }
+  .row.off .th { opacity:.35; }
+  .cnt { font-size:12px; color:var(--muted); display:flex; gap:5px; align-items:center; cursor:pointer; }
+  .printonly { display:none; }
+  @media print {
+    @page { margin:14mm; }
+    * { -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+    body { background:#fff; }
+    header { position:static; border:0; padding:0 0 10px; }
+    .bar, .addbar, .addform, .sh button, .cnt, .row .x, .row .nb, .row input[type=checkbox], .hint { display:none !important; }
+    .printonly { display:block; color:var(--muted); font-size:12px; margin:0 0 8px; }
+    main { padding:0; }
+    section { break-inside:auto; }
+    .sh, .row { break-inside:avoid; }
+    .row { cursor:auto; }
+    .row:hover { background:transparent; }
+    .row.off { background:transparent; }
+    .note { padding:0; }
+  }
+/* ---------- slide-out menu ---------- */
+  .menu-btn { width: 34px; height: 34px; padding: 0; flex: none; display: inline-flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; border: 1px solid var(--line); border-radius: 8px; background: var(--card); cursor: pointer; }
+  .menu-btn:hover { border-color: var(--accent); background: var(--card); }
+.menu-btn span { display: block; width: 16px; height: 2px; border-radius: 1px; background: var(--ink); }
+.side-overlay { position: fixed; inset: 0; background: rgba(0, 0, 0, 0.35); opacity: 0; pointer-events: none; transition: opacity .25s ease; z-index: 200; }
+.side-menu { position: fixed; top: 0; left: 0; bottom: 0; width: 260px; max-width: 80vw; padding: 20px 14px; background: var(--card); border-right: 1px solid var(--line); transform: translateX(-100%); visibility: hidden; transition: transform .25s ease, visibility 0s linear .25s; z-index: 201; font-family: inherit; }
+body.menu-open .side-overlay { opacity: 1; pointer-events: auto; }
+body.menu-open .side-menu { transform: none; visibility: visible; transition-delay: 0s; }
+.side-title { font-size: 12px; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); margin: 0 8px 12px; }
+.side-link { display: block; padding: 11px 12px; border-radius: 8px; color: var(--ink); text-decoration: none; font-size: 16px; font-weight: 600; }
+.side-link:hover { background: var(--bg); }
+.side-link[aria-current="page"] { background: var(--hide); }
+@media print { .menu-btn, .side-menu, .side-overlay, .acct, .gate { display: none !important; } }
+  .titlebar { display:flex; align-items:center; gap:10px; margin-bottom:6px; }
+  .titlebar h1 { margin:0; }
+  [hidden] { display:none !important; }
+  .acct { margin-left:auto; display:flex; align-items:center; gap:10px; flex-wrap:wrap; justify-content:flex-end; }
+  .acct .st { font-size:12px; color:var(--muted); }
+  .acct .st.err { color:var(--neg); }
+  .acct .st.ok { color:var(--accent); }
+  .gate { background:var(--card); border:1px solid var(--line); border-radius:12px; padding:22px 18px; text-align:center; color:var(--muted); }
+  .gate p { margin:0 0 12px; }
+  .gate p:last-child { margin-bottom:0; }
+  .note { color:var(--muted); font-size:12px; padding:0 16px 24px; }
+  .titlebar h1 .sub2 { color:var(--muted); font-weight:400; }
+  .stats4 { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:4px 8px; }
+  .stats4 .col { font-size:10.5px; text-transform:uppercase; letter-spacing:.05em; color:var(--muted); padding:0 10px; white-space:nowrap; }
+  .stats4 .v { background:var(--bg); border-radius:8px; padding:4px 10px; font-size:17px; font-weight:650; white-space:nowrap;
+    font-family:-apple-system,"SF Pro Display",BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif; font-variant-numeric:lining-nums tabular-nums; }
+  .stats4 .v.main { background:var(--accent-soft); color:var(--accent); }
+  @media (max-width:560px) { .stats4 .col { padding:0 4px; font-size:9px; } .stats4 .v { font-size:14px; padding:3px 6px; } }
+  .chips { display:flex; gap:6px; flex-wrap:wrap; margin:0 0 12px; align-items:center; }
+  .chip { padding:4px 10px; font-size:12px; border-radius:999px; }
+  .chip.on { background:var(--accent); color:#fff; border-color:var(--accent); }
+  .chip b { font-weight:650; margin-left:4px; }
+  .sh .grip-note { color:var(--muted); font-size:12px; font-weight:400; }
+  .rows { min-height:8px; }
+  .it { border-bottom:1px solid var(--line); background:var(--card); }
+  .it:last-child { border-bottom:0; }
+  .it.dragging { background:var(--accent-soft); box-shadow:0 2px 10px rgba(0,0,0,.18); position:relative; z-index:2; }
+  .it.done .ti { text-decoration:line-through; opacity:.5; }
+  .ln { display:flex; gap:10px; align-items:center; padding:8px 12px; }
+  .grip { flex:none; width:22px; height:30px; display:flex; align-items:center; justify-content:center; color:var(--muted);
+    cursor:grab; touch-action:none; user-select:none; -webkit-user-select:none; font-size:16px; letter-spacing:-2px; }
+  .nodrag .grip { opacity:.25; cursor:not-allowed; }
+  .it .tx { flex:1; min-width:0; cursor:pointer; }
+  .it .ti { font-weight:500; }
+  .it .me { color:var(--muted); font-size:12.5px; }
+  .tag { display:inline-block; font-size:11px; padding:0 7px; border-radius:999px; border:1px solid var(--line); margin-right:4px; background:var(--bg); color:var(--ink); }
+  .tag.p-High { background:#f3d6cf; border-color:#e3b3a8; color:#7d2a18; }
+  .tag.p-MedHigh { background:#f6e3c6; border-color:#e6cc9d; color:#6c4a12; }
+  .it .co { font-weight:600; white-space:nowrap; font-family:-apple-system,"SF Pro Display",BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif; font-variant-numeric:lining-nums tabular-nums; }
+  select, .det input, .det textarea { font:inherit; font-size:13px; padding:5px 8px; border:1px solid var(--line); border-radius:8px; background:var(--card); color:var(--ink); }
+  select.stsel { font-weight:600; flex:none; }
+  select.s-Backlog { background:var(--bg); }
+  select.s-Planned { background:#e3ecf7; border-color:#b8cde6; }
+  select.s-GettingBids { background:#f6e3c6; border-color:#e6cc9d; }
+  select.s-InProgress { background:#e0e9cf; border-color:#b8ca95; }
+  select.s-Done { background:#c9dfc4; border-color:#97bf8e; }
+  .det { padding:4px 14px 14px 44px; display:grid; grid-template-columns:repeat(auto-fill,minmax(180px,1fr)); gap:10px; background:var(--bg); border-top:1px solid var(--line); }
+  .det label { display:flex; flex-direction:column; gap:3px; font-size:11px; text-transform:uppercase; letter-spacing:.04em; color:var(--muted); }
+  .det label.wide { grid-column:1/-1; }
+  .det input, .det textarea, .det select { width:100%; text-transform:none; letter-spacing:0; }
+  .det textarea { min-height:60px; resize:vertical; }
+  .det .acts { grid-column:1/-1; display:flex; justify-content:flex-end; }
+  .det .del { color:#c0261b; border-color:#c0261b; }
+  @media (max-width:560px) { .det { padding-left:14px; } .it .co { font-size:13px; margin-left:auto; } .ln { gap:6px 8px; padding:8px; flex-wrap:wrap; }
+    .it .tx { flex:1 1 calc(100% - 40px); } .it .grip { align-self:flex-start; }
+    .it .co { padding-left:30px; } .long-t { display:none; } }
+  .short-t { display:none; } @media (max-width:560px) { .short-t { display:inline; } }
+  .empty { padding:14px; color:var(--muted); font-size:13px; }
+  @media print { .grip, select.stsel, .chips { display:none !important; } }
+</style>
+<script src="https://accounts.google.com/gsi/client" async defer></script>
+</head>
+<body>
+<div class="side-overlay" id="side-overlay"></div>
+<nav class="side-menu" id="side-menu" aria-label="Tools">
+  <div class="side-title">Ry's Tools</div>
+  <a class="side-link" href="budget.html">Budget Planner</a>
+  <a class="side-link" href="mortgage.html">Mortgage Calculator</a>
+  <a class="side-link" href="homecost.html">Home Cost Explorer</a>
+  <a class="side-link" href="maintenance.html" aria-current="page">Maintenance &amp; Upgrades</a>
+</nav>
+<header><div class="wrap">
+  <div class="titlebar"><button type="button" class="menu-btn" id="menu-btn" aria-label="Open menu" aria-expanded="false" aria-controls="side-menu"><span></span><span></span><span></span></button><h1><span class="long-t">Maintenance &amp; Upgrades Tracker</span><span class="short-t">Maint. &amp; Upgrades</span></h1>
+    <div class="acct"><span class="st" id="save-status"></span><button type="button" id="acct-btn">Google Sign-In</button></div></div>
+  <div class="stats4" id="stats" hidden>
+    <div class="col">Total estimate</div><div class="col">Still to do</div><div class="col">Done</div><div class="col">Stories</div>
+    <div class="v" id="s-total"></div><div class="v main" id="s-open"></div><div class="v" id="s-done"></div><div class="v" id="s-count"></div>
+  </div>
+</div></header>
+<main>
+<div class="wrap chips" id="chips" hidden></div>
+<div class="wrap"><section class="gate" id="gate"></section></div><div class="wrap" id="app" hidden></div>
+<div class="wrap bar" id="bar" hidden><button id="importBtn" type="button">Import data</button><input type="file" id="importFile" accept="application/json,.json" hidden><span class="hint">Drag the ⋮⋮ handle to reorder or move a story to another section. Click a story to edit it. Click Save to store changes in your Google Drive.</span></div>
+</main>
+
+<script>
+(function () {
+/* ================= access list ================= */
+// SHA-256 of each approved account's lowercased email, so the addresses themselves aren't
+// printed in the page source. This only decides what the UI shows: the page contains no
+// data of its own, everything is read from the signed-in user's own Drive file.
+const ALLOWED_HASHES = ["7632439ab9eed19264bc3e1aa4ad1a2c4a0cfcbd0334a6a3d9d1ef5231bec8b7", "d86c22090aa6b4f235012ebb9376f1651f6e26bf33879165000a6075b661928b", "08d75589e1d251a55018e1f5c3e769f40720a44bef0dc28f689b5dbd067e26e5", "9aba2ffbc6f32a548f8b91fdab8e456cadb68b5a851aff20b5b8fb1d0ec122d5"];
+async function sha256Hex(s) {
+  const buf = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(s));
+  return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, "0")).join("");
+}
+async function isAllowedEmail(email) {
+  if (!email || !window.crypto || !crypto.subtle) return false;
+  return ALLOWED_HASHES.indexOf(await sha256Hex(email.trim().toLowerCase())) !== -1;
+}
+
+
+  const GoogleDriveSync = (function () {
+    // Client IDs are meant to be public (unlike API tokens) — the real gate is the
+    // Google sign-in + consent screen each user goes through, not a hidden secret.
+    const CLIENT_ID = '575902569700-4l05lkmf0kbrgq5kdr58canigcvafv3j.apps.googleusercontent.com';
+    // Only what this page needs: Drive (app-created files) for saving, and the account
+    // email shown on the Save button.
+    const SCOPE = 'https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/userinfo.email';
+    const FILE_NAME = 'munny-data.json';
+    const FILE_ID_KEY = 'munny_drive_file_id';
+    const TOKEN_KEY = 'munny_google_token';
+
+    let tokenClient = null;
+    let accessToken = null;
+    let refreshTimer = null;
+
+    function getCachedFileId() {
+      try { return localStorage.getItem(FILE_ID_KEY) || ''; } catch (e) { return ''; }
+    }
+    function setCachedFileId(id) {
+      try {
+        if (id) localStorage.setItem(FILE_ID_KEY, id);
+        else localStorage.removeItem(FILE_ID_KEY);
+      } catch (e) {}
+    }
+
+    // Re-arms itself every time a token is (re)persisted, a few minutes ahead of that
+    // token's real expiry, so an open tab silently refreshes itself via trySilentSignIn
+    // well before anything actually 401s — the "indefinite" feel comes from this timer,
+    // not just from restoreSession() at page load.
+    function scheduleProactiveRefresh(expiresInSeconds) {
+      if (refreshTimer) { clearTimeout(refreshTimer); refreshTimer = null; }
+      const bufferMs = 5 * 60 * 1000;
+      const delay = Math.max((expiresInSeconds || 3600) * 1000 - bufferMs, 30000);
+      refreshTimer = setTimeout(() => { trySilentSignIn(); }, delay);
+    }
+
+    function persistToken(token, expiresInSeconds) {
+      try {
+        localStorage.setItem(TOKEN_KEY, JSON.stringify({
+          access_token: token,
+          expires_at: Date.now() + (expiresInSeconds || 3600) * 1000
+        }));
+      } catch (e) {}
+      scheduleProactiveRefresh(expiresInSeconds);
+    }
+    function clearPersistedToken() {
+      try { localStorage.removeItem(TOKEN_KEY); } catch (e) {}
+    }
+    // Google's token client never restores a session on its own after a reload — a
+    // still-valid access token has to be saved and re-hydrated by hand. Once the real
+    // expiry passes (usually ~1hr), the next Drive request 401s and clears it — though
+    // in practice scheduleProactiveRefresh should silently renew it well before then.
+    function restoreSession() {
+      let stored;
+      try { stored = JSON.parse(localStorage.getItem(TOKEN_KEY) || 'null'); } catch (e) { stored = null; }
+      if (!stored || !stored.access_token || !stored.expires_at) return false;
+      if (Date.now() > stored.expires_at - 60000) { clearPersistedToken(); return false; }
+      accessToken = stored.access_token;
+      scheduleProactiveRefresh((stored.expires_at - Date.now()) / 1000);
+      return true;
+    }
+
+    function isSignedIn() {
+      return !!accessToken;
+    }
+
+    function signIn() {
+      return new Promise((resolve, reject) => {
+        if (!window.google || !google.accounts || !google.accounts.oauth2) {
+          reject(new Error('Google sign-in script hasn\'t loaded yet — try again in a moment.'));
+          return;
+        }
+        if (!tokenClient) {
+          tokenClient = google.accounts.oauth2.initTokenClient({
+            client_id: CLIENT_ID,
+            scope: SCOPE,
+            callback: () => {} // replaced per-request below
+          });
+        }
+        let settled = false;
+        // If the popup gets closed/dismissed without Google ever calling back
+        // (e.g. blocked, or the user closes it), don't hang forever.
+        const timer = setTimeout(() => {
+          if (settled) return;
+          settled = true;
+          reject(new Error('Sign-in timed out — the popup may have been closed or blocked. Try again.'));
+        }, 60000);
+        tokenClient.callback = (resp) => {
+          if (settled) return;
+          settled = true;
+          clearTimeout(timer);
+          if (resp.error) { reject(new Error(resp.error)); return; }
+          accessToken = resp.access_token;
+          persistToken(accessToken, resp.expires_in);
+          resolve(accessToken);
+        };
+        // prompt:'' asks Google to try a silent, invisible sign-in first — in Safari this
+        // seems to open the popup, fail to complete quietly, and close itself before you
+        // can interact with it. Forcing consent every time is a little more friction but
+        // actually shows the real interactive screen instead of a flash-and-close window.
+        // (trySilentSignIn below uses prompt:'' anyway, for the automatic — not clicked —
+        // reauth path, where there's no interactive screen to lose in the first place.)
+        tokenClient.requestAccessToken({ prompt: 'consent' });
+      });
+    }
+
+    // Like signIn(), but prompt:'' instead of prompt:'consent' — a silent, invisible
+    // reauth attempt that relies on the browser still having an active Google session
+    // plus this app's prior consent on file. Called automatically (not from a click), on
+    // page load when there's no valid cached session and proactively before the current
+    // one expires (see scheduleProactiveRefresh), so a browser that's still logged into
+    // Google never needs an explicit re-sign-in click, the same way Gmail itself doesn't.
+    // Resolves to false instead of rejecting on any failure (no existing Google session,
+    // consent revoked, popup blocked since this isn't a real click, timeout, script not
+    // loaded yet) — every one of those just means falling back to the ordinary "click
+    // Google Sign-In" experience, not a real error worth surfacing.
+    function trySilentSignIn() {
+      return new Promise((resolve) => {
+        if (!window.google || !google.accounts || !google.accounts.oauth2) { resolve(false); return; }
+        if (!tokenClient) {
+          tokenClient = google.accounts.oauth2.initTokenClient({
+            client_id: CLIENT_ID,
+            scope: SCOPE,
+            callback: () => {}
+          });
+        }
+        let settled = false;
+        const timer = setTimeout(() => {
+          if (settled) return;
+          settled = true;
+          resolve(false);
+        }, 8000);
+        tokenClient.callback = (resp) => {
+          if (settled) return;
+          settled = true;
+          clearTimeout(timer);
+          if (resp.error) { resolve(false); return; }
+          accessToken = resp.access_token;
+          persistToken(accessToken, resp.expires_in);
+          resolve(true);
+        };
+        try {
+          tokenClient.requestAccessToken({ prompt: '' });
+        } catch (e) {
+          settled = true;
+          clearTimeout(timer);
+          resolve(false);
+        }
+      });
+    }
+
+    async function api(url, options) {
+      if (!accessToken) throw new Error('not signed in');
+      const headers = Object.assign({ 'Authorization': 'Bearer ' + accessToken }, (options && options.headers) || {});
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), 15000);
+      let resp;
+      try {
+        resp = await fetch(url, Object.assign({ cache: 'no-store' }, options, { headers, signal: controller.signal }));
+      } catch (e) {
+        if (e.name === 'AbortError') throw new Error('Google Drive request timed out — check your connection and try again.');
+        throw new Error('Network error talking to Google Drive: ' + e.message);
+      } finally {
+        clearTimeout(timer);
+      }
+      if (resp.status === 401) { accessToken = null; clearPersistedToken(); } // expired/revoked — isSignedIn() will now correctly report false
+      return resp;
+    }
+
+    async function findFileId() {
+      const cached = getCachedFileId();
+      if (cached) return cached;
+      const q = encodeURIComponent("name='" + FILE_NAME + "' and trashed=false");
+      const resp = await api('https://www.googleapis.com/drive/v3/files?q=' + q + '&fields=files(id,name)&spaces=drive');
+      if (!resp.ok) throw new Error('HTTP ' + resp.status);
+      const json = await resp.json();
+      if (json.files && json.files.length) {
+        setCachedFileId(json.files[0].id);
+        return json.files[0].id;
+      }
+      return null;
+    }
+
+    async function createFile(dataObj) {
+      const metadata = { name: FILE_NAME, mimeType: 'application/json' };
+      const boundary = 'munnyboundary' + Date.now();
+      const body =
+        '--' + boundary + '\r\n' +
+        'Content-Type: application/json; charset=UTF-8\r\n\r\n' +
+        JSON.stringify(metadata) + '\r\n' +
+        '--' + boundary + '\r\n' +
+        'Content-Type: application/json\r\n\r\n' +
+        JSON.stringify(dataObj, null, 2) + '\r\n' +
+        '--' + boundary + '--';
+      const resp = await api('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id', {
+        method: 'POST',
+        headers: { 'Content-Type': 'multipart/related; boundary=' + boundary },
+        body
+      });
+      if (!resp.ok) throw new Error('HTTP ' + resp.status);
+      const json = await resp.json();
+      setCachedFileId(json.id);
+      return json.id;
+    }
+
+    async function load() {
+      if (!accessToken) return null;
+      const fileId = await findFileId();
+      if (!fileId) return null;
+      const resp = await api('https://www.googleapis.com/drive/v3/files/' + fileId + '?alt=media');
+      if (resp.status === 404) {
+        setCachedFileId('');
+        return null;
+      }
+      if (!resp.ok) throw new Error('HTTP ' + resp.status);
+      return resp.json();
+    }
+
+    async function save(dataObj) {
+      if (!accessToken) throw new Error('not signed in');
+      let fileId = getCachedFileId() || await findFileId();
+      if (!fileId) {
+        await createFile(dataObj);
+        return true;
+      }
+      const resp = await api('https://www.googleapis.com/upload/drive/v3/files/' + fileId + '?uploadType=media', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(dataObj, null, 2)
+      });
+      if (resp.status === 404) {
+        setCachedFileId('');
+        await createFile(dataObj);
+        return true;
+      }
+      if (!resp.ok) throw new Error('HTTP ' + resp.status);
+      return true;
+    }
+
+    async function getUserEmail() {
+      const resp = await api('https://www.googleapis.com/oauth2/v3/userinfo');
+      if (!resp.ok) throw new Error('HTTP ' + resp.status);
+      const json = await resp.json();
+      return json.email || '';
+    }
+
+    return { isSignedIn, signIn, trySilentSignIn, load, save, getUserEmail, restoreSession };
+  })();
+
+/* ================= shared Drive file ================= */
+// One Drive file holds every tool's data, each under tools[<name>]. Saving here only ever
+// replaces tools.maintenance and leaves the other tools' slices untouched.
+const CURRENT_TOOL = "maintenance";
+function withToolsWrapper(remote) {
+  if (!remote) return {};
+  if (remote.tools) return Object.assign({}, remote.tools);
+  return { budget: remote };
+}
+async function mergeAndSave(toolData) {
+  const remote = await GoogleDriveSync.load();
+  const tools = withToolsWrapper(remote);
+  tools[CURRENT_TOOL] = toolData;
+  await GoogleDriveSync.save({ tools: tools });
+}
+
+/* ================= page state ================= */
+// The page holds no data of its own. Groups and stories come from the signed-in user's Drive file.
+const STATUSES = ["Backlog", "Planned", "Getting Bids", "In Progress", "Done"];
+const sKey = s => s.replace(/\s+/g, "");
+const PRIORITIES = ["", "High", "Med High", "Medium", "Low", "TBD"];
+const WHO = ["", "Hire Contractor", "DIY"];
+let groups = [], items = [], filter = null, openId = null;
+let accountEmail = "", allowed = false, dirty = false;
+const $ = id => document.getElementById(id);
+const esc = t => String(t == null ? "" : t).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const fmt0 = n => (Math.round(n) < 0 ? "–" : "") + "$" + Math.abs(Math.round(n)).toLocaleString("en-US");
+
+function setStatus(text, cls) { const el = $("save-status"); el.textContent = text; el.className = "st" + (cls ? " " + cls : ""); }
+const markDirty = () => { dirty = true; setStatus("Unsaved changes", ""); };
+function updateButton() {
+  const btn = $("acct-btn");
+  if (!GoogleDriveSync.isSignedIn()) { btn.textContent = "Google Sign-In"; return; }
+  if (!allowed) { btn.textContent = "Switch account"; return; }
+  btn.textContent = accountEmail ? "Save to " + accountEmail : "Save to Google Drive";
+}
+function showGate(message, withImport) {
+  const gate = $("gate");
+  gate.innerHTML = "";
+  const p = document.createElement("p"); p.textContent = message; gate.appendChild(p);
+  if (withImport) {
+    const b = document.createElement("button"); b.type = "button"; b.textContent = "Choose data file…";
+    b.onclick = () => $("importFile").click();
+    gate.appendChild(b);
+  }
+  gate.hidden = false;
+  $("stats").hidden = true; $("chips").hidden = true; $("bar").hidden = true; $("app").hidden = true;
+}
+function showApp() {
+  $("gate").hidden = true;
+  $("stats").hidden = false; $("chips").hidden = false; $("bar").hidden = false; $("app").hidden = false;
+  render();
+}
+
+/* ---------- rendering ---------- */
+const app = $("app");
+function totals() {
+  let t = 0, d = 0;
+  items.forEach(i => { t += i.cost || 0; if (i.status === "Done") d += i.cost || 0; });
+  $("s-total").textContent = fmt0(t); $("s-open").textContent = fmt0(t - d); $("s-done").textContent = fmt0(d);
+  const done = items.filter(i => i.status === "Done").length;
+  $("s-count").textContent = done + " / " + items.length;
+}
+function renderChips() {
+  const box = $("chips");
+  const cnt = s => items.filter(i => i.status === s).length;
+  box.innerHTML = `<button type="button" class="chip ${filter ? "" : "on"}" data-f="">All<b>${items.length}</b></button>` +
+    STATUSES.map(s => `<button type="button" class="chip ${filter === s ? "on" : ""}" data-f="${s}">${s}<b>${cnt(s)}</b></button>`).join("");
+  box.classList.toggle("nodrag", !!filter);
+}
+function optionList(list, cur) {
+  const vals = list.includes(cur) || cur == null ? list : list.concat([cur]);
+  return vals.map(v => `<option ${v === (cur || "") ? "selected" : ""} value="${esc(v)}">${v === "" ? "—" : esc(v)}</option>`).join("");
+}
+function rowHtml(it) {
+  const tags = [
+    it.priority ? `<span class="tag p-${sKey(it.priority)}">${esc(it.priority)}</span>` : "",
+    it.type ? `<span class="tag">${esc(it.type)}</span>` : "",
+    it.who ? `<span class="tag">${esc(it.who)}</span>` : ""].join("");
+  const meta = [it.room, it.timing, it.dependency, it.lastInstalled ? "installed " + it.lastInstalled : ""].filter(Boolean).map(esc).join(" · ");
+  let detail = "";
+  if (openId === it.id) {
+    const f = (k, label, cls) => `<label class="${cls || ""}">${label}<input type="text" data-f="${k}" value="${esc(it[k])}"></label>`;
+    detail = `<div class="det">
+      <label class="wide">Description<input type="text" data-f="title" value="${esc(it.title)}"></label>
+      ${f("room", "Room / area")}
+      <label>Section<select data-f="group">${groups.map(g => `<option value="${g.id}" ${g.id === it.group ? "selected" : ""}>${esc(g.title)}</option>`).join("")}</select></label>
+      <label>Priority<select data-f="priority">${optionList(PRIORITIES, it.priority)}</select></label>
+      ${f("type", "Maintain / upgrade")}
+      <label>Estimated cost<input type="text" inputmode="decimal" data-f="cost" value="${it.cost || 0}"></label>
+      ${f("timing", "Target timing")}
+      ${f("dependency", "Dependency / timing note")}
+      ${f("duration", "Time to complete")}
+      <label>Contractor or DIY<select data-f="who">${optionList(WHO, it.who)}</select></label>
+      ${f("bids", "Contractors for bids")}
+      ${f("lastInstalled", "Last installed")}
+      <label class="wide">Notes<textarea data-f="notes">${esc(it.notes)}</textarea></label>
+      <div class="acts"><button type="button" class="del" data-del="${it.id}">Delete story</button></div></div>`;
+  }
+  return `<div class="it ${it.status === "Done" ? "done" : ""}" data-id="${it.id}">
+    <div class="ln"><span class="grip" title="Drag to move">⋮⋮</span>
+      <div class="tx" data-open="${it.id}"><div class="ti">${esc(it.title)}</div><div class="me">${tags}${meta}</div></div>
+      <span class="co">${fmt0(it.cost || 0)}</span>
+      <select class="stsel s-${sKey(it.status)}" data-status="${it.id}">${STATUSES.map(s => `<option ${s === it.status ? "selected" : ""}>${s}</option>`).join("")}</select></div>${detail}</div>`;
+}
+function render() {
+  totals(); renderChips();
+  app.classList.toggle("nodrag", !!filter);
+  app.innerHTML = groups.map(g => {
+    const all = items.filter(i => i.group === g.id), shown = filter ? all.filter(i => i.status === filter) : all;
+    const sum = all.reduce((a, i) => a + (i.cost || 0), 0);
+    return `<section data-group="${g.id}"><div class="sh"><h2>${esc(g.title)}</h2><span class="sub">${fmt0(sum)}<small>${all.length} ${all.length === 1 ? "story" : "stories"}</small></span>
+      <button type="button" data-add="${g.id}">+ Add</button></div>
+      <div class="rows">${shown.map(rowHtml).join("") || (filter ? '<div class="empty">Nothing here with this status.</div>' : "")}</div></section>`;
+  }).join("");
+}
+const keepScroll = fn => { const y = scrollY; fn(); render(); scrollTo(0, y); };
+
+/* ---------- editing ---------- */
+const byId = id => items.find(i => i.id === id);
+app.addEventListener("change", e => {
+  const el = e.target, row = el.closest(".it"); if (!row) return;
+  const it = byId(row.dataset.id); if (!it) return;
+  if (el.dataset.status) { it.status = el.value; markDirty(); keepScroll(() => {}); return; }
+  const k = el.dataset.f; if (!k) return;
+  if (k === "cost") { const n = parseFloat(String(el.value).replace(/[$,\s]/g, "")); it.cost = isNaN(n) ? 0 : n; }
+  else it[k] = el.value;
+  markDirty(); keepScroll(() => {});
+});
+app.addEventListener("click", e => {
+  const d = e.target.dataset;
+  if (d.open) { openId = openId === d.open ? null : d.open; keepScroll(() => {}); return; }
+  if (d.add) {
+    const it = { id: "u" + Date.now(), group: d.add, status: "Backlog", priority: "", lastInstalled: "", timing: "", dependency: "", type: "", room: "", title: "New story", cost: 0, duration: "", who: "", bids: "", notes: "" };
+    const last = items.map((x, i) => x.group === d.add ? i : -1).filter(i => i >= 0).pop();
+    items.splice(last === undefined ? items.length : last + 1, 0, it);
+    openId = it.id; markDirty(); keepScroll(() => {}); return;
+  }
+  if (d.del) {
+    if (!confirm("Delete this story?")) return;
+    items = items.filter(i => i.id !== d.del); openId = null; markDirty(); keepScroll(() => {});
+  }
+});
+$("chips").addEventListener("click", e => {
+  if (e.target.closest("[data-f]") === null) return;
+  filter = e.target.closest("[data-f]").dataset.f || null; render();
+});
+
+/* ---------- drag to reorder (pointer events, works with touch) ---------- */
+let drag = null;
+app.addEventListener("pointerdown", e => {
+  const grip = e.target.closest(".grip"); if (!grip || filter) return;
+  const row = grip.closest(".it"); if (!row) return;
+  e.preventDefault();
+  grip.setPointerCapture(e.pointerId);
+  drag = { row, grip, id: e.pointerId, y: e.clientY };
+  row.classList.add("dragging");
+});
+app.addEventListener("pointermove", e => {
+  if (!drag || e.pointerId !== drag.id) return;
+  drag.y = e.clientY;
+  if (e.clientY < 70) scrollBy(0, -14); else if (e.clientY > innerHeight - 70) scrollBy(0, 14);
+  const under = document.elementFromPoint(e.clientX, e.clientY);
+  if (!under) return;
+  const over = under.closest(".it"), rows = under.closest("section") && under.closest("section").querySelector(".rows");
+  if (over && over !== drag.row) {
+    const r = over.getBoundingClientRect();
+    over.parentNode.insertBefore(drag.row, e.clientY < r.top + r.height / 2 ? over : over.nextSibling);
+  } else if (!over && rows && !rows.contains(drag.row)) {
+    rows.appendChild(drag.row);
+  }
+});
+function endDrag(e) {
+  if (!drag || e.pointerId !== drag.id) return;
+  drag.row.classList.remove("dragging");
+  const order = [];
+  app.querySelectorAll("section").forEach(sec => sec.querySelectorAll(".it").forEach(r => {
+    const it = byId(r.dataset.id); if (it) { it.group = sec.dataset.group; order.push(it); }
+  }));
+  drag = null;
+  if (order.length === items.length) { items = order; markDirty(); }
+  keepScroll(() => {});
+}
+app.addEventListener("pointerup", endDrag);
+app.addEventListener("pointercancel", endDrag);
+
+/* ---------- data in / out ---------- */
+function applyData(d) {
+  if (!d || !Array.isArray(d.items) || !Array.isArray(d.groups)) throw new Error("That file isn't a valid data file.");
+  groups = d.groups; items = d.items;
+  items.forEach(i => { if (!STATUSES.includes(i.status)) i.status = "Backlog"; });
+  filter = null; openId = null;
+}
+const getData = () => ({ groups, items });
+
+async function afterSignIn() {
+  setStatus("", "");
+  try { accountEmail = (await GoogleDriveSync.getUserEmail()) || ""; } catch (e) { accountEmail = ""; }
+  allowed = await isAllowedEmail(accountEmail);
+  updateButton();
+  if (!allowed) {
+    groups = []; items = [];
+    showGate("This account doesn't have access to this tool. Use the menu to open the Budget Planner, or switch to an approved account.", false);
+    return;
+  }
+  const link = document.getElementById("side-maint-link"); if (link) link.hidden = false;
+  showGate("Loading your data from Google Drive…", false);
+  try {
+    const remote = await GoogleDriveSync.load();
+    const own = withToolsWrapper(remote)[CURRENT_TOOL];
+    if (own && Array.isArray(own.items)) { applyData(own); dirty = false; showApp(); }
+    else showGate("No data in your Google Drive yet. Choose your data file to load it, then click Save.", true);
+  } catch (e) { showGate("Couldn't load from Google Drive: " + e.message, false); }
+}
+async function saveToDrive() {
+  if (!items.length && !groups.length) { setStatus("Nothing to save yet. Import your data file first.", "err"); return; }
+  const btn = $("acct-btn"); btn.disabled = true;
+  setStatus("Saving…", "");
+  try {
+    await mergeAndSave(getData());
+    dirty = false; setStatus("Saved", "ok");
+    setTimeout(() => { if ($("save-status").textContent === "Saved") setStatus("", ""); }, 2500);
+  } catch (e) {
+    setStatus(GoogleDriveSync.isSignedIn() ? "Save failed: " + e.message : "Session expired. Click Google Sign-In, then Save again.", "err");
+    updateButton();
+  } finally { btn.disabled = false; }
+}
+async function signInFlow() {
+  setStatus("Signing in to Google…", "");
+  try { await GoogleDriveSync.signIn(); await afterSignIn(); }
+  catch (e) { setStatus("Google sign-in failed: " + e.message, "err"); }
+}
+$("acct-btn").addEventListener("click", () => { if (GoogleDriveSync.isSignedIn() && allowed) saveToDrive(); else signInFlow(); });
+$("importBtn").addEventListener("click", () => $("importFile").click());
+$("importFile").addEventListener("change", async e => {
+  const file = e.target.files && e.target.files[0];
+  e.target.value = "";
+  if (!file) return;
+  if (items.length && !confirm("Replace the current stories with this file?")) return;
+  try {
+    applyData(JSON.parse(await file.text()));
+    dirty = true; showApp();
+    setStatus("Loaded. Click Save to store it in your Google Drive.", "ok");
+  } catch (err) { setStatus("Import failed: " + err.message, "err"); }
+});
+window.addEventListener("beforeunload", e => { if (dirty) { e.preventDefault(); e.returnValue = ""; } });
+
+async function boot() {
+  showGate("Sign in with Google to open this tool.", false);
+  let ok = GoogleDriveSync.restoreSession();
+  if (!ok) ok = await GoogleDriveSync.trySilentSignIn();
+  updateButton();
+  if (ok) await afterSignIn();
+}
+window.addEventListener("load", boot);
+})();
+</script>
+<script>
+(function () {
+  var btn = document.getElementById('menu-btn'), body = document.body;
+  function setOpen(open) {
+    body.classList.toggle('menu-open', open);
+    btn.setAttribute('aria-expanded', open ? 'true' : 'false');
+    btn.setAttribute('aria-label', open ? 'Close menu' : 'Open menu');
+  }
+  btn.addEventListener('click', function () { setOpen(!body.classList.contains('menu-open')); });
+  document.getElementById('side-overlay').addEventListener('click', function () { setOpen(false); });
+  document.addEventListener('keydown', function (e) { if (e.key === 'Escape') setOpen(false); });
+})();
+</script>
+</body>
+</html>
