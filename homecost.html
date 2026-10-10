@@ -136,6 +136,7 @@ body.menu-open .side-menu { transform: none; visibility: visible; transition-del
   <a class="side-link" href="budget.html">Budget Planner</a>
   <a class="side-link" href="mortgage.html">Mortgage Calculator</a>
   <a class="side-link" href="homecost.html" aria-current="page">Home Cost Explorer</a>
+  <a class="side-link" href="maintenance.html" id="side-maint-link" hidden>Maintenance &amp; Upgrades</a>
 </nav>
 <header><div class="wrap">
   <div class="titlebar"><button type="button" class="menu-btn" id="menu-btn" aria-label="Open menu" aria-expanded="false" aria-controls="side-menu"><span></span><span></span><span></span></button><h1>Home Cost Explorer <span class="sub2">· Addendum options</span></h1>
@@ -641,6 +642,7 @@ async function afterSignIn() {
   } catch (e) { accountEmail = ""; }
   allowed = await isAllowedEmail(accountEmail);
   updateButton();
+  { const ml = $("side-maint-link"); if (ml) ml.hidden = !allowed; }
   if (!allowed) {
     source = null; DATA = [];
     showGate("This account doesn't have access to this tool. Use the menu to open the Budget Planner, or switch to an approved account.", false);
