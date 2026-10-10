@@ -578,7 +578,6 @@ function rowHtml(it) {
     detail = `<div class="det">
       <label class="wide">Description<input type="text" data-f="title" value="${esc(it.title)}"></label>
       ${f("room", "Room / area")}
-      <label>Section<select data-f="group">${groups.map(g => `<option value="${g.id}" ${g.id === it.group ? "selected" : ""}>${esc(g.title)}</option>`).join("")}</select></label>
       <label>Priority<select data-f="priority">${optionList(PRIORITIES, it.priority)}</select></label>
       <div class="fld">Maintain / upgrade<div class="seg">${TYPES.map(v => `<button type="button" data-type="${v}" class="${it.type === v ? "on" : ""}">${v}</button>`).join("")}</div></div>
       <label>Estimated cost<input type="text" inputmode="decimal" data-f="cost" value="${it.cost || 0}"></label>
