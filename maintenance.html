@@ -183,6 +183,19 @@ body.menu-open .side-menu { transform: none; visibility: visible; transition-del
   .short-t { display:none; } @media (max-width:560px) { .short-t { display:inline; } }
   .empty { padding:14px; color:var(--muted); font-size:13px; }
   @media print { .grip, select.stsel, .chips { display:none !important; } }
+  /* ---------- black theme ---------- */
+  :root { color-scheme:dark; --bg:#000; --card:#121212; --ink:#ecebe6; --muted:#9a948a; --line:#2c2c2c;
+    --accent:#d9b97a; --accent-soft:#2a2316; --hide:#1b1b1b; --neg:#e0705a; }
+  .chip.on { color:#000; }
+  .tag.p-High { background:#4a1f16; border-color:#7d3526; color:#f3c6bb; }
+  .tag.p-MedHigh { background:#43330f; border-color:#6e5420; color:#f1d9a3; }
+  select.s-Backlog { background:#1c1c1c; }
+  select.s-Planned { background:#16283d; border-color:#2e5079; }
+  select.s-GettingBids { background:#43330f; border-color:#6e5420; }
+  select.s-InProgress { background:#243319; border-color:#41602d; }
+  select.s-Done { background:#1b3a1b; border-color:#2f6a2f; }
+  .it.dragging, section.dragging { box-shadow:0 2px 12px rgba(255,255,255,.12); }
+  .side-overlay { background:rgba(0,0,0,.6); }
 </style>
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 </head>
