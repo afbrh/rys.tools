@@ -917,6 +917,7 @@ body.menu-open .side-menu { transform: none; visibility: visible; transition-del
   <a class="side-link" href="budget.html" aria-current="page">Budget Planner</a>
   <a class="side-link" href="mortgage.html">Mortgage Calculator</a>
   <a class="side-link" href="homecost.html" id="side-home-link" hidden>Home Cost Explorer</a>
+  <a class="side-link" href="maintenance.html" id="side-maint-link" hidden>Maintenance &amp; Upgrades</a>
 </nav>
 <script id="saved-data" type="application/json"></script>
 
@@ -2900,7 +2901,10 @@ body.menu-open .side-menu { transform: none; visibility: visible; transition-del
   }
   async function updateMenuAccess() {
     const link = document.getElementById('side-home-link');
-    if (link) link.hidden = !(GoogleDriveSync.isSignedIn() && await hasHomeAccess(accountEmail));
+    const ok = GoogleDriveSync.isSignedIn() && await hasHomeAccess(accountEmail);
+    if (link) link.hidden = !ok;
+    const ml = document.getElementById('side-maint-link');
+    if (ml) ml.hidden = !ok;
   }
 
   function updateAccountButton() {
