@@ -166,7 +166,8 @@ body.menu-open .side-menu { transform: none; visibility: visible; transition-del
   .det label.wide { grid-column:1/-1; }
   .det input, .det textarea, .det select { width:100%; text-transform:none; letter-spacing:0; }
   .det textarea { min-height:60px; resize:vertical; }
-  .det .acts { grid-column:1/-1; display:flex; justify-content:flex-end; }
+  .det .acts { grid-column:1/-1; display:flex; justify-content:flex-end; gap:8px; }
+  .chev { color:var(--muted); font-size:12px; margin-right:6px; }
   .det .del { color:#c0261b; border-color:#c0261b; }
   @media (max-width:560px) { .det { padding-left:14px; } .it .co { font-size:13px; margin-left:auto; } .ln { gap:6px 8px; padding:8px; flex-wrap:wrap; }
     .it .tx { flex:1 1 calc(100% - 40px); } .it .grip { align-self:flex-start; }
@@ -563,11 +564,11 @@ function rowHtml(it) {
       ${f("bids", "Contractors for bids")}
       ${f("lastInstalled", "Last installed")}
       <label class="wide">Notes<textarea data-f="notes">${esc(it.notes)}</textarea></label>
-      <div class="acts"><button type="button" class="del" data-del="${it.id}">Delete story</button></div></div>`;
+      <div class="acts"><button type="button" data-close="1">Close</button><button type="button" class="del" data-del="${it.id}">Delete story</button></div></div>`;
   }
   return `<div class="it ${it.status === "Done" ? "done" : ""}" data-id="${it.id}">
     <div class="ln"><span class="grip" title="Drag to move">⋮⋮</span>
-      <div class="tx" data-open="${it.id}"><div class="ti">${esc(it.title)}</div><div class="me">${tags}${meta}</div></div>
+      <div class="tx" data-open="${it.id}"><div class="ti"><span class="chev">${openId === it.id ? "▴" : "▾"}</span>${esc(it.title)}</div><div class="me">${tags}${meta}</div></div>
       <span class="co">${fmt0(it.cost || 0)}</span>
       <select class="stsel s-${sKey(it.status)}" data-status="${it.id}">${STATUSES.map(s => `<option ${s === it.status ? "selected" : ""}>${s}</option>`).join("")}</select></div>${detail}</div>`;
 }
@@ -596,8 +597,9 @@ app.addEventListener("change", e => {
   markDirty(); keepScroll(() => {});
 });
 app.addEventListener("click", e => {
-  const d = e.target.dataset;
-  if (d.open) { openId = openId === d.open ? null : d.open; keepScroll(() => {}); return; }
+  const d = e.target.dataset, tx = e.target.closest("[data-open]");
+  if (d.close) { openId = null; keepScroll(() => {}); return; }
+  if (tx) { openId = openId === tx.dataset.open ? null : tx.dataset.open; keepScroll(() => {}); return; }
   if (d.add) {
     const it = { id: "u" + Date.now(), group: d.add, status: "Backlog", priority: "", lastInstalled: "", timing: "", dependency: "", type: "", room: "", title: "New story", cost: 0, duration: "", who: "", bids: "", notes: "" };
     const last = items.map((x, i) => x.group === d.add ? i : -1).filter(i => i >= 0).pop();
