@@ -155,7 +155,6 @@ body.menu-open .side-menu { transform: none; visibility: visible; transition-del
   .ln { display:flex; gap:10px; align-items:center; padding:8px 12px; }
   .grip { flex:none; width:22px; height:30px; display:flex; align-items:center; justify-content:center; color:var(--muted);
     cursor:grab; touch-action:none; user-select:none; -webkit-user-select:none; font-size:16px; letter-spacing:-2px; }
-  .nodrag .grip { opacity:.25; cursor:not-allowed; }
   .it .tx { flex:1; min-width:0; cursor:pointer; }
   .it .ti { font-weight:500; }
   .it .me { color:var(--muted); font-size:12.5px; }
@@ -502,7 +501,8 @@ const STATUSES = ["Backlog", "Planned", "Getting Bids", "In Progress", "Done"];
 const sKey = s => s.replace(/\s+/g, "");
 const PRIORITIES = ["", "High", "Medium", "Low"], TYPES = ["Maintain", "Upgrade"];
 const WHO = ["", "Hire Contractor", "DIY"];
-let groups = [], items = [], filter = null, openId = null, renaming = null;
+let groups = [], items = [], filter = "Open", openId = null, renaming = null;
+const inFilter = i => filter === "Done" ? i.status === "Done" : i.status !== "Done";
 let accountEmail = "", allowed = false, dirty = false;
 const $ = id => document.getElementById(id);
 const esc = t => String(t == null ? "" : t).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
@@ -545,10 +545,9 @@ function totals() {
 }
 function renderChips() {
   const box = $("chips");
-  const cnt = s => items.filter(i => i.status === s).length;
-  box.innerHTML = `<button type="button" class="chip ${filter ? "" : "on"}" data-f="">All<b>${items.length}</b></button>` +
-    STATUSES.map(s => `<button type="button" class="chip ${filter === s ? "on" : ""}" data-f="${s}">${s}<b>${cnt(s)}</b></button>`).join("");
-  box.classList.toggle("nodrag", !!filter);
+  const nDone = items.filter(i => i.status === "Done").length;
+  box.innerHTML = [["Open", items.length - nDone], ["Done", nDone]].map(([s, n]) =>
+    `<button type="button" class="chip ${filter === s ? "on" : ""}" data-f="${s}">${s}<b>${n}</b></button>`).join("");
 }
 function optionList(list, cur) {
   const vals = list.includes(cur) || cur == null ? list : list.concat([cur]);
@@ -586,13 +585,12 @@ function rowHtml(it) {
 }
 function render() {
   totals(); renderChips();
-  app.classList.toggle("nodrag", !!filter);
   app.innerHTML = groups.map(g => {
-    const all = items.filter(i => i.group === g.id), shown = filter ? all.filter(i => i.status === filter) : all;
+    const all = items.filter(i => i.group === g.id), shown = all.filter(inFilter);
     const sum = all.reduce((a, i) => a + (i.cost || 0), 0);
     return `<section data-group="${g.id}"><div class="sh"><span class="grip sgrip" title="Drag to reorder sections">⋮⋮</span>${renaming === g.id ? `<input type="text" class="sname" data-gid="${g.id}" value="${esc(g.title)}" maxlength="60">` : `<h2 data-rename="${g.id}" title="Click to rename">${esc(g.title)}</h2>`}<span class="sub">${fmt0(sum)}<small>${all.length} ${all.length === 1 ? "story" : "stories"}</small></span>
       <button type="button" data-rename="${g.id}" title="Rename section">✎</button><button type="button" data-add="${g.id}">+ Add</button><button type="button" class="xs" data-delsec="${g.id}" title="Delete section">×</button></div>
-      <div class="rows">${shown.map(rowHtml).join("") || (filter ? '<div class="empty">Nothing here with this status.</div>' : "")}</div></section>`;
+      <div class="rows">${shown.map(rowHtml).join("") || '<div class="empty">Nothing here.</div>'}</div></section>`;
   }).join("");
 }
 const keepScroll = fn => { const y = scrollY; fn(); render(); scrollTo(0, y); };
@@ -638,13 +636,13 @@ app.addEventListener("click", e => {
 });
 $("chips").addEventListener("click", e => {
   if (e.target.closest("[data-f]") === null) return;
-  filter = e.target.closest("[data-f]").dataset.f || null; render();
+  filter = e.target.closest("[data-f]").dataset.f; render();
 });
 
 /* ---------- drag to reorder (pointer events, works with touch) ---------- */
 let drag = null;
 app.addEventListener("pointerdown", e => {
-  const grip = e.target.closest(".grip"); if (!grip || filter) return;
+  const grip = e.target.closest(".grip"); if (!grip) return;
   const row = grip.closest(".it"); if (!row) return;
   e.preventDefault();
   grip.setPointerCapture(e.pointerId);
@@ -673,7 +671,11 @@ function endDrag(e) {
     const it = byId(r.dataset.id); if (it) { it.group = sec.dataset.group; order.push(it); }
   }));
   drag = null;
-  if (order.length === items.length) { items = order; markDirty(); }
+  // Stories hidden by the filter keep their slots; the visible ones are placed in the new order.
+  const vis = new Set(order);
+  if (order.length === items.filter(inFilter).length) {
+    let k = 0; items = items.map(i => vis.has(i) ? order[k++] : i); markDirty();
+  }
   keepScroll(() => {});
 }
 app.addEventListener("pointerup", endDrag);
@@ -739,7 +741,7 @@ function applyData(d) {
     if (i.type === "Replace") i.type = "Maintain";
     if (!TYPES.includes(i.type)) i.type = "";
   });
-  filter = null; openId = null;
+  filter = "Open"; openId = null;
 }
 const getData = () => ({ groups, items });
 
