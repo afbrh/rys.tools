@@ -162,6 +162,7 @@ body.menu-open .side-menu { transform: none; visibility: visible; transition-del
   select.s-Backlog { background:var(--bg); }
   select.s-Planned { background:#e3ecf7; border-color:#b8cde6; }
   select.s-GettingBids { background:#f6e3c6; border-color:#e6cc9d; }
+  select.s-Whenitbreaks { background:#e6dff0; border-color:#c9bbdc; }
   select.s-InProgress { background:#e0e9cf; border-color:#b8ca95; }
   select.s-Done { background:#c9dfc4; border-color:#97bf8e; }
   .det { padding:4px 14px 14px 44px; display:grid; grid-template-columns:repeat(auto-fill,minmax(180px,1fr)); gap:10px; background:var(--bg); border-top:1px solid var(--line); }
@@ -492,9 +493,9 @@ async function mergeAndSave(toolData) {
 
 /* ================= page state ================= */
 // The page holds no data of its own. Groups and stories come from the signed-in user's Drive file.
-const STATUSES = ["Backlog", "Planned", "In Progress", "Done"];
+const STATUSES = ["Backlog", "Planned", "In Progress", "When it breaks", "Done"];
 // Sections are fixed and always shown in this order.
-const SECTION_ORDER = ["In Progress", "Planned", "Backlog", "Done"];
+const SECTION_ORDER = ["In Progress", "Planned", "Backlog", "When it breaks", "Done"];
 const sKey = s => s.replace(/\s+/g, "");
 const PRIORITIES = ["", "High", "Medium", "Low"], TYPES = ["Maintain", "Upgrade"];
 const WHO = ["", "Hire Contractor", "DIY"];
@@ -684,6 +685,8 @@ function applyData(d) {
     }
     if (i.status === "Getting Bids") i.status = "Planned";
     if (!STATUSES.includes(i.status)) i.status = "Backlog";
+    // One-time (data version 2): the old Contingency items (furnace on down) wait for "When it breaks".
+    if (!(d.v >= 2) && /^Contingency/.test(i.origin || "") && i.status === "Backlog") i.status = "When it breaks";
     i.group = i.status;
     // Older data had extra priorities and types; fold them into the current options.
     if (i.priority === "Med High") i.priority = "High";
@@ -694,7 +697,7 @@ function applyData(d) {
   groups = SECTION_ORDER.map(id => ({ id, title: id }));
   filter = "Open"; openId = null;
 }
-const getData = () => ({ groups, items });
+const getData = () => ({ v: 2, groups, items });
 
 async function afterSignIn() {
   setStatus("", "");
