@@ -151,7 +151,8 @@ body.menu-open .side-menu { transform: none; visibility: visible; transition-del
   .grip { flex:none; width:22px; height:30px; display:flex; align-items:center; justify-content:center; color:var(--muted);
     cursor:grab; touch-action:none; user-select:none; -webkit-user-select:none; font-size:16px; letter-spacing:-2px; }
   .it .tx { flex:1; min-width:0; cursor:pointer; }
-  .it .ln { user-select:none; -webkit-user-select:none; }
+  .it .ln { user-select:none; -webkit-user-select:none; -webkit-touch-callout:none; -webkit-tap-highlight-color:transparent; }
+  body.is-dragging, body.is-dragging * { user-select:none !important; -webkit-user-select:none !important; cursor:grabbing !important; }
   .it .ti { font-weight:500; }
   .it .me { color:var(--muted); font-size:12.5px; margin-left:6px; }
   .tag { display:inline-block; font-size:11px; padding:0 7px; border-radius:999px; border:1px solid var(--line); margin-right:4px; background:var(--bg); color:var(--ink); }
@@ -629,31 +630,46 @@ $("chips").addEventListener("click", e => {
 });
 
 /* ---------- drag to reorder (pointer events, works with touch) ---------- */
-let drag = null, pending = null, justDragged = false;
-// Mouse and pen can also drag from any blank part of a story's line; touch keeps the ⋮⋮ handle so the list still scrolls.
+let drag = null, pending = null, justDragged = false, lastPointerType = "mouse";
+const HOLD_MS = 320, MOVE_PX = 6;
+// A story can be dragged from any blank part of its line. A mouse drags once it moves a few pixels; a finger
+// holds for a moment first (moving sooner just scrolls the list), and then the drag takes over from scrolling.
+function clearSelection() { try { const s = getSelection(); if (s) s.removeAllRanges(); } catch (err) {} }
+function startDrag(p, y) {
+  clearTimeout(p.timer); pending = null;
+  try { p.ln.setPointerCapture(p.id); } catch (err) {}
+  drag = { row: p.row, grip: p.ln, id: p.id, y };
+  p.row.classList.add("dragging"); document.body.classList.add("is-dragging"); clearSelection();
+  if (p.touch && navigator.vibrate) navigator.vibrate(12);
+}
 app.addEventListener("pointerdown", e => {
-  if (e.pointerType === "touch" || e.button > 0 || e.target.closest(".grip, button, select, input, textarea, a")) return;
+  lastPointerType = e.pointerType;
+  if (e.button > 0 || e.target.closest(".grip, button, select, input, textarea, a")) return;
   const ln = e.target.closest(".ln"); if (!ln) return;
-  pending = { ln, row: ln.closest(".it"), id: e.pointerId, x: e.clientX, y: e.clientY };
+  const p = { ln, row: ln.closest(".it"), id: e.pointerId, x: e.clientX, y: e.clientY, touch: e.pointerType === "touch" };
+  if (p.touch) p.timer = setTimeout(() => { if (pending === p) startDrag(p, p.y); }, HOLD_MS);
+  pending = p;
 });
 app.addEventListener("pointermove", e => {
   if (!pending || drag || e.pointerId !== pending.id) return;
-  if (Math.hypot(e.clientX - pending.x, e.clientY - pending.y) < 6) return;
-  const { ln, row } = pending; pending = null;
-  try { ln.setPointerCapture(e.pointerId); } catch (err) {}
-  drag = { row, grip: ln, id: e.pointerId, y: e.clientY };
-  row.classList.add("dragging");
+  const moved = Math.hypot(e.clientX - pending.x, e.clientY - pending.y);
+  if (pending.touch) { if (moved > 8) { clearTimeout(pending.timer); pending = null; } return; }
+  if (moved >= MOVE_PX) startDrag(pending, e.clientY);
 });
-const clearPending = () => { pending = null; };
+const clearPending = () => { if (pending) clearTimeout(pending.timer); pending = null; };
 app.addEventListener("pointerup", clearPending);
 app.addEventListener("pointercancel", clearPending);
+// While a story is being dragged by finger the page must not scroll, and a long press must not open a menu.
+app.addEventListener("touchmove", e => { if (drag) e.preventDefault(); }, { passive: false });
+app.addEventListener("contextmenu", e => { if (lastPointerType === "touch" && e.target.closest(".ln")) e.preventDefault(); });
+app.addEventListener("selectstart", e => { if (drag || pending) e.preventDefault(); });
 app.addEventListener("pointerdown", e => {
   const grip = e.target.closest(".grip"); if (!grip) return;
   const row = grip.closest(".it"); if (!row) return;
   e.preventDefault();
   grip.setPointerCapture(e.pointerId);
   drag = { row, grip, id: e.pointerId, y: e.clientY };
-  row.classList.add("dragging");
+  row.classList.add("dragging"); document.body.classList.add("is-dragging"); clearSelection();
 });
 app.addEventListener("pointermove", e => {
   if (!drag || e.pointerId !== drag.id) return;
@@ -671,7 +687,7 @@ app.addEventListener("pointermove", e => {
 });
 function endDrag(e) {
   if (!drag || e.pointerId !== drag.id) return;
-  drag.row.classList.remove("dragging");
+  drag.row.classList.remove("dragging"); document.body.classList.remove("is-dragging");
   const order = [];
   app.querySelectorAll("section").forEach(sec => sec.querySelectorAll(".it").forEach(r => {
     const it = byId(r.dataset.id); if (it) { it.group = it.status = sec.dataset.group; order.push(it); }
