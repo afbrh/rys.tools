@@ -157,7 +157,7 @@ body.menu-open .side-menu { transform: none; visibility: visible; transition-del
     cursor:grab; touch-action:none; user-select:none; -webkit-user-select:none; font-size:16px; letter-spacing:-2px; }
   .it .tx { flex:1; min-width:0; cursor:pointer; }
   .it .ti { font-weight:500; }
-  .it .me { color:var(--muted); font-size:12.5px; }
+  .it .me { color:var(--muted); font-size:12.5px; margin-left:6px; }
   .tag { display:inline-block; font-size:11px; padding:0 7px; border-radius:999px; border:1px solid var(--line); margin-right:4px; background:var(--bg); color:var(--ink); }
   .tag.p-High { background:#f3d6cf; border-color:#e3b3a8; color:#7d2a18; }
   .tag.p-MedHigh { background:#f6e3c6; border-color:#e6cc9d; color:#6c4a12; }
@@ -556,7 +556,6 @@ function optionList(list, cur) {
 function rowHtml(it) {
   const tags = [
     it.priority ? `<span class="tag p-${sKey(it.priority)}">${esc(it.priority)}</span>` : "",
-    it.type ? `<span class="tag">${esc(it.type)}</span>` : "",
     it.who ? `<span class="tag">${esc(it.who)}</span>` : ""].join("");
   const meta = [it.room, it.timing, it.dependency, it.lastInstalled ? "installed " + it.lastInstalled : ""].filter(Boolean).map(esc).join(" · ");
   let detail = "";
@@ -579,7 +578,7 @@ function rowHtml(it) {
   }
   return `<div class="it ${it.status === "Done" ? "done" : ""}" data-id="${it.id}">
     <div class="ln"><span class="grip" title="Drag to move">⋮⋮</span>
-      <div class="tx" data-open="${it.id}"><div class="ti"><span class="chev">${openId === it.id ? "▴" : "▾"}</span>${esc(it.title)}</div><div class="me">${tags}${meta}</div></div>
+      <div class="tx" data-open="${it.id}"><span class="ti"><span class="chev">${openId === it.id ? "▴" : "▾"}</span>${esc(it.title)}</span> <span class="me">${tags}${meta}</span></div>
       <span class="co">${fmt0(it.cost || 0)}</span>
       <select class="stsel s-${sKey(it.status)}" data-status="${it.id}">${STATUSES.map(s => `<option ${s === it.status ? "selected" : ""}>${s}</option>`).join("")}</select></div>${detail}</div>`;
 }
