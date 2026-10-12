@@ -140,8 +140,6 @@ body.menu-open .side-menu { transform: none; visibility: visible; transition-del
   .chip b { font-weight:650; margin-left:4px; }
   .sh .grip-note { color:var(--muted); font-size:12px; font-weight:400; }
   .rows { min-height:8px; }
-  .sdragging .rows { display:none; }
-  section.dragging { box-shadow:0 2px 12px rgba(0,0,0,.22); background:var(--accent-soft); }
   .sh .sgrip { height:24px; }
   .sh button { white-space:nowrap; }
   @media (max-width:560px) { .sh { gap:6px; padding:8px 10px; } .sh .sub small { display:none; } .sh h2 { min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; } }
@@ -207,7 +205,7 @@ body.menu-open .side-menu { transform: none; visibility: visible; transition-del
 <main>
 <div class="wrap chips" id="chips" hidden></div>
 <div class="wrap"><section class="gate" id="gate"></section></div><div class="wrap" id="app" hidden></div>
-<div class="wrap bar" id="bar" hidden><button id="importBtn" type="button">Import data</button><input type="file" id="importFile" accept="application/json,.json" hidden><span class="hint">Drag a story's ⋮⋮ handle to reorder it or move it to another status section (or change its status in the dropdown), or a section's handle to reorder the sections. Click a story to edit it. Click Save to store changes in your Google Drive.</span></div>
+<div class="wrap bar" id="bar" hidden><button id="importBtn" type="button">Import data</button><input type="file" id="importFile" accept="application/json,.json" hidden><span class="hint">Drag a story's ⋮⋮ handle to reorder it or move it to another status section (or change its status in the dropdown). Click a story to edit it. Click Save to store changes in your Google Drive.</span></div>
 </main>
 
 <script>
@@ -495,6 +493,8 @@ async function mergeAndSave(toolData) {
 /* ================= page state ================= */
 // The page holds no data of its own. Groups and stories come from the signed-in user's Drive file.
 const STATUSES = ["Backlog", "Planned", "In Progress", "Done"];
+// Sections are fixed and always shown in this order.
+const SECTION_ORDER = ["In Progress", "Planned", "Backlog", "Done"];
 const sKey = s => s.replace(/\s+/g, "");
 const PRIORITIES = ["", "High", "Medium", "Low"], TYPES = ["Maintain", "Upgrade"];
 const WHO = ["", "Hire Contractor", "DIY"];
@@ -584,7 +584,7 @@ function render() {
   app.innerHTML = groups.filter(g => inFilter({ status: g.id })).map(g => {
     const all = items.filter(i => i.group === g.id), shown = all.filter(inFilter);
     const sum = all.reduce((a, i) => a + (i.cost || 0), 0);
-    return `<section data-group="${g.id}"><div class="sh"><span class="grip sgrip" title="Drag to reorder sections">⋮⋮</span><h2>${esc(g.title)}</h2><span class="sub">${fmt0(sum)}<small>${all.length} ${all.length === 1 ? "story" : "stories"}</small></span>
+    return `<section data-group="${g.id}"><div class="sh"><h2>${esc(g.title)}</h2><span class="sub">${fmt0(sum)}<small>${all.length} ${all.length === 1 ? "story" : "stories"}</small></span>
       <button type="button" data-add="${g.id}">+ Add</button></div>
       <div class="rows">${shown.map(rowHtml).join("") || '<div class="empty">Nothing here.</div>'}</div></section>`;
   }).join("");
@@ -669,35 +669,6 @@ function endDrag(e) {
 app.addEventListener("pointerup", endDrag);
 app.addEventListener("pointercancel", endDrag);
 
-/* ---------- drag to reorder sections ---------- */
-let sdrag = null;
-app.addEventListener("pointerdown", e => {
-  const grip = e.target.closest(".sgrip"); if (!grip) return;
-  const sec = grip.closest("section"); if (!sec) return;
-  e.preventDefault();
-  grip.setPointerCapture(e.pointerId);
-  sdrag = { sec, id: e.pointerId };
-  sec.classList.add("dragging"); app.classList.add("sdragging");
-});
-app.addEventListener("pointermove", e => {
-  if (!sdrag || e.pointerId !== sdrag.id) return;
-  if (e.clientY < 70) scrollBy(0, -14); else if (e.clientY > innerHeight - 70) scrollBy(0, 14);
-  const under = document.elementFromPoint(e.clientX, e.clientY), over = under && under.closest("section");
-  if (over && over !== sdrag.sec && over.parentNode === app) {
-    const r = over.getBoundingClientRect();
-    app.insertBefore(sdrag.sec, e.clientY < r.top + r.height / 2 ? over : over.nextSibling);
-  }
-});
-function endSDrag(e) {
-  if (!sdrag || e.pointerId !== sdrag.id) return;
-  const order = [...app.querySelectorAll("section")].map(s => groups.find(g => g.id === s.dataset.group)).filter(Boolean);
-  sdrag = null; app.classList.remove("sdragging");
-  if (order.length === groups.length) { groups = order; markDirty(); }
-  keepScroll(() => {});
-}
-app.addEventListener("pointerup", endSDrag);
-app.addEventListener("pointercancel", endSDrag);
-
 /* ---------- data in / out ---------- */
 function applyData(d) {
   if (!d || !Array.isArray(d.items) || !Array.isArray(d.groups)) throw new Error("That file isn't a valid data file.");
@@ -720,9 +691,7 @@ function applyData(d) {
     if (i.type === "Replace") i.type = "Maintain";
     if (!TYPES.includes(i.type)) i.type = "";
   });
-  const keep = d.groups.filter(g => STATUSES.includes(g.id)).map(g => g.id);
-  const order = keep.length === STATUSES.length ? keep : STATUSES;
-  groups = order.map(id => ({ id, title: id }));
+  groups = SECTION_ORDER.map(id => ({ id, title: id }));
   filter = "Open"; openId = null;
 }
 const getData = () => ({ groups, items });
