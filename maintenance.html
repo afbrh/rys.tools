@@ -141,6 +141,10 @@ body.menu-open .side-menu { transform: none; visibility: visible; transition-del
   @media (max-width:560px) { .sh { gap:6px; padding:8px 10px; } .sh .sub small { display:none; } .sh h2 { min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; } }
   .it { border-bottom:1px solid var(--line); background:var(--card); }
   .it:last-child { border-bottom:0; }
+  /* A story is tinted by the status of the section it is in. */
+  .it.st-InProgress { background:#e0e9cf; }
+  .it.st-Planned { background:#e3ecf7; }
+  .it.st-Whenitbreaks { background:#e6dff0; }
   .it.dragging { background:var(--accent-soft); box-shadow:0 2px 10px rgba(0,0,0,.18); position:relative; z-index:2; }
   .it.done .ti { text-decoration:line-through; opacity:.5; }
   .ln { display:flex; gap:10px; align-items:center; padding:8px 12px; }
@@ -569,11 +573,10 @@ function rowHtml(it) {
       <label class="wide">Notes<textarea data-f="notes">${esc(it.notes)}</textarea></label>
       <div class="acts"><button type="button" data-close="1">Close</button><button type="button" class="del" data-del="${it.id}">Delete story</button></div></div>`;
   }
-  return `<div class="it ${it.status === "Done" ? "done" : ""}" data-id="${it.id}">
+  return `<div class="it st-${sKey(it.status)} ${it.status === "Done" ? "done" : ""}" data-id="${it.id}">
     <div class="ln"><span class="grip" title="Drag to move">⋮⋮</span>
       <div class="tx" data-open="${it.id}"><span class="ti"><span class="chev">${openId === it.id ? "▴" : "▾"}</span>${esc(it.title)}</span> <span class="me">${tags}${meta}</span></div>
-      <span class="co">${fmt0(it.cost || 0)}</span>
-      <select class="stsel s-${sKey(it.status)}" data-status="${it.id}">${STATUSES.map(s => `<option ${s === it.status ? "selected" : ""}>${s}</option>`).join("")}</select></div>${detail}</div>`;
+      <span class="co">${fmt0(it.cost || 0)}</span></div>${detail}</div>`;
 }
 function render() {
   renderChips();
