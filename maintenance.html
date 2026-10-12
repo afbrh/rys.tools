@@ -128,18 +128,14 @@ body.menu-open .side-menu { transform: none; visibility: visible; transition-del
   .gate p:last-child { margin-bottom:0; }
   .note { color:var(--muted); font-size:12px; padding:0 16px 24px; }
   .titlebar h1 .sub2 { color:var(--muted); font-weight:400; }
-  .stats4 { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:4px 8px; }
-  .stats4 .col { font-size:10.5px; text-transform:uppercase; letter-spacing:.05em; color:var(--muted); padding:0 10px; white-space:nowrap; }
-  .stats4 .v { background:var(--bg); border-radius:8px; padding:4px 10px; font-size:17px; font-weight:650; white-space:nowrap;
-    font-family:-apple-system,"SF Pro Display",BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif; font-variant-numeric:lining-nums tabular-nums; }
-  .stats4 .v.main { background:var(--accent-soft); color:var(--accent); }
-  @media (max-width:560px) { .stats4 .col { padding:0 4px; font-size:9px; } .stats4 .v { font-size:14px; padding:3px 6px; } }
   .chips { display:flex; gap:6px; flex-wrap:wrap; margin:0 0 12px; align-items:center; }
   .chip { padding:4px 10px; font-size:12px; border-radius:999px; }
   .chip.on { background:var(--accent); color:#fff; border-color:var(--accent); }
   .chip b { font-weight:650; margin-left:4px; }
   .sh .grip-note { color:var(--muted); font-size:12px; font-weight:400; }
   .rows { min-height:8px; }
+  .sfoot { display:flex; justify-content:space-between; gap:10px; padding:10px 14px; border-top:1px solid var(--line); background:var(--bg); font-weight:600; }
+  .sfoot b { font-family:-apple-system,"SF Pro Display",BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif; font-variant-numeric:lining-nums tabular-nums; }
   .sh .sgrip { height:24px; }
   .sh button { white-space:nowrap; }
   @media (max-width:560px) { .sh { gap:6px; padding:8px 10px; } .sh .sub small { display:none; } .sh h2 { min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; } }
@@ -198,10 +194,6 @@ body.menu-open .side-menu { transform: none; visibility: visible; transition-del
 <header><div class="wrap">
   <div class="titlebar"><button type="button" class="menu-btn" id="menu-btn" aria-label="Open menu" aria-expanded="false" aria-controls="side-menu"><span></span><span></span><span></span></button><h1><span class="long-t">Maintenance &amp; Upgrades Tracker</span><span class="short-t">Maint. &amp; Upgrades</span></h1>
     <div class="acct"><span class="st" id="save-status"></span><button type="button" id="acct-btn">Google Sign-In</button></div></div>
-  <div class="stats4" id="stats" hidden>
-    <div class="col">Total estimate</div><div class="col">Still to do</div><div class="col">Done</div><div class="col">Stories</div>
-    <div class="v" id="s-total"></div><div class="v main" id="s-open"></div><div class="v" id="s-done"></div><div class="v" id="s-count"></div>
-  </div>
 </div></header>
 <main>
 <div class="wrap chips" id="chips" hidden></div>
@@ -524,22 +516,25 @@ function showGate(message, withImport) {
     gate.appendChild(b);
   }
   gate.hidden = false;
-  $("stats").hidden = true; $("chips").hidden = true; $("bar").hidden = true; $("app").hidden = true;
+  $("chips").hidden = true; $("bar").hidden = true; $("app").hidden = true;
 }
 function showApp() {
   $("gate").hidden = true;
-  $("stats").hidden = false; $("chips").hidden = false; $("bar").hidden = false; $("app").hidden = false;
+  $("chips").hidden = false; $("bar").hidden = false; $("app").hidden = false;
   render();
 }
 
 /* ---------- rendering ---------- */
 const app = $("app");
-function totals() {
-  let t = 0, d = 0;
-  items.forEach(i => { t += i.cost || 0; if (i.status === "Done") d += i.cost || 0; });
-  $("s-total").textContent = fmt0(t); $("s-open").textContent = fmt0(t - d); $("s-done").textContent = fmt0(d);
-  const done = items.filter(i => i.status === "Done").length;
-  $("s-count").textContent = done + " / " + items.length;
+// Totals sit at the bottom of the Backlog, When it breaks and Done sections.
+const sumOf = list => list.reduce((a, i) => a + (i.cost || 0), 0);
+function footHtml(id) {
+  let label, list;
+  if (id === "Backlog") { label = "Total: In Progress, Planned &amp; Backlog"; list = items.filter(i => ["In Progress", "Planned", "Backlog"].includes(i.status)); }
+  else if (id === "When it breaks") { label = "Total: When it breaks"; list = items.filter(i => i.status === id); }
+  else if (id === "Done") { label = "Total: Done"; list = items.filter(i => i.status === id); }
+  else return "";
+  return `<div class="sfoot"><span>${label}</span><b>${fmt0(sumOf(list))}</b></div>`;
 }
 function renderChips() {
   const box = $("chips");
@@ -581,13 +576,13 @@ function rowHtml(it) {
       <select class="stsel s-${sKey(it.status)}" data-status="${it.id}">${STATUSES.map(s => `<option ${s === it.status ? "selected" : ""}>${s}</option>`).join("")}</select></div>${detail}</div>`;
 }
 function render() {
-  totals(); renderChips();
+  renderChips();
   app.innerHTML = groups.filter(g => inFilter({ status: g.id })).map(g => {
     const all = items.filter(i => i.group === g.id), shown = all.filter(inFilter);
     const sum = all.reduce((a, i) => a + (i.cost || 0), 0);
     return `<section data-group="${g.id}"><div class="sh"><h2>${esc(g.title)}</h2><span class="sub">${fmt0(sum)}<small>${all.length} ${all.length === 1 ? "story" : "stories"}</small></span>
       <button type="button" data-add="${g.id}">+ Add</button></div>
-      <div class="rows">${shown.map(rowHtml).join("") || '<div class="empty">Nothing here.</div>'}</div></section>`;
+      <div class="rows">${shown.map(rowHtml).join("") || '<div class="empty">Nothing here.</div>'}</div>${footHtml(g.id)}</section>`;
   }).join("");
 }
 const keepScroll = fn => { const y = scrollY; fn(); render(); scrollTo(0, y); };
