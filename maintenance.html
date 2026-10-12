@@ -151,6 +151,7 @@ body.menu-open .side-menu { transform: none; visibility: visible; transition-del
   .grip { flex:none; width:22px; height:30px; display:flex; align-items:center; justify-content:center; color:var(--muted);
     cursor:grab; touch-action:none; user-select:none; -webkit-user-select:none; font-size:16px; letter-spacing:-2px; }
   .it .tx { flex:1; min-width:0; cursor:pointer; }
+  .it .ln { user-select:none; -webkit-user-select:none; }
   .it .ti { font-weight:500; }
   .it .me { color:var(--muted); font-size:12.5px; margin-left:6px; }
   .tag { display:inline-block; font-size:11px; padding:0 7px; border-radius:999px; border:1px solid var(--line); margin-right:4px; background:var(--bg); color:var(--ink); }
@@ -602,6 +603,7 @@ app.addEventListener("change", e => {
   markDirty(); keepScroll(() => {});
 });
 app.addEventListener("click", e => {
+  if (justDragged) { justDragged = false; return; }
   const d = e.target.dataset, tx = e.target.closest("[data-open]");
   if (d.type) {
     const row = e.target.closest(".it"), it = row && byId(row.dataset.id);
@@ -627,7 +629,24 @@ $("chips").addEventListener("click", e => {
 });
 
 /* ---------- drag to reorder (pointer events, works with touch) ---------- */
-let drag = null;
+let drag = null, pending = null, justDragged = false;
+// Mouse and pen can also drag from any blank part of a story's line; touch keeps the ⋮⋮ handle so the list still scrolls.
+app.addEventListener("pointerdown", e => {
+  if (e.pointerType === "touch" || e.button > 0 || e.target.closest(".grip, button, select, input, textarea, a")) return;
+  const ln = e.target.closest(".ln"); if (!ln) return;
+  pending = { ln, row: ln.closest(".it"), id: e.pointerId, x: e.clientX, y: e.clientY };
+});
+app.addEventListener("pointermove", e => {
+  if (!pending || drag || e.pointerId !== pending.id) return;
+  if (Math.hypot(e.clientX - pending.x, e.clientY - pending.y) < 6) return;
+  const { ln, row } = pending; pending = null;
+  try { ln.setPointerCapture(e.pointerId); } catch (err) {}
+  drag = { row, grip: ln, id: e.pointerId, y: e.clientY };
+  row.classList.add("dragging");
+});
+const clearPending = () => { pending = null; };
+app.addEventListener("pointerup", clearPending);
+app.addEventListener("pointercancel", clearPending);
 app.addEventListener("pointerdown", e => {
   const grip = e.target.closest(".grip"); if (!grip) return;
   const row = grip.closest(".it"); if (!row) return;
@@ -658,6 +677,7 @@ function endDrag(e) {
     const it = byId(r.dataset.id); if (it) { it.group = it.status = sec.dataset.group; order.push(it); }
   }));
   drag = null;
+  justDragged = true; setTimeout(() => { justDragged = false; }, 80);
   // Stories hidden by the filter keep their slots; the visible ones are placed in the new order.
   const vis = new Set(order);
   if (order.length === items.filter(inFilter).length) {
