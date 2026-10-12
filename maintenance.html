@@ -143,9 +143,6 @@ body.menu-open .side-menu { transform: none; visibility: visible; transition-del
   .sdragging .rows { display:none; }
   section.dragging { box-shadow:0 2px 12px rgba(0,0,0,.22); background:var(--accent-soft); }
   .sh .sgrip { height:24px; }
-  .sh h2[data-rename] { cursor:text; }
-  .sname { flex:1; min-width:0; font:inherit; font-size:14px; font-weight:600; padding:3px 8px; border:1px solid var(--accent); border-radius:8px; background:var(--card); color:var(--ink); }
-  .sh .xs { color:#c0261b; border-color:#c0261b; }
   .sh button { white-space:nowrap; }
   @media (max-width:560px) { .sh { gap:6px; padding:8px 10px; } .sh .sub small { display:none; } .sh h2 { min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; } }
   .it { border-bottom:1px solid var(--line); background:var(--card); }
@@ -210,7 +207,7 @@ body.menu-open .side-menu { transform: none; visibility: visible; transition-del
 <main>
 <div class="wrap chips" id="chips" hidden></div>
 <div class="wrap"><section class="gate" id="gate"></section></div><div class="wrap" id="app" hidden></div>
-<div class="wrap bar" id="bar" hidden><button type="button" id="addSecBtn">+ Add section</button><button id="importBtn" type="button">Import data</button><input type="file" id="importFile" accept="application/json,.json" hidden><span class="hint">Drag a story's ⋮⋮ handle to reorder it or move it to another section, or a section's handle to reorder sections. Click a story to edit it. Click Save to store changes in your Google Drive.</span></div>
+<div class="wrap bar" id="bar" hidden><button id="importBtn" type="button">Import data</button><input type="file" id="importFile" accept="application/json,.json" hidden><span class="hint">Drag a story's ⋮⋮ handle to reorder it or move it to another status section (or change its status in the dropdown), or a section's handle to reorder the sections. Click a story to edit it. Click Save to store changes in your Google Drive.</span></div>
 </main>
 
 <script>
@@ -497,11 +494,11 @@ async function mergeAndSave(toolData) {
 
 /* ================= page state ================= */
 // The page holds no data of its own. Groups and stories come from the signed-in user's Drive file.
-const STATUSES = ["Backlog", "Planned", "Getting Bids", "In Progress", "Done"];
+const STATUSES = ["Backlog", "Planned", "In Progress", "Done"];
 const sKey = s => s.replace(/\s+/g, "");
 const PRIORITIES = ["", "High", "Medium", "Low"], TYPES = ["Maintain", "Upgrade"];
 const WHO = ["", "Hire Contractor", "DIY"];
-let groups = [], items = [], filter = "Open", openId = null, renaming = null;
+let groups = [], items = [], filter = "Open", openId = null;
 const inFilter = i => filter === "Done" ? i.status === "Done" : i.status !== "Done";
 let accountEmail = "", allowed = false, dirty = false;
 const $ = id => document.getElementById(id);
@@ -584,11 +581,11 @@ function rowHtml(it) {
 }
 function render() {
   totals(); renderChips();
-  app.innerHTML = groups.map(g => {
+  app.innerHTML = groups.filter(g => inFilter({ status: g.id })).map(g => {
     const all = items.filter(i => i.group === g.id), shown = all.filter(inFilter);
     const sum = all.reduce((a, i) => a + (i.cost || 0), 0);
-    return `<section data-group="${g.id}"><div class="sh"><span class="grip sgrip" title="Drag to reorder sections">⋮⋮</span>${renaming === g.id ? `<input type="text" class="sname" data-gid="${g.id}" value="${esc(g.title)}" maxlength="60">` : `<h2 data-rename="${g.id}" title="Click to rename">${esc(g.title)}</h2>`}<span class="sub">${fmt0(sum)}<small>${all.length} ${all.length === 1 ? "story" : "stories"}</small></span>
-      <button type="button" data-rename="${g.id}" title="Rename section">✎</button><button type="button" data-add="${g.id}">+ Add</button><button type="button" class="xs" data-delsec="${g.id}" title="Delete section">×</button></div>
+    return `<section data-group="${g.id}"><div class="sh"><span class="grip sgrip" title="Drag to reorder sections">⋮⋮</span><h2>${esc(g.title)}</h2><span class="sub">${fmt0(sum)}<small>${all.length} ${all.length === 1 ? "story" : "stories"}</small></span>
+      <button type="button" data-add="${g.id}">+ Add</button></div>
       <div class="rows">${shown.map(rowHtml).join("") || '<div class="empty">Nothing here.</div>'}</div></section>`;
   }).join("");
 }
@@ -599,7 +596,7 @@ const byId = id => items.find(i => i.id === id);
 app.addEventListener("change", e => {
   const el = e.target, row = el.closest(".it"); if (!row) return;
   const it = byId(row.dataset.id); if (!it) return;
-  if (el.dataset.status) { it.status = el.value; markDirty(); keepScroll(() => {}); return; }
+  if (el.dataset.status) { it.status = it.group = el.value; markDirty(); keepScroll(() => {}); return; }
   const k = el.dataset.f; if (!k) return;
   if (k === "cost") { const n = parseFloat(String(el.value).replace(/[$,\s]/g, "")); it.cost = isNaN(n) ? 0 : n; }
   else it[k] = el.value;
@@ -607,14 +604,6 @@ app.addEventListener("change", e => {
 });
 app.addEventListener("click", e => {
   const d = e.target.dataset, tx = e.target.closest("[data-open]");
-  if (d.rename) { renaming = d.rename; keepScroll(() => {}); const i = app.querySelector(".sname"); if (i) { i.focus(); i.select(); } return; }
-  if (d.delsec) {
-    if (groups.length < 2) { alert("You need at least one section."); return; }
-    const g = groups.find(x => x.id === d.delsec), n = items.filter(i => i.group === d.delsec).length;
-    if (!confirm(n ? `Delete the section "${g.title}" and its ${n} ${n === 1 ? "story" : "stories"}?` : `Delete the section "${g.title}"?`)) return;
-    groups = groups.filter(x => x.id !== d.delsec); items = items.filter(i => i.group !== d.delsec); openId = null;
-    markDirty(); keepScroll(() => {}); return;
-  }
   if (d.type) {
     const row = e.target.closest(".it"), it = row && byId(row.dataset.id);
     if (it) { it.type = it.type === d.type ? "" : d.type; markDirty(); keepScroll(() => {}); }
@@ -623,7 +612,7 @@ app.addEventListener("click", e => {
   if (d.close) { openId = null; keepScroll(() => {}); return; }
   if (tx) { openId = openId === tx.dataset.open ? null : tx.dataset.open; keepScroll(() => {}); return; }
   if (d.add) {
-    const it = { id: "u" + Date.now(), group: d.add, status: "Backlog", priority: "", lastInstalled: "", timing: "", dependency: "", type: "", room: "", title: "New story", cost: 0, duration: "", who: "", bids: "", notes: "" };
+    const it = { id: "u" + Date.now(), group: d.add, status: d.add, priority: "", lastInstalled: "", timing: "", dependency: "", type: "", room: "", title: "New story", cost: 0, duration: "", who: "", bids: "", notes: "" };
     const last = items.map((x, i) => x.group === d.add ? i : -1).filter(i => i >= 0).pop();
     items.splice(last === undefined ? items.length : last + 1, 0, it);
     openId = it.id; markDirty(); keepScroll(() => {}); return;
@@ -667,7 +656,7 @@ function endDrag(e) {
   drag.row.classList.remove("dragging");
   const order = [];
   app.querySelectorAll("section").forEach(sec => sec.querySelectorAll(".it").forEach(r => {
-    const it = byId(r.dataset.id); if (it) { it.group = sec.dataset.group; order.push(it); }
+    const it = byId(r.dataset.id); if (it) { it.group = it.status = sec.dataset.group; order.push(it); }
   }));
   drag = null;
   // Stories hidden by the filter keep their slots; the visible ones are placed in the new order.
@@ -679,25 +668,6 @@ function endDrag(e) {
 }
 app.addEventListener("pointerup", endDrag);
 app.addEventListener("pointercancel", endDrag);
-
-function addSection() {
-  const g = { id: "g" + Date.now(), title: "New section" }; groups.push(g); renaming = g.id; markDirty(); render();
-  const i = app.querySelector(".sname"); if (i) { i.scrollIntoView({ block: "center" }); i.focus(); i.select(); }
-}
-function commitRename(input, cancel) {
-  const g = groups.find(x => x.id === input.dataset.gid); renaming = null;
-  const v = input.value.trim();
-  if (!cancel && g && v && v !== g.title) { g.title = v; markDirty(); }
-  keepScroll(() => {});
-}
-app.addEventListener("keydown", e => {
-  if (!e.target.classList.contains("sname")) return;
-  if (e.key === "Enter") { e.preventDefault(); e.target.blur(); }
-  if (e.key === "Escape") { e.target.dataset.cancel = "1"; e.target.blur(); }
-});
-app.addEventListener("focusout", e => {
-  if (e.target.classList.contains("sname") && renaming) commitRename(e.target, e.target.dataset.cancel === "1");
-});
 
 /* ---------- drag to reorder sections ---------- */
 let sdrag = null;
@@ -731,15 +701,28 @@ app.addEventListener("pointercancel", endSDrag);
 /* ---------- data in / out ---------- */
 function applyData(d) {
   if (!d || !Array.isArray(d.items) || !Array.isArray(d.groups)) throw new Error("That file isn't a valid data file.");
-  groups = d.groups; items = d.items;
+  // Sections are now the statuses. Older data used topic sections (Maintenance, Upgrades, ...):
+  // fold that into the Maintain / Upgrade type and remember the old section as `origin`.
+  const oldTitle = {}; d.groups.forEach(g => { oldTitle[g.id] = g.title; });
+  items = d.items;
   items.forEach(i => {
+    if (i.group in oldTitle && !STATUSES.includes(i.group)) {
+      if (!i.origin) i.origin = oldTitle[i.group];
+      if (i.group === "maintenance") i.type = "Maintain";
+      else if (i.group === "upgrades") i.type = "Upgrade";
+    }
+    if (i.status === "Getting Bids") i.status = "Planned";
     if (!STATUSES.includes(i.status)) i.status = "Backlog";
+    i.group = i.status;
     // Older data had extra priorities and types; fold them into the current options.
     if (i.priority === "Med High") i.priority = "High";
     if (!PRIORITIES.includes(i.priority)) i.priority = "";
     if (i.type === "Replace") i.type = "Maintain";
     if (!TYPES.includes(i.type)) i.type = "";
   });
+  const keep = d.groups.filter(g => STATUSES.includes(g.id)).map(g => g.id);
+  const order = keep.length === STATUSES.length ? keep : STATUSES;
+  groups = order.map(id => ({ id, title: id }));
   filter = "Open"; openId = null;
 }
 const getData = () => ({ groups, items });
@@ -782,7 +765,6 @@ async function signInFlow() {
   catch (e) { setStatus("Google sign-in failed: " + e.message, "err"); }
 }
 $("acct-btn").addEventListener("click", () => { if (GoogleDriveSync.isSignedIn() && allowed) saveToDrive(); else signInFlow(); });
-$("addSecBtn").addEventListener("click", addSection);
 $("importBtn").addEventListener("click", () => $("importFile").click());
 $("importFile").addEventListener("change", async e => {
   const file = e.target.files && e.target.files[0];
