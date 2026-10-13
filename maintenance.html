@@ -552,11 +552,15 @@ function optionList(list, cur) {
   const vals = list.includes(cur) || cur == null ? list : list.concat([cur]);
   return vals.map(v => `<option ${v === (cur || "") ? "selected" : ""} value="${esc(v)}">${v === "" ? "—" : esc(v)}</option>`).join("");
 }
-function rowHtml(it) {
+const ISO = /^\d{4}-\d{2}-\d{2}$/;
+const fmtDue = v => { if (!ISO.test(v || "")) return v || ""; const [y, m, d] = v.split("-").map(Number); return "Due " + new Date(y, m - 1, d).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }); };
+function metaHtml(it) {
   const tags = [
     it.priority ? `<span class="tag p-${sKey(it.priority)}">${esc(it.priority)}</span>` : "",
     it.who ? `<span class="tag">${esc(it.who)}</span>` : ""].join("");
-  const meta = [it.room, it.timing, it.dependency, it.lastInstalled ? "installed " + it.lastInstalled : ""].filter(Boolean).map(esc).join(" · ");
+  return tags + [it.room, it.timing, fmtDue(it.dependency), it.lastInstalled ? "installed " + it.lastInstalled : ""].filter(Boolean).map(esc).join(" · ");
+}
+function rowHtml(it) {
   let detail = "";
   if (openId === it.id) {
     const f = (k, label, cls) => `<label class="${cls || ""}">${label}<input type="text" data-f="${k}" value="${esc(it[k])}"></label>`;
@@ -567,7 +571,7 @@ function rowHtml(it) {
       <div class="fld">Maintain / upgrade<div class="seg">${TYPES.map(v => `<button type="button" data-type="${v}" class="${it.type === v ? "on" : ""}">${v}</button>`).join("")}</div></div>
       <label>Estimated cost<input type="text" inputmode="decimal" data-f="cost" value="${it.cost || 0}"></label>
       ${f("timing", "Target timing")}
-      ${f("dependency", "Due Date")}
+      <label>Due Date<input type="date" data-f="dependency" value="${ISO.test(it.dependency || "") ? it.dependency : ""}"></label>
       ${f("duration", "Time to complete")}
       <label>Contractor or DIY<select data-f="who">${optionList(WHO, it.who)}</select></label>
       ${f("bids", "Contractors for bids")}
@@ -577,7 +581,7 @@ function rowHtml(it) {
   }
   return `<div class="it st-${sKey(it.status)} ${it.status === "Done" ? "done" : ""}" data-id="${it.id}">
     <div class="ln"><span class="grip" title="Drag to move">⋮⋮</span>
-      <div class="tx" data-open="${it.id}"><span class="ti"><span class="chev">${openId === it.id ? "▴" : "▾"}</span>${esc(it.title)}</span> <span class="me">${tags}${meta}</span></div>
+      <div class="tx" data-open="${it.id}"><span class="ti"><span class="chev">${openId === it.id ? "▴" : "▾"}</span>${esc(it.title)}</span> <span class="me">${metaHtml(it)}</span></div>
       <span class="co">${fmt0(it.cost || 0)}</span></div>${detail}</div>`;
 }
 function render() {
@@ -601,7 +605,10 @@ app.addEventListener("change", e => {
   const k = el.dataset.f; if (!k) return;
   if (k === "cost") { const n = parseFloat(String(el.value).replace(/[$,\s]/g, "")); it.cost = isNaN(n) ? 0 : n; }
   else it[k] = el.value;
-  markDirty(); keepScroll(() => {});
+  markDirty();
+  // A date box fires change while it is still being typed in, so only refresh the line, not the whole list.
+  if (el.type === "date") { const me = row.querySelector(".me"); if (me) me.innerHTML = metaHtml(it); return; }
+  keepScroll(() => {});
 });
 app.addEventListener("click", e => {
   if (justDragged) { justDragged = false; return; }
@@ -717,6 +724,8 @@ function applyData(d) {
       if (i.group === "maintenance") i.type = "Maintain";
       else if (i.group === "upgrades") i.type = "Upgrade";
     }
+    // Due Date is a real date now; keep any older free-text note by moving it into the notes.
+    if (i.dependency && !ISO.test(i.dependency)) { i.notes = "Timing note: " + i.dependency + (i.notes ? "\n" + i.notes : ""); i.dependency = ""; }
     if (i.status === "Getting Bids") i.status = "Planned";
     if (!STATUSES.includes(i.status)) i.status = "Backlog";
     // One-time (data version 2): the old Contingency items (furnace on down) wait for "When it breaks".
