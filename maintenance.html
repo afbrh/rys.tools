@@ -567,7 +567,7 @@ function rowHtml(it) {
       <div class="fld">Maintain / upgrade<div class="seg">${TYPES.map(v => `<button type="button" data-type="${v}" class="${it.type === v ? "on" : ""}">${v}</button>`).join("")}</div></div>
       <label>Estimated cost<input type="text" inputmode="decimal" data-f="cost" value="${it.cost || 0}"></label>
       ${f("timing", "Target timing")}
-      ${f("dependency", "Dependency / timing note")}
+      ${f("dependency", "Due Date")}
       ${f("duration", "Time to complete")}
       <label>Contractor or DIY<select data-f="who">${optionList(WHO, it.who)}</select></label>
       ${f("bids", "Contractors for bids")}
