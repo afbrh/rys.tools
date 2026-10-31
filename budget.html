@@ -41,7 +41,7 @@
   .app-footnote { color: #b9b2a3 !important; }
   /* ---------- app shell / tabs ---------- */
   .app-shell { max-width: none; margin: 0; }
-  /* Same header treatment as the Home Cost Explorer: a full-width band in the card colour
+  /* Same header treatment as the other tools: a full-width band in the card colour
      with a thin rule underneath, content centred in a 960px column. */
   .app-header-sticky { position: sticky; top: 0; z-index: 100; background: var(--card); border-bottom: 1px solid var(--paper-line); padding: 12px 16px; }
   .app-header-inner { max-width: 960px; margin: 0 auto; }
@@ -917,7 +917,6 @@ body.menu-open .side-menu { transform: none; visibility: visible; transition-del
   <div class="side-title">Ry's Tools</div>
   <a class="side-link" href="budget.html" aria-current="page">Budget Planner</a>
   <a class="side-link" href="mortgage.html">Mortgage Calculator</a>
-  <a class="side-link" href="homecost.html" id="side-home-link" hidden>Home Cost Explorer</a>
   <a class="side-link" href="maintenance.html" id="side-maint-link" hidden>Maintenance &amp; Upgrades</a>
 </nav>
 <script id="saved-data" type="application/json"></script>
@@ -2889,7 +2888,7 @@ body.menu-open .side-menu { transform: none; visibility: visible; transition-del
   // Drive until that button is clicked.
   let accountEmail = '';
 
-  // Only these accounts get the Home Cost Explorer link in the menu. Stored as SHA-256 hashes
+  // Only these accounts get the Maintenance & Upgrades link in the menu. Stored as SHA-256 hashes
   // of the lowercased emails so the addresses aren't printed in the page source. This only
   // controls what the menu shows; that tool's data is never in the site's files, it's loaded
   // from the signed-in user's own Drive file.
@@ -2901,9 +2900,7 @@ body.menu-open .side-menu { transform: none; visibility: visible; transition-del
     return HOME_ACCESS_HASHES.indexOf(hex) !== -1;
   }
   async function updateMenuAccess() {
-    const link = document.getElementById('side-home-link');
     const ok = GoogleDriveSync.isSignedIn() && await hasHomeAccess(accountEmail);
-    if (link) link.hidden = !ok;
     const ml = document.getElementById('side-maint-link');
     if (ml) ml.hidden = !ok;
   }
