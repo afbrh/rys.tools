@@ -73,7 +73,8 @@ body.menu-open .side-menu { transform: none; visibility: visible; transition-del
   #app-content { max-width: 592px; margin: 0 auto; padding: 16px; }
   .tab-panel { margin: 0 0 14px; padding: 0; overflow: hidden; border: 1px solid var(--paper-line); border-radius: 12px; background: var(--card); }
   .card-title { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
-  .card-title .card-total { font-family: var(--font-mono); font-weight: 500; color: var(--gold); }
+  .card-title .card-total { font-family: var(--font-mono); font-weight: 500; color: var(--expense); }
+  .card-title .card-total.income { color: var(--income); }
   .card-title { margin: 0; padding: 10px 14px; background: var(--paper); border-bottom: 1px solid var(--paper-line); font-family: var(--font-header); font-size: 14px; font-weight: 600; color: var(--ink); }
   #app-content .tab-panel .page, #app-content .tab-panel .sheet { max-width: none; margin: 0; padding: 12px 16px 6px; }
   /* Costs are indented under their section's title bar, as its sub-items. */
@@ -779,7 +780,7 @@ body.menu-open .side-menu { transform: none; visibility: visible; transition-del
     const h = document.querySelector('#tab-' + tab + ' .card-title');
     if (!h) return;
     let t = h.querySelector('.card-total');
-    if (!t) { t = document.createElement('span'); t.className = 'card-total'; h.appendChild(t); }
+    if (!t) { t = document.createElement('span'); t.className = 'card-total' + (tab === 'income' ? ' income' : ''); h.appendChild(t); }
     t.textContent = '$' + amount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   }
 
@@ -979,7 +980,7 @@ body.menu-open .side-menu { transform: none; visibility: visible; transition-del
         };
         set('sum-income-', currency(incomeAmount));
         set('sum-exp-', currency(expenseTotal));
-        set('sum-net-', (net < 0 ? '-' : '') + currency(Math.abs(net)), net < 0 ? 'var(--expense)' : '');
+        set('sum-net-', (net < 0 ? '-' : '') + currency(Math.abs(net)), net < 0 ? 'var(--expense)' : 'var(--income)');
       });
 
       sizeAllCurrencyInputs();
