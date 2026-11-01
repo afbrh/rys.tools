@@ -63,8 +63,8 @@ body.menu-open .side-menu { transform: none; visibility: visible; transition-del
   /* ---------- fixed totals window ---------- */
   .summary-bar { padding-top: 2px; }
   .sum-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px 10px; }
-  .sum-label { font-size: 11px; text-transform: uppercase; letter-spacing: .05em; color: var(--ink-soft); }
-  .sum-val { background: var(--paper); border-radius: 10px; padding: 8px 12px; font-family: var(--font-mono); font-size: 22px; font-weight: 650; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .sum-label { text-align: right; font-size: 11px; text-transform: uppercase; letter-spacing: .05em; color: var(--ink-soft); }
+  .sum-val { text-align: right; background: var(--paper); border-radius: 10px; padding: 8px 12px; font-family: var(--font-mono); font-size: 22px; font-weight: 650; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .sum-val.income { color: var(--income); }
   .sum-val.net { background: var(--gold-bg); color: var(--gold); }
   @media (max-width: 560px) { .sum-val { font-size: 13px; padding: 6px 8px; } }
@@ -168,7 +168,7 @@ body.menu-open .side-menu { transform: none; visibility: visible; transition-del
   #tab-budget .flex-row { display: flex; align-items: center; min-width: max-content; }
   #tab-budget .row-label { width: 190px; flex: 0 0 190px; padding-right: 10px; display: flex; align-items: center; gap: 4px; }
   #tab-budget .row-label .field-label { font-size: 14px; color: var(--ink); }
-  #tab-budget .row-values { display: flex; gap: 34px; }
+  #tab-budget .row-values { display: flex; gap: 34px; margin-left: auto; }
   #tab-budget .value-cell { width: 118px; flex: 0 0 118px; }
   #tab-budget .section { margin-bottom: 26px; }
   #tab-budget .section-head { border-bottom: 1px solid var(--paper-line); padding-bottom: 6px; margin-bottom: 2px; }
@@ -382,7 +382,7 @@ body.menu-open .side-menu { transform: none; visibility: visible; transition-del
     font-size: 16px; line-height: 1; cursor: pointer; padding: 2px 4px; border-radius: 4px;
   }
   #tab-subscriptions .row-label .row-remove-btn:hover { color: var(--danger); background: var(--expense-bg); }
-  #tab-subscriptions .row-values { display: flex; gap: 34px; }
+  #tab-subscriptions .row-values { display: flex; gap: 34px; margin-left: auto; }
   #tab-subscriptions .value-cell { width: 118px; flex: 0 0 118px; }
   #tab-subscriptions .section { margin-bottom: 26px; }
   #tab-subscriptions .section-head { border-bottom: 1px solid var(--paper-line); padding-bottom: 6px; margin-bottom: 2px; }
@@ -439,7 +439,7 @@ body.menu-open .side-menu { transform: none; visibility: visible; transition-del
   #tab-food .flex-row { display: flex; align-items: center; min-width: max-content; }
   #tab-food .row-label { width: 150px; flex: 0 0 150px; padding-right: 10px; }
   #tab-food .row-label .field-label { font-size: 14px; color: var(--ink); }
-  #tab-food .row-values { display: flex; gap: 34px; }
+  #tab-food .row-values { display: flex; gap: 34px; margin-left: auto; }
   #tab-food .value-cell { width: 118px; flex: 0 0 118px; }
   #tab-food .section { margin-bottom: 26px; }
   #tab-food .section-head { border-bottom: 1px solid var(--paper-line); padding-bottom: 6px; margin-bottom: 2px; }
@@ -485,7 +485,7 @@ body.menu-open .side-menu { transform: none; visibility: visible; transition-del
   #tab-housing .row-label { width: 190px; flex: 0 0 190px; padding-right: 10px; }
   #tab-housing .row-label .field-label { font-size: 14px; color: var(--ink); }
   #tab-housing .row-label .hint { display: block; font-size: 11px; color: var(--ink-soft); margin-top: 2px; }
-  #tab-housing .row-values { display: flex; gap: 34px; }
+  #tab-housing .row-values { display: flex; gap: 34px; margin-left: auto; }
   #tab-housing .value-cell { width: 118px; flex: 0 0 118px; }
   #tab-housing .section { margin-bottom: 26px; }
   #tab-housing .section-head { border-bottom: 1px solid var(--paper-line); padding-bottom: 6px; margin-bottom: 2px; }
@@ -531,7 +531,7 @@ body.menu-open .side-menu { transform: none; visibility: visible; transition-del
   #tab-car .row-label { width: 190px; flex: 0 0 190px; padding-right: 10px; }
   #tab-car .row-label .field-label { font-size: 14px; color: var(--ink); }
   #tab-car .row-label .hint { display: block; font-size: 11px; color: var(--ink-soft); margin-top: 2px; }
-  #tab-car .row-values { display: flex; gap: 34px; }
+  #tab-car .row-values { display: flex; gap: 34px; margin-left: auto; }
   #tab-car .value-cell { width: 118px; flex: 0 0 118px; }
   #tab-car .section { margin-bottom: 26px; }
   #tab-car .section-head { border-bottom: 1px solid var(--paper-line); padding-bottom: 6px; margin-bottom: 2px; }
@@ -576,7 +576,7 @@ body.menu-open .side-menu { transform: none; visibility: visible; transition-del
   #tab-utilities .flex-row { display: flex; align-items: center; min-width: max-content; }
   #tab-utilities .row-label { width: 190px; flex: 0 0 190px; padding-right: 10px; }
   #tab-utilities .row-label .field-label { font-size: 14px; color: var(--ink); }
-  #tab-utilities .row-values { display: flex; gap: 34px; }
+  #tab-utilities .row-values { display: flex; gap: 34px; margin-left: auto; }
   #tab-utilities .value-cell { width: 118px; flex: 0 0 118px; }
   #tab-utilities .section { margin-bottom: 26px; }
   #tab-utilities .section-head { border-bottom: 1px solid var(--paper-line); padding-bottom: 6px; margin-bottom: 2px; }
@@ -622,7 +622,7 @@ body.menu-open .side-menu { transform: none; visibility: visible; transition-del
   #tab-savings .row-label { width: 190px; flex: 0 0 190px; padding-right: 10px; }
   #tab-savings .row-label .field-label { font-size: 14px; color: var(--ink); }
   #tab-savings .row-label .hint { display: block; font-size: 11px; color: var(--ink-soft); margin-top: 2px; }
-  #tab-savings .row-values { display: flex; gap: 34px; }
+  #tab-savings .row-values { display: flex; gap: 34px; margin-left: auto; }
   #tab-savings .value-cell { width: 118px; flex: 0 0 118px; }
   #tab-savings .section { margin-bottom: 26px; }
   #tab-savings .section-head { border-bottom: 1px solid var(--paper-line); padding-bottom: 6px; margin-bottom: 2px; }
