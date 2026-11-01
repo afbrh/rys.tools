@@ -261,7 +261,7 @@ body.menu-open .side-menu { transform: none; visibility: visible; transition-del
   #tab-income .row-main { display: flex; align-items: center; gap: 8px; flex: 1 1 200px; min-width: 0; }
   #tab-income .row-actions { display: flex; align-items: center; flex-wrap: wrap; justify-content: flex-end; gap: 8px; flex: 1 1 auto; min-width: 0; }
   #tab-income .row input[type="text"] {
-    flex: 1;
+    flex: 0 1 190px;
     min-width: 0;
     border: none;
     background: transparent;
@@ -309,20 +309,11 @@ body.menu-open .side-menu { transform: none; visibility: visible; transition-del
     color: var(--income);
   }
   #tab-income .remove-btn {
-    margin-left: auto;
-    background: none;
-    border: 1px solid var(--paper-line);
-    color: var(--ink-soft);
-    font-family: var(--font-body);
-    font-size: 12px;
-    font-weight: 600;
-    line-height: 1;
-    cursor: pointer;
-    padding: 6px 12px;
-    border-radius: 6px;
     flex-shrink: 0;
+    background: none; border: none; color: var(--ink-soft);
+    font-size: 16px; line-height: 1; cursor: pointer; padding: 2px 4px; border-radius: 4px;
   }
-  #tab-income .remove-btn:hover { color: var(--danger); background: var(--expense-bg); border-color: var(--danger); }
+  #tab-income .remove-btn:hover { color: var(--danger); background: var(--expense-bg); }
   #tab-income .add-row-btn {
     margin-top: 10px;
     background: none;
@@ -1087,10 +1078,20 @@ body.menu-open .side-menu { transform: none; visibility: visible; transition-del
       nameInput.value = name || '';
       nameInput.addEventListener('input', recalculate);
       main.appendChild(nameInput);
+      const removeBtn = document.createElement('button');
+      removeBtn.className = 'remove-btn';
+      removeBtn.innerHTML = '&times;';
+      removeBtn.setAttribute('aria-label', 'Remove income source');
+      removeBtn.onclick = () => { row.remove(); recalculate(); };
+      main.appendChild(removeBtn);
       row.appendChild(main);
 
       const actions = document.createElement('div');
       actions.className = 'row-actions';
+
+      const equiv = document.createElement('span');
+      equiv.className = 'monthly-equiv';
+      actions.appendChild(equiv);
 
       const select = document.createElement('select');
       select.className = 'freq-select';
@@ -1118,17 +1119,6 @@ body.menu-open .side-menu { transform: none; visibility: visible; transition-del
       amountInput.addEventListener('input', recalculate);
       amountWrap.appendChild(amountInput);
       actions.appendChild(amountWrap);
-
-      const equiv = document.createElement('span');
-      equiv.className = 'monthly-equiv';
-      actions.appendChild(equiv);
-
-      const removeBtn = document.createElement('button');
-      removeBtn.className = 'remove-btn';
-      removeBtn.textContent = 'Remove';
-      removeBtn.setAttribute('aria-label', 'Remove row');
-      removeBtn.onclick = () => { row.remove(); recalculate(); };
-      actions.appendChild(removeBtn);
 
       row.appendChild(actions);
       container.appendChild(row);
