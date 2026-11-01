@@ -676,19 +676,8 @@ body.menu-open .side-menu { transform: none; visibility: visible; transition-del
     <h2 class="card-title">Income</h2>
     <div class="sheet">
       <div class="section income" id="income-sources-section">
-        <div class="section-head">
-          <h2>Sources</h2>
-          <span class="section-total" id="income-sources-total">$10,374.00</span>
-        </div>
         <div id="income-source-rows"></div>
         <button class="add-row-btn" onclick="IncomeApp.addSource()">+ Add income source</button>
-      </div>
-
-      <div class="summary">
-        <div class="net-line" id="income-net-line">
-          <span class="label">Total monthly income</span>
-          <span class="value" id="income-total-value">$10,374.00</span>
-        </div>
       </div>
     </div>
   </div>
@@ -1143,8 +1132,7 @@ body.menu-open .side-menu { transform: none; visibility: visible; transition-del
         const equivEl = row.querySelector('.monthly-equiv');
         if (equivEl) equivEl.textContent = r.amount !== '' ? ('≈ ' + currency(monthly) + '/mo') : '';
       });
-      document.getElementById('income-sources-total').textContent = currency(total);
-      document.getElementById('income-total-value').textContent = currency(total);
+      setCardTotal('income', total);
       BudgetApp.setIncomeAmount(total);
       sizeAllCurrencyInputs();
     }
