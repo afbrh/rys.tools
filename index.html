@@ -63,14 +63,11 @@ body.menu-open .side-menu { transform: none; visibility: visible; transition-del
   /* ---------- fixed totals window ---------- */
   .summary-bar { padding-top: 2px; }
   .sum-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px 10px; }
-  .sum-grid.multi { grid-template-columns: minmax(60px, auto) repeat(3, minmax(0, 1fr)); }
   .sum-label { font-size: 11px; text-transform: uppercase; letter-spacing: .05em; color: var(--ink-soft); }
   .sum-val { background: var(--paper); border-radius: 10px; padding: 8px 12px; font-family: var(--font-mono); font-size: 22px; font-weight: 650; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .sum-val.income { color: var(--income); }
   .sum-val.net { background: var(--gold-bg); color: var(--gold); }
-  .sum-name { align-self: center; font-size: 13px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .sum-grid.multi .sum-val { padding: 5px 12px; font-size: 18px; }
-  @media (max-width: 560px) { .sum-val, .sum-grid.multi .sum-val { font-size: 13px; padding: 6px 8px; } .sum-name { font-size: 11px; } .sum-grid.multi { grid-template-columns: minmax(48px, auto) repeat(3, minmax(0, 1fr)); } }
+  @media (max-width: 560px) { .sum-val { font-size: 13px; padding: 6px 8px; } }
 
   /* ---------- single-scroll cards ---------- */
   #app-content { max-width: 992px; margin: 0 auto; padding: 16px; }
@@ -166,50 +163,11 @@ body.menu-open .side-menu { transform: none; visibility: visible; transition-del
   /* Scenario grid — the Expenses section below, one column per shared scenario. */
   #tab-budget .page { max-width: 900px; margin: 0 auto; }
   #tab-budget .table-scroll { overflow-x: auto; padding-bottom: 4px; }
-  #tab-budget .add-btn {
-    flex-shrink: 0;
-    align-self: center;
-    background: none;
-    border: 1px dashed var(--ink-soft);
-    color: var(--ink-soft);
-    font-family: var(--font-body);
-    font-size: 13px;
-    font-weight: 600;
-    padding: 8px 16px;
-    border-radius: 6px;
-    cursor: pointer;
-    white-space: nowrap;
-  }
-  #tab-budget .add-btn:hover { border-color: var(--expense); color: var(--expense); }
   #tab-budget .flex-row { display: flex; align-items: center; min-width: max-content; }
   #tab-budget .row-label { width: 190px; flex: 0 0 190px; padding-right: 10px; display: flex; align-items: center; gap: 4px; }
   #tab-budget .row-label .field-label { font-size: 14px; color: var(--ink); }
   #tab-budget .row-values { display: flex; gap: 34px; }
   #tab-budget .value-cell { width: 118px; flex: 0 0 118px; }
-  #tab-budget .col-head-row { padding-bottom: 12px; margin-bottom: 6px; border-bottom: 1px solid var(--paper-line); }
-  #tab-budget .col-head-cell { position: relative; text-align: right; }
-  #tab-budget .col-head-cell .name-row { display: flex; align-items: center; justify-content: flex-end; gap: 6px; }
-  #tab-budget .col-head-cell input.name {
-    font-family: var(--font-header);
-    font-weight: 600;
-    font-size: 14px;
-    border: none;
-    background: transparent;
-    color: var(--ink);
-    text-align: right;
-    flex: 1 1 auto;
-    min-width: 0;
-    padding: 2px 0;
-  }
-  #tab-budget .col-head-cell input.name:focus { outline: none; border-bottom: 1px solid var(--ink-soft); }
-  #tab-budget .col-head-cell .col-head-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 3px; }
-  #tab-budget .col-head-cell .remove-btn,
-  #tab-budget .col-head-cell .clone-btn {
-    background: none; border: none;
-    color: var(--ink-soft); font-size: 12px; cursor: pointer; padding: 0;
-  }
-  #tab-budget .col-head-cell .remove-btn:hover { color: var(--expense); }
-  #tab-budget .col-head-cell .clone-btn:hover { color: var(--gold); }
   #tab-budget .section { margin-bottom: 26px; }
   #tab-budget .section-head { border-bottom: 1px solid var(--paper-line); padding-bottom: 6px; margin-bottom: 2px; }
   #tab-budget .section-head h2 { font-family: var(--font-header); font-size: 15px; font-weight: 600; margin: 0; color: var(--expense); }
@@ -401,21 +359,6 @@ body.menu-open .side-menu { transform: none; visibility: visible; transition-del
     margin: 0 0 28px;
     letter-spacing: var(--letter-spacing-header);
   }
-  #tab-subscriptions .add-btn {
-    flex-shrink: 0;
-    align-self: center;
-    background: none;
-    border: 1px dashed var(--ink-soft);
-    color: var(--ink-soft);
-    font-family: var(--font-body);
-    font-size: 13px;
-    font-weight: 600;
-    padding: 8px 16px;
-    border-radius: 6px;
-    cursor: pointer;
-    white-space: nowrap;
-  }
-  #tab-subscriptions .add-btn:hover { border-color: var(--expense); color: var(--expense); }
   #tab-subscriptions .table-scroll { overflow-x: auto; padding-bottom: 4px; }
   #tab-subscriptions .flex-row { display: flex; align-items: center; min-width: max-content; }
   #tab-subscriptions .row-label { width: 190px; flex: 0 0 190px; padding-right: 10px; display: flex; align-items: center; gap: 4px; }
@@ -439,27 +382,6 @@ body.menu-open .side-menu { transform: none; visibility: visible; transition-del
   #tab-subscriptions .row-label .row-remove-btn:hover { color: var(--danger); background: var(--expense-bg); }
   #tab-subscriptions .row-values { display: flex; gap: 34px; }
   #tab-subscriptions .value-cell { width: 118px; flex: 0 0 118px; }
-  #tab-subscriptions .col-head-row { padding-bottom: 12px; margin-bottom: 6px; border-bottom: 1px solid var(--paper-line); }
-  #tab-subscriptions .col-head-cell { position: relative; text-align: right; }
-  #tab-subscriptions .col-head-cell .name-row { display: flex; align-items: center; justify-content: flex-end; gap: 6px; }
-  #tab-subscriptions .col-head-cell input.name {
-    font-family: var(--font-header);
-    font-weight: 600;
-    font-size: 14px;
-    border: none;
-    background: transparent;
-    color: var(--ink);
-    text-align: right;
-    flex: 1 1 auto;
-    min-width: 0;
-    padding: 2px 0;
-  }
-  #tab-subscriptions .col-head-cell input.name:focus { outline: none; border-bottom: 1px solid var(--ink-soft); }
-  #tab-subscriptions .col-head-cell .remove-btn {
-    display: block; margin: 3px 0 0 auto; background: none; border: none;
-    color: var(--ink-soft); font-size: 12px; cursor: pointer; padding: 0;
-  }
-  #tab-subscriptions .col-head-cell .remove-btn:hover { color: var(--expense); }
   #tab-subscriptions .section { margin-bottom: 26px; }
   #tab-subscriptions .section-head { border-bottom: 1px solid var(--paper-line); padding-bottom: 6px; margin-bottom: 2px; }
   #tab-subscriptions .section-head h2 { font-family: var(--font-header); font-size: 15px; font-weight: 600; margin: 0; color: var(--expense); }
@@ -511,48 +433,12 @@ body.menu-open .side-menu { transform: none; visibility: visible; transition-del
     margin: 0 0 28px;
     letter-spacing: var(--letter-spacing-header);
   }
-  #tab-food .add-btn {
-    flex-shrink: 0;
-    align-self: center;
-    background: none;
-    border: 1px dashed var(--ink-soft);
-    color: var(--ink-soft);
-    font-family: var(--font-body);
-    font-size: 13px;
-    font-weight: 600;
-    padding: 8px 16px;
-    border-radius: 6px;
-    cursor: pointer;
-    white-space: nowrap;
-  }
-  #tab-food .add-btn:hover { border-color: var(--expense); color: var(--expense); }
   #tab-food .table-scroll { overflow-x: auto; padding-bottom: 4px; }
   #tab-food .flex-row { display: flex; align-items: center; min-width: max-content; }
   #tab-food .row-label { width: 150px; flex: 0 0 150px; padding-right: 10px; }
   #tab-food .row-label .field-label { font-size: 14px; color: var(--ink); }
   #tab-food .row-values { display: flex; gap: 34px; }
   #tab-food .value-cell { width: 118px; flex: 0 0 118px; }
-  #tab-food .col-head-row { padding-bottom: 12px; margin-bottom: 6px; border-bottom: 1px solid var(--paper-line); }
-  #tab-food .col-head-cell { position: relative; text-align: right; }
-  #tab-food .col-head-cell .name-row { display: flex; align-items: center; justify-content: flex-end; gap: 6px; }
-  #tab-food .col-head-cell input.name {
-    font-family: var(--font-header);
-    font-weight: 600;
-    font-size: 14px;
-    border: none;
-    background: transparent;
-    color: var(--ink);
-    text-align: right;
-    flex: 1 1 auto;
-    min-width: 0;
-    padding: 2px 0;
-  }
-  #tab-food .col-head-cell input.name:focus { outline: none; border-bottom: 1px solid var(--ink-soft); }
-  #tab-food .col-head-cell .remove-btn {
-    display: block; margin: 3px 0 0 auto; background: none; border: none;
-    color: var(--ink-soft); font-size: 12px; cursor: pointer; padding: 0;
-  }
-  #tab-food .col-head-cell .remove-btn:hover { color: var(--expense); }
   #tab-food .section { margin-bottom: 26px; }
   #tab-food .section-head { border-bottom: 1px solid var(--paper-line); padding-bottom: 6px; margin-bottom: 2px; }
   #tab-food .section-head h2 { font-family: var(--font-header); font-size: 15px; font-weight: 600; margin: 0; color: var(--expense); }
@@ -592,21 +478,6 @@ body.menu-open .side-menu { transform: none; visibility: visible; transition-del
     margin: 0 0 28px;
     letter-spacing: var(--letter-spacing-header);
   }
-  #tab-housing .add-btn {
-    flex-shrink: 0;
-    align-self: center;
-    background: none;
-    border: 1px dashed var(--ink-soft);
-    color: var(--ink-soft);
-    font-family: var(--font-body);
-    font-size: 13px;
-    font-weight: 600;
-    padding: 8px 16px;
-    border-radius: 6px;
-    cursor: pointer;
-    white-space: nowrap;
-  }
-  #tab-housing .add-btn:hover { border-color: var(--expense); color: var(--expense); }
   #tab-housing .table-scroll { overflow-x: auto; padding-bottom: 4px; }
   #tab-housing .flex-row { display: flex; align-items: center; min-width: max-content; }
   #tab-housing .row-label { width: 190px; flex: 0 0 190px; padding-right: 10px; }
@@ -614,27 +485,6 @@ body.menu-open .side-menu { transform: none; visibility: visible; transition-del
   #tab-housing .row-label .hint { display: block; font-size: 11px; color: var(--ink-soft); margin-top: 2px; }
   #tab-housing .row-values { display: flex; gap: 34px; }
   #tab-housing .value-cell { width: 118px; flex: 0 0 118px; }
-  #tab-housing .col-head-row { padding-bottom: 12px; margin-bottom: 6px; border-bottom: 1px solid var(--paper-line); }
-  #tab-housing .col-head-cell { position: relative; text-align: right; }
-  #tab-housing .col-head-cell .name-row { display: flex; align-items: center; justify-content: flex-end; gap: 6px; }
-  #tab-housing .col-head-cell input.name {
-    font-family: var(--font-header);
-    font-weight: 600;
-    font-size: 14px;
-    border: none;
-    background: transparent;
-    color: var(--ink);
-    text-align: right;
-    flex: 1 1 auto;
-    min-width: 0;
-    padding: 2px 0;
-  }
-  #tab-housing .col-head-cell input.name:focus { outline: none; border-bottom: 1px solid var(--ink-soft); }
-  #tab-housing .col-head-cell .remove-btn {
-    display: block; margin: 3px 0 0 auto; background: none; border: none;
-    color: var(--ink-soft); font-size: 12px; cursor: pointer; padding: 0;
-  }
-  #tab-housing .col-head-cell .remove-btn:hover { color: var(--expense); }
   #tab-housing .section { margin-bottom: 26px; }
   #tab-housing .section-head { border-bottom: 1px solid var(--paper-line); padding-bottom: 6px; margin-bottom: 2px; }
   #tab-housing .section-head h2 { font-family: var(--font-header); font-size: 15px; font-weight: 600; margin: 0; color: var(--expense); }
@@ -674,21 +524,6 @@ body.menu-open .side-menu { transform: none; visibility: visible; transition-del
     margin: 0 0 28px;
     letter-spacing: var(--letter-spacing-header);
   }
-  #tab-car .add-btn {
-    flex-shrink: 0;
-    align-self: center;
-    background: none;
-    border: 1px dashed var(--ink-soft);
-    color: var(--ink-soft);
-    font-family: var(--font-body);
-    font-size: 13px;
-    font-weight: 600;
-    padding: 8px 16px;
-    border-radius: 6px;
-    cursor: pointer;
-    white-space: nowrap;
-  }
-  #tab-car .add-btn:hover { border-color: var(--expense); color: var(--expense); }
   #tab-car .table-scroll { overflow-x: auto; padding-bottom: 4px; }
   #tab-car .flex-row { display: flex; align-items: center; min-width: max-content; }
   #tab-car .row-label { width: 190px; flex: 0 0 190px; padding-right: 10px; }
@@ -696,27 +531,6 @@ body.menu-open .side-menu { transform: none; visibility: visible; transition-del
   #tab-car .row-label .hint { display: block; font-size: 11px; color: var(--ink-soft); margin-top: 2px; }
   #tab-car .row-values { display: flex; gap: 34px; }
   #tab-car .value-cell { width: 118px; flex: 0 0 118px; }
-  #tab-car .col-head-row { padding-bottom: 12px; margin-bottom: 6px; border-bottom: 1px solid var(--paper-line); }
-  #tab-car .col-head-cell { position: relative; text-align: right; }
-  #tab-car .col-head-cell .name-row { display: flex; align-items: center; justify-content: flex-end; gap: 6px; }
-  #tab-car .col-head-cell input.name {
-    font-family: var(--font-header);
-    font-weight: 600;
-    font-size: 14px;
-    border: none;
-    background: transparent;
-    color: var(--ink);
-    text-align: right;
-    flex: 1 1 auto;
-    min-width: 0;
-    padding: 2px 0;
-  }
-  #tab-car .col-head-cell input.name:focus { outline: none; border-bottom: 1px solid var(--ink-soft); }
-  #tab-car .col-head-cell .remove-btn {
-    display: block; margin: 3px 0 0 auto; background: none; border: none;
-    color: var(--ink-soft); font-size: 12px; cursor: pointer; padding: 0;
-  }
-  #tab-car .col-head-cell .remove-btn:hover { color: var(--expense); }
   #tab-car .section { margin-bottom: 26px; }
   #tab-car .section-head { border-bottom: 1px solid var(--paper-line); padding-bottom: 6px; margin-bottom: 2px; }
   #tab-car .section-head h2 { font-family: var(--font-header); font-size: 15px; font-weight: 600; margin: 0; color: var(--expense); }
@@ -756,48 +570,12 @@ body.menu-open .side-menu { transform: none; visibility: visible; transition-del
     margin: 0 0 28px;
     letter-spacing: var(--letter-spacing-header);
   }
-  #tab-utilities .add-btn {
-    flex-shrink: 0;
-    align-self: center;
-    background: none;
-    border: 1px dashed var(--ink-soft);
-    color: var(--ink-soft);
-    font-family: var(--font-body);
-    font-size: 13px;
-    font-weight: 600;
-    padding: 8px 16px;
-    border-radius: 6px;
-    cursor: pointer;
-    white-space: nowrap;
-  }
-  #tab-utilities .add-btn:hover { border-color: var(--expense); color: var(--expense); }
   #tab-utilities .table-scroll { overflow-x: auto; padding-bottom: 4px; }
   #tab-utilities .flex-row { display: flex; align-items: center; min-width: max-content; }
   #tab-utilities .row-label { width: 190px; flex: 0 0 190px; padding-right: 10px; }
   #tab-utilities .row-label .field-label { font-size: 14px; color: var(--ink); }
   #tab-utilities .row-values { display: flex; gap: 34px; }
   #tab-utilities .value-cell { width: 118px; flex: 0 0 118px; }
-  #tab-utilities .col-head-row { padding-bottom: 12px; margin-bottom: 6px; border-bottom: 1px solid var(--paper-line); }
-  #tab-utilities .col-head-cell { position: relative; text-align: right; }
-  #tab-utilities .col-head-cell .name-row { display: flex; align-items: center; justify-content: flex-end; gap: 6px; }
-  #tab-utilities .col-head-cell input.name {
-    font-family: var(--font-header);
-    font-weight: 600;
-    font-size: 14px;
-    border: none;
-    background: transparent;
-    color: var(--ink);
-    text-align: right;
-    flex: 1 1 auto;
-    min-width: 0;
-    padding: 2px 0;
-  }
-  #tab-utilities .col-head-cell input.name:focus { outline: none; border-bottom: 1px solid var(--ink-soft); }
-  #tab-utilities .col-head-cell .remove-btn {
-    display: block; margin: 3px 0 0 auto; background: none; border: none;
-    color: var(--ink-soft); font-size: 12px; cursor: pointer; padding: 0;
-  }
-  #tab-utilities .col-head-cell .remove-btn:hover { color: var(--expense); }
   #tab-utilities .section { margin-bottom: 26px; }
   #tab-utilities .section-head { border-bottom: 1px solid var(--paper-line); padding-bottom: 6px; margin-bottom: 2px; }
   #tab-utilities .section-head h2 { font-family: var(--font-header); font-size: 15px; font-weight: 600; margin: 0; color: var(--expense); }
@@ -837,21 +615,6 @@ body.menu-open .side-menu { transform: none; visibility: visible; transition-del
     margin: 0 0 28px;
     letter-spacing: var(--letter-spacing-header);
   }
-  #tab-savings .add-btn {
-    flex-shrink: 0;
-    align-self: center;
-    background: none;
-    border: 1px dashed var(--ink-soft);
-    color: var(--ink-soft);
-    font-family: var(--font-body);
-    font-size: 13px;
-    font-weight: 600;
-    padding: 8px 16px;
-    border-radius: 6px;
-    cursor: pointer;
-    white-space: nowrap;
-  }
-  #tab-savings .add-btn:hover { border-color: var(--income); color: var(--income); }
   #tab-savings .table-scroll { overflow-x: auto; padding-bottom: 4px; }
   #tab-savings .flex-row { display: flex; align-items: center; min-width: max-content; }
   #tab-savings .row-label { width: 190px; flex: 0 0 190px; padding-right: 10px; }
@@ -859,27 +622,6 @@ body.menu-open .side-menu { transform: none; visibility: visible; transition-del
   #tab-savings .row-label .hint { display: block; font-size: 11px; color: var(--ink-soft); margin-top: 2px; }
   #tab-savings .row-values { display: flex; gap: 34px; }
   #tab-savings .value-cell { width: 118px; flex: 0 0 118px; }
-  #tab-savings .col-head-row { padding-bottom: 12px; margin-bottom: 6px; border-bottom: 1px solid var(--paper-line); }
-  #tab-savings .col-head-cell { position: relative; text-align: right; }
-  #tab-savings .col-head-cell .name-row { display: flex; align-items: center; justify-content: flex-end; gap: 6px; }
-  #tab-savings .col-head-cell input.name {
-    font-family: var(--font-header);
-    font-weight: 600;
-    font-size: 14px;
-    border: none;
-    background: transparent;
-    color: var(--ink);
-    text-align: right;
-    flex: 1 1 auto;
-    min-width: 0;
-    padding: 2px 0;
-  }
-  #tab-savings .col-head-cell input.name:focus { outline: none; border-bottom: 1px solid var(--ink-soft); }
-  #tab-savings .col-head-cell .remove-btn {
-    display: block; margin: 3px 0 0 auto; background: none; border: none;
-    color: var(--ink-soft); font-size: 12px; cursor: pointer; padding: 0;
-  }
-  #tab-savings .col-head-cell .remove-btn:hover { color: var(--expense); }
   #tab-savings .section { margin-bottom: 26px; }
   #tab-savings .section-head { border-bottom: 1px solid var(--paper-line); padding-bottom: 6px; margin-bottom: 2px; }
   #tab-savings .section-head h2 { font-family: var(--font-header); font-size: 15px; font-weight: 600; margin: 0; color: var(--income); }
@@ -1047,91 +789,32 @@ body.menu-open .side-menu { transform: none; visibility: visible; transition-del
     }
   });
 
-  /* ================= Shared scenario registry ================= */
-  // A single, synced list of scenario names shared by every expense tab (Housing, Food, Car,
-  // Utilities, Savings, Subscriptions) — adding, removing, or renaming a scenario in any one
-  // tab does the same everywhere else. Each tab keeps only its own per-scenario dollar values,
-  // keyed by these shared ids. rename() itself doesn't notify: the input being typed into stays
-  // the visible source of truth for its own tab while the user is still mid-keystroke, so a
-  // notify()-triggered re-render there can't fight the cursor. Each tab's name <input> calls
-  // commitRename() on blur (and Enter) instead, once typing is actually done, which both
-  // notifies (pushing the new name out to every other tab's next render) and saves.
+  /* ================= Single-budget registry ================= */
+  // The planner used to compare several named scenarios side by side. It is now one plain
+  // budget, but every tab still keys its values by this one fixed id, so files saved back
+  // then load unchanged: the first saved scenario becomes the budget and any others are
+  // dropped the next time the file is saved.
   const ScenarioRegistry = (function () {
-    let scenarios = [{ id: 'sc1', name: 'Scenario A' }];
-    let nextLetter = 66; // 'B'
+    let scenarios = [{ id: 'sc1', name: 'Budget' }];
     const listeners = [];
 
     function list() { return scenarios; }
 
     function subscribe(fn) { listeners.push(fn); }
 
-    // Every subscriber gets the same event object, so a tab can tell a plain
-    // add/remove/load apart from a clone (which needs to copy a source scenario's
-    // values instead of just defaulting the new column blank).
     function notify(event) { listeners.forEach(fn => fn(event || { type: 'change' })); }
 
-    function add() {
-      const id = 'sc' + Date.now();
-      scenarios.push({ id, name: 'Scenario ' + String.fromCharCode(nextLetter) });
-      nextLetter++;
-      notify({ type: 'add', id });
-      return id;
-    }
-
-    function remove(id) {
-      if (scenarios.length <= 1) return;
-      scenarios = scenarios.filter(s => s.id !== id);
-      notify({ type: 'remove', id });
-    }
-
-    // Picks "<name> copy", or "<name> copy 2", "<name> copy 3", ... if that's taken —
-    // stripping any existing " copy"/" copy N" suffix first, so cloning a clone doesn't
-    // pile up into "Scenario A copy copy copy".
-    function cloneName(baseName) {
-      const stripped = baseName.replace(/\s+copy(\s+\d+)?$/i, '');
-      const taken = new Set(scenarios.map(s => s.name));
-      if (!taken.has(stripped + ' copy')) return stripped + ' copy';
-      let n = 2;
-      while (taken.has(stripped + ' copy ' + n)) n++;
-      return stripped + ' copy ' + n;
-    }
-
-    function clone(sourceId) {
-      const source = scenarios.find(s => s.id === sourceId);
-      if (!source) return;
-      const id = 'sc' + Date.now();
-      scenarios.push({ id, name: cloneName(source.name) });
-      notify({ type: 'clone', id, sourceId });
-      return id;
-    }
-
-    function rename(id, name) {
-      const s = scenarios.find(s => s.id === id);
-      if (s) s.name = name;
-    }
-
-    // Called once the user is done typing a scenario name (blur/Enter) — pushes the
-    // new name out to every other tab's next render and saves it.
-    function commitRename() {
-      notify({ type: 'rename' });
-    }
-
     function getState() {
-      return { scenarios: JSON.parse(JSON.stringify(scenarios)), nextLetter };
+      return { scenarios: JSON.parse(JSON.stringify(scenarios)) };
     }
 
     function setState(state) {
-      if (state && Array.isArray(state.scenarios) && state.scenarios.length) {
-        scenarios = state.scenarios.map(s => ({ id: s.id, name: s.name }));
-        nextLetter = state.nextLetter || nextLetter;
-      } else {
-        scenarios = [{ id: 'sc1', name: 'Scenario A' }];
-        nextLetter = 66;
-      }
+      const first = state && Array.isArray(state.scenarios) && state.scenarios[0];
+      scenarios = [{ id: (first && first.id) || 'sc1', name: 'Budget' }];
       notify({ type: 'load' });
     }
 
-    return { list, subscribe, add, remove, clone, rename, commitRename, getState, setState };
+    return { list, subscribe, getState, setState };
   })();
 
   /* ================= Budget app (namespaced) ================= */
@@ -1166,25 +849,15 @@ body.menu-open .side-menu { transform: none; visibility: visible; transition-del
       return e;
     }
 
-    // Income has no scenarios; the summary bar shows it once next to every scenario's totals.
     function renderSummary() {
       const bar = document.getElementById('summary-bar');
       if (!bar) return;
-      const scenarios = ScenarioRegistry.list();
-      const multi = scenarios.length > 1;
-      let html = '<div class="sum-grid' + (multi ? ' multi' : '') + '">';
-      html += (multi ? '<div></div>' : '') +
-        '<div class="sum-label">Income</div><div class="sum-label">Expenses</div><div class="sum-label">Net</div>';
-      scenarios.forEach(s => {
-        html += (multi ? '<div class="sum-name"></div>' : '') +
-          '<div class="sum-val income" id="sum-income-' + s.id + '">$0.00</div>' +
-          '<div class="sum-val" id="sum-exp-' + s.id + '">$0.00</div>' +
-          '<div class="sum-val net" id="sum-net-' + s.id + '">$0.00</div>';
-      });
-      bar.innerHTML = html + '</div>';
-      if (multi) {
-        bar.querySelectorAll('.sum-name').forEach((n, i) => { n.textContent = scenarios[i].name; });
-      }
+      const id = ScenarioRegistry.list()[0].id;
+      bar.innerHTML = '<div class="sum-grid">' +
+        '<div class="sum-label">Income</div><div class="sum-label">Expenses</div><div class="sum-label">Net</div>' +
+        '<div class="sum-val income" id="sum-income-' + id + '">$0.00</div>' +
+        '<div class="sum-val" id="sum-exp-' + id + '">$0.00</div>' +
+        '<div class="sum-val net" id="sum-net-' + id + '">$0.00</div></div>';
     }
 
     function setIncomeAmount(amount) {
@@ -1232,51 +905,6 @@ body.menu-open .side-menu { transform: none; visibility: visible; transition-del
       recalculateAll();
     }
 
-    // Adding, removing, and cloning scenarios all live here on the Budget tab only —
-    // the other tabs just display and edit whatever scenarios already exist.
-    function buildHeaderRow() {
-      const row = el('div', 'flex-row col-head-row');
-      row.appendChild(el('div', 'row-label'));
-      const values = el('div', 'row-values');
-      const scenarios = ScenarioRegistry.list();
-      scenarios.forEach(scenario => {
-        const cell = el('div', 'value-cell col-head-cell');
-        const nameRow = el('div', 'name-row');
-        const input = document.createElement('input');
-        input.className = 'name';
-        input.value = scenario.name;
-        input.addEventListener('input', e => ScenarioRegistry.rename(scenario.id, e.target.value));
-        input.addEventListener('blur', () => ScenarioRegistry.commitRename());
-        input.addEventListener('keydown', e => { if (e.key === 'Enter') input.blur(); });
-        nameRow.appendChild(input);
-        cell.appendChild(nameRow);
-
-        const actions = el('div', 'col-head-actions');
-        const cloneBtn = document.createElement('button');
-        cloneBtn.className = 'clone-btn';
-        cloneBtn.textContent = 'Clone';
-        cloneBtn.title = 'Duplicate this scenario, with all its numbers, to tweak the copy for comparison';
-        cloneBtn.onclick = () => ScenarioRegistry.clone(scenario.id);
-        actions.appendChild(cloneBtn);
-        if (scenarios.length > 1) {
-          const removeBtn = document.createElement('button');
-          removeBtn.className = 'remove-btn';
-          removeBtn.textContent = 'Remove';
-          removeBtn.onclick = () => ScenarioRegistry.remove(scenario.id);
-          actions.appendChild(removeBtn);
-        }
-        cell.appendChild(actions);
-        values.appendChild(cell);
-      });
-      const addBtn = document.createElement('button');
-      addBtn.className = 'add-btn';
-      addBtn.textContent = '+ Add scenario';
-      addBtn.onclick = () => ScenarioRegistry.add();
-      values.appendChild(addBtn);
-      row.appendChild(values);
-      return row;
-    }
-
     function buildCustomRow(rowData) {
       const row = el('div', 'row flex-row');
       const label = el('div', 'row-label');
@@ -1321,7 +949,6 @@ body.menu-open .side-menu { transform: none; visibility: visible; transition-del
       ensureScenarioColumns();
       const root = document.getElementById('budget-table-root');
       root.innerHTML = '';
-      root.appendChild(buildHeaderRow());
 
       const section = el('div', 'section');
       customRows.forEach(r => section.appendChild(buildCustomRow(r)));
@@ -1399,11 +1026,6 @@ body.menu-open .side-menu { transform: none; visibility: visible; transition-del
     }
 
     ScenarioRegistry.subscribe(event => {
-      if (event && event.type === 'clone' && event.sourceId) {
-        customRows.forEach(row => {
-          if (row.values[event.sourceId] !== undefined) row.values[event.id] = row.values[event.sourceId];
-        });
-      }
       render();
     });
 
@@ -1558,6 +1180,7 @@ body.menu-open .side-menu { transform: none; visibility: visible; transition-del
     let valuesByScenario = {};
 
     function ensureValues() {
+      Object.keys(valuesByScenario).forEach(k => { if (!ScenarioRegistry.list().some(s => s.id === k)) delete valuesByScenario[k]; });
       ScenarioRegistry.list().forEach(s => {
         if (!valuesByScenario[s.id]) valuesByScenario[s.id] = Object.assign({}, DEFAULTS);
       });
@@ -1579,30 +1202,6 @@ body.menu-open .side-menu { transform: none; visibility: visible; transition-del
       if (!values) return;
       values[key] = raw;
       recalculateAll();
-    }
-
-    // Adding, removing, and cloning scenarios only happens on the Budget tab — this
-    // header just displays each scenario's name (still editable/renamable here).
-    function buildHeaderRow() {
-      const row = el('div', 'flex-row col-head-row');
-      row.appendChild(el('div', 'row-label'));
-      const values = el('div', 'row-values');
-      const scenarios = ScenarioRegistry.list();
-      scenarios.forEach(scenario => {
-        const cell = el('div', 'value-cell col-head-cell');
-        const nameRow = el('div', 'name-row');
-        const input = document.createElement('input');
-        input.className = 'name';
-        input.value = scenario.name;
-        input.addEventListener('input', e => ScenarioRegistry.rename(scenario.id, e.target.value));
-        input.addEventListener('blur', () => ScenarioRegistry.commitRename());
-        input.addEventListener('keydown', e => { if (e.key === 'Enter') input.blur(); });
-        nameRow.appendChild(input);
-        cell.appendChild(nameRow);
-        values.appendChild(cell);
-      });
-      row.appendChild(values);
-      return row;
     }
 
     function buildInputRow(field) {
@@ -1653,7 +1252,6 @@ body.menu-open .side-menu { transform: none; visibility: visible; transition-del
     function render() {
       const root = document.getElementById('housing-table-root');
       root.innerHTML = '';
-      root.appendChild(buildHeaderRow());
 
       const section = el('div', 'section');
       section.appendChild(el('div', 'section-head', '<h2>Housing costs</h2>'));
@@ -1695,9 +1293,6 @@ body.menu-open .side-menu { transform: none; visibility: visible; transition-del
     }
 
     ScenarioRegistry.subscribe(event => {
-      if (event && event.type === 'clone' && valuesByScenario[event.sourceId]) {
-        valuesByScenario[event.id] = JSON.parse(JSON.stringify(valuesByScenario[event.sourceId]));
-      }
       ensureValues();
       render();
     });
@@ -1717,6 +1312,7 @@ body.menu-open .side-menu { transform: none; visibility: visible; transition-del
     let valuesByScenario = {};
 
     function ensureValues() {
+      Object.keys(valuesByScenario).forEach(k => { if (!ScenarioRegistry.list().some(s => s.id === k)) delete valuesByScenario[k]; });
       ScenarioRegistry.list().forEach(s => {
         if (!valuesByScenario[s.id]) valuesByScenario[s.id] = Object.assign({}, DEFAULTS);
       });
@@ -1738,30 +1334,6 @@ body.menu-open .side-menu { transform: none; visibility: visible; transition-del
       if (!values) return;
       values[key] = raw;
       recalculateAll();
-    }
-
-    // Adding, removing, and cloning scenarios only happens on the Budget tab — this
-    // header just displays each scenario's name (still editable/renamable here).
-    function buildHeaderRow() {
-      const row = el('div', 'flex-row col-head-row');
-      row.appendChild(el('div', 'row-label'));
-      const values = el('div', 'row-values');
-      const scenarios = ScenarioRegistry.list();
-      scenarios.forEach(scenario => {
-        const cell = el('div', 'value-cell col-head-cell');
-        const nameRow = el('div', 'name-row');
-        const input = document.createElement('input');
-        input.className = 'name';
-        input.value = scenario.name;
-        input.addEventListener('input', e => ScenarioRegistry.rename(scenario.id, e.target.value));
-        input.addEventListener('blur', () => ScenarioRegistry.commitRename());
-        input.addEventListener('keydown', e => { if (e.key === 'Enter') input.blur(); });
-        nameRow.appendChild(input);
-        cell.appendChild(nameRow);
-        values.appendChild(cell);
-      });
-      row.appendChild(values);
-      return row;
     }
 
     function buildInputRow(field) {
@@ -1809,7 +1381,6 @@ body.menu-open .side-menu { transform: none; visibility: visible; transition-del
     function render() {
       const root = document.getElementById('food-table-root');
       root.innerHTML = '';
-      root.appendChild(buildHeaderRow());
 
       const section = el('div', 'section');
       section.appendChild(el('div', 'section-head', '<h2>Food spending</h2>'));
@@ -1858,9 +1429,6 @@ body.menu-open .side-menu { transform: none; visibility: visible; transition-del
     }
 
     ScenarioRegistry.subscribe(event => {
-      if (event && event.type === 'clone' && valuesByScenario[event.sourceId]) {
-        valuesByScenario[event.id] = JSON.parse(JSON.stringify(valuesByScenario[event.sourceId]));
-      }
       ensureValues();
       render();
     });
@@ -1883,6 +1451,7 @@ body.menu-open .side-menu { transform: none; visibility: visible; transition-del
     let valuesByScenario = {};
 
     function ensureValues() {
+      Object.keys(valuesByScenario).forEach(k => { if (!ScenarioRegistry.list().some(s => s.id === k)) delete valuesByScenario[k]; });
       ScenarioRegistry.list().forEach(s => {
         if (!valuesByScenario[s.id]) valuesByScenario[s.id] = Object.assign({}, DEFAULTS);
       });
@@ -1904,30 +1473,6 @@ body.menu-open .side-menu { transform: none; visibility: visible; transition-del
       if (!values) return;
       values[key] = raw;
       recalculateAll();
-    }
-
-    // Adding, removing, and cloning scenarios only happens on the Budget tab — this
-    // header just displays each scenario's name (still editable/renamable here).
-    function buildHeaderRow() {
-      const row = el('div', 'flex-row col-head-row');
-      row.appendChild(el('div', 'row-label'));
-      const values = el('div', 'row-values');
-      const scenarios = ScenarioRegistry.list();
-      scenarios.forEach(scenario => {
-        const cell = el('div', 'value-cell col-head-cell');
-        const nameRow = el('div', 'name-row');
-        const input = document.createElement('input');
-        input.className = 'name';
-        input.value = scenario.name;
-        input.addEventListener('input', e => ScenarioRegistry.rename(scenario.id, e.target.value));
-        input.addEventListener('blur', () => ScenarioRegistry.commitRename());
-        input.addEventListener('keydown', e => { if (e.key === 'Enter') input.blur(); });
-        nameRow.appendChild(input);
-        cell.appendChild(nameRow);
-        values.appendChild(cell);
-      });
-      row.appendChild(values);
-      return row;
     }
 
     function buildInputRow(field) {
@@ -1978,7 +1523,6 @@ body.menu-open .side-menu { transform: none; visibility: visible; transition-del
     function render() {
       const root = document.getElementById('car-table-root');
       root.innerHTML = '';
-      root.appendChild(buildHeaderRow());
 
       const section = el('div', 'section');
       section.appendChild(el('div', 'section-head', '<h2>Car spending</h2>'));
@@ -2020,9 +1564,6 @@ body.menu-open .side-menu { transform: none; visibility: visible; transition-del
     }
 
     ScenarioRegistry.subscribe(event => {
-      if (event && event.type === 'clone' && valuesByScenario[event.sourceId]) {
-        valuesByScenario[event.id] = JSON.parse(JSON.stringify(valuesByScenario[event.sourceId]));
-      }
       ensureValues();
       render();
     });
@@ -2045,6 +1586,7 @@ body.menu-open .side-menu { transform: none; visibility: visible; transition-del
     let valuesByScenario = {};
 
     function ensureValues() {
+      Object.keys(valuesByScenario).forEach(k => { if (!ScenarioRegistry.list().some(s => s.id === k)) delete valuesByScenario[k]; });
       ScenarioRegistry.list().forEach(s => {
         if (!valuesByScenario[s.id]) valuesByScenario[s.id] = Object.assign({}, DEFAULTS);
       });
@@ -2066,30 +1608,6 @@ body.menu-open .side-menu { transform: none; visibility: visible; transition-del
       if (!values) return;
       values[key] = raw;
       recalculateAll();
-    }
-
-    // Adding, removing, and cloning scenarios only happens on the Budget tab — this
-    // header just displays each scenario's name (still editable/renamable here).
-    function buildHeaderRow() {
-      const row = el('div', 'flex-row col-head-row');
-      row.appendChild(el('div', 'row-label'));
-      const values = el('div', 'row-values');
-      const scenarios = ScenarioRegistry.list();
-      scenarios.forEach(scenario => {
-        const cell = el('div', 'value-cell col-head-cell');
-        const nameRow = el('div', 'name-row');
-        const input = document.createElement('input');
-        input.className = 'name';
-        input.value = scenario.name;
-        input.addEventListener('input', e => ScenarioRegistry.rename(scenario.id, e.target.value));
-        input.addEventListener('blur', () => ScenarioRegistry.commitRename());
-        input.addEventListener('keydown', e => { if (e.key === 'Enter') input.blur(); });
-        nameRow.appendChild(input);
-        cell.appendChild(nameRow);
-        values.appendChild(cell);
-      });
-      row.appendChild(values);
-      return row;
     }
 
     function buildInputRow(field) {
@@ -2137,7 +1655,6 @@ body.menu-open .side-menu { transform: none; visibility: visible; transition-del
     function render() {
       const root = document.getElementById('utilities-table-root');
       root.innerHTML = '';
-      root.appendChild(buildHeaderRow());
 
       const section = el('div', 'section');
       section.appendChild(el('div', 'section-head', '<h2>Utilities spending</h2>'));
@@ -2176,9 +1693,6 @@ body.menu-open .side-menu { transform: none; visibility: visible; transition-del
     }
 
     ScenarioRegistry.subscribe(event => {
-      if (event && event.type === 'clone' && valuesByScenario[event.sourceId]) {
-        valuesByScenario[event.id] = JSON.parse(JSON.stringify(valuesByScenario[event.sourceId]));
-      }
       ensureValues();
       render();
     });
@@ -2202,6 +1716,7 @@ body.menu-open .side-menu { transform: none; visibility: visible; transition-del
     let valuesByScenario = {};
 
     function ensureValues() {
+      Object.keys(valuesByScenario).forEach(k => { if (!ScenarioRegistry.list().some(s => s.id === k)) delete valuesByScenario[k]; });
       ScenarioRegistry.list().forEach(s => {
         if (!valuesByScenario[s.id]) valuesByScenario[s.id] = Object.assign({}, DEFAULTS);
       });
@@ -2223,30 +1738,6 @@ body.menu-open .side-menu { transform: none; visibility: visible; transition-del
       if (!values) return;
       values[key] = raw;
       recalculateAll();
-    }
-
-    // Adding, removing, and cloning scenarios only happens on the Budget tab — this
-    // header just displays each scenario's name (still editable/renamable here).
-    function buildHeaderRow() {
-      const row = el('div', 'flex-row col-head-row');
-      row.appendChild(el('div', 'row-label'));
-      const values = el('div', 'row-values');
-      const scenarios = ScenarioRegistry.list();
-      scenarios.forEach(scenario => {
-        const cell = el('div', 'value-cell col-head-cell');
-        const nameRow = el('div', 'name-row');
-        const input = document.createElement('input');
-        input.className = 'name';
-        input.value = scenario.name;
-        input.addEventListener('input', e => ScenarioRegistry.rename(scenario.id, e.target.value));
-        input.addEventListener('blur', () => ScenarioRegistry.commitRename());
-        input.addEventListener('keydown', e => { if (e.key === 'Enter') input.blur(); });
-        nameRow.appendChild(input);
-        cell.appendChild(nameRow);
-        values.appendChild(cell);
-      });
-      row.appendChild(values);
-      return row;
     }
 
     function buildInputRow(field) {
@@ -2314,7 +1805,6 @@ body.menu-open .side-menu { transform: none; visibility: visible; transition-del
     function render() {
       const root = document.getElementById('savings-table-root');
       root.innerHTML = '';
-      root.appendChild(buildHeaderRow());
 
       const section = el('div', 'section');
       section.appendChild(el('div', 'section-head', '<h2>Yearly savings goals</h2>'));
@@ -2360,9 +1850,6 @@ body.menu-open .side-menu { transform: none; visibility: visible; transition-del
     }
 
     ScenarioRegistry.subscribe(event => {
-      if (event && event.type === 'clone' && valuesByScenario[event.sourceId]) {
-        valuesByScenario[event.id] = JSON.parse(JSON.stringify(valuesByScenario[event.sourceId]));
-      }
       ensureValues();
       render();
     });
@@ -2378,6 +1865,7 @@ body.menu-open .side-menu { transform: none; visibility: visible; transition-del
     let valuesByScenario = {};
 
     function ensureValues() {
+      Object.keys(valuesByScenario).forEach(k => { if (!ScenarioRegistry.list().some(s => s.id === k)) delete valuesByScenario[k]; });
       ScenarioRegistry.list().forEach(s => {
         if (!valuesByScenario[s.id]) {
           const values = {};
@@ -2416,30 +1904,6 @@ body.menu-open .side-menu { transform: none; visibility: visible; transition-del
       rows = rows.filter(r => r.id !== rowId);
       Object.keys(valuesByScenario).forEach(sid => { delete valuesByScenario[sid][rowId]; });
       render();
-    }
-
-    // Adding, removing, and cloning scenarios only happens on the Budget tab — this
-    // header just displays each scenario's name (still editable/renamable here).
-    function buildHeaderRow() {
-      const row = el('div', 'flex-row col-head-row');
-      row.appendChild(el('div', 'row-label'));
-      const values = el('div', 'row-values');
-      const scenarios = ScenarioRegistry.list();
-      scenarios.forEach(scenario => {
-        const cell = el('div', 'value-cell col-head-cell');
-        const nameRow = el('div', 'name-row');
-        const input = document.createElement('input');
-        input.className = 'name';
-        input.value = scenario.name;
-        input.addEventListener('input', e => ScenarioRegistry.rename(scenario.id, e.target.value));
-        input.addEventListener('blur', () => ScenarioRegistry.commitRename());
-        input.addEventListener('keydown', e => { if (e.key === 'Enter') input.blur(); });
-        nameRow.appendChild(input);
-        cell.appendChild(nameRow);
-        values.appendChild(cell);
-      });
-      row.appendChild(values);
-      return row;
     }
 
     function buildInputRow(rowData) {
@@ -2504,7 +1968,6 @@ body.menu-open .side-menu { transform: none; visibility: visible; transition-del
       ensureValues();
       const root = document.getElementById('subscriptions-table-root');
       root.innerHTML = '';
-      root.appendChild(buildHeaderRow());
 
       const section = el('div', 'section');
       section.appendChild(el('div', 'section-head', '<h2>Subscriptions</h2>'));
@@ -2591,9 +2054,6 @@ body.menu-open .side-menu { transform: none; visibility: visible; transition-del
     }
 
     ScenarioRegistry.subscribe(event => {
-      if (event && event.type === 'clone' && valuesByScenario[event.sourceId]) {
-        valuesByScenario[event.id] = JSON.parse(JSON.stringify(valuesByScenario[event.sourceId]));
-      }
       render();
     });
 
