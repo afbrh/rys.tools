@@ -979,7 +979,7 @@ body.menu-open .side-menu { transform: none; visibility: visible; transition-del
           if (e) { e.textContent = text; if (color) e.style.color = color; }
         };
         set('sum-income-', currency(incomeAmount));
-        set('sum-exp-', currency(expenseTotal));
+        set('sum-exp-', (expenseTotal > 0 ? '-' : '') + currency(expenseTotal), 'var(--expense)');
         set('sum-net-', (net < 0 ? '-' : '') + currency(Math.abs(net)), net < 0 ? 'var(--expense)' : 'var(--income)');
       });
 
