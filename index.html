@@ -72,6 +72,8 @@ body.menu-open .side-menu { transform: none; visibility: visible; transition-del
   /* ---------- single-scroll cards ---------- */
   #app-content { max-width: 992px; margin: 0 auto; padding: 16px; }
   .tab-panel { margin: 0 0 14px; padding: 0; overflow: hidden; border: 1px solid var(--paper-line); border-radius: 12px; background: var(--card); }
+  .card-title { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
+  .card-title .card-total { font-family: var(--font-mono); font-weight: 500; color: var(--gold); }
   .card-title { margin: 0; padding: 10px 14px; background: var(--paper); border-bottom: 1px solid var(--paper-line); font-family: var(--font-header); font-size: 14px; font-weight: 600; color: var(--ink); }
   #app-content .tab-panel .page, #app-content .tab-panel .sheet { max-width: none; margin: 0; padding: 12px 16px 6px; }
   @media (max-width: 560px) { #app-content { padding: 12px 10px; } #app-content .tab-panel .page, #app-content .tab-panel .sheet { padding: 10px 10px 4px; } }
@@ -789,6 +791,15 @@ body.menu-open .side-menu { transform: none; visibility: visible; transition-del
     }
   });
 
+  // Each expense card shows its monthly total right-justified in its title bar.
+  function setCardTotal(tab, amount) {
+    const h = document.querySelector('#tab-' + tab + ' .card-title');
+    if (!h) return;
+    let t = h.querySelector('.card-total');
+    if (!t) { t = document.createElement('span'); t.className = 'card-total'; h.appendChild(t); }
+    t.textContent = '$' + amount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  }
+
   /* ================= Single-budget registry ================= */
   // The planner used to compare several named scenarios side by side. It is now one plain
   // budget, but every tab still keys its values by this one fixed id, so files saved back
@@ -971,9 +982,13 @@ body.menu-open .side-menu { transform: none; visibility: visible; transition-del
         LOCKED_FIELDS.forEach(field => {
           expenseTotal += (lockedAmounts[field.key] && lockedAmounts[field.key][scenario.id]) || 0;
         });
+        let otherTotal = 0;
         customRows.forEach(row => {
-          expenseTotal += parseFloat(row.values[scenario.id]) || 0;
+          const v = parseFloat(row.values[scenario.id]) || 0;
+          expenseTotal += v;
+          otherTotal += v;
         });
+        setCardTotal('budget', otherTotal);
         const net = incomeAmount - expenseTotal;
         const set = (id, text, color) => {
           const e = document.getElementById(id + scenario.id);
@@ -1232,35 +1247,13 @@ body.menu-open .side-menu { transform: none; visibility: visible; transition-del
       return row;
     }
 
-    function buildTotalRow() {
-      const row = el('div', 'flex-row payment-row');
-      row.appendChild(el('div', 'row-label', '<span class="field-label">Total housing expense</span>'));
-      const values = el('div', 'row-values');
-      ScenarioRegistry.list().forEach(scenario => {
-        const cell = el('div', 'value-cell');
-        const span = document.createElement('span');
-        span.className = 'value-text';
-        span.id = 'housing-total-' + scenario.id;
-        span.textContent = '$0';
-        cell.appendChild(span);
-        values.appendChild(cell);
-      });
-      row.appendChild(values);
-      return row;
-    }
-
     function render() {
       const root = document.getElementById('housing-table-root');
       root.innerHTML = '';
 
       const section = el('div', 'section');
-      section.appendChild(el('div', 'section-head', '<h2>Housing costs</h2>'));
       HOUSING_FIELDS.forEach(f => section.appendChild(buildInputRow(f)));
       root.appendChild(section);
-
-      const totalBlock = el('div', 'summary-block payment-block');
-      totalBlock.appendChild(buildTotalRow());
-      root.appendChild(totalBlock);
 
       recalculateAll();
       sizeAllCurrencyInputs();
@@ -1275,8 +1268,7 @@ body.menu-open .side-menu { transform: none; visibility: visible; transition-del
           total += f.annual ? val / 12 : val;
         });
 
-        const totalEl = document.getElementById('housing-total-' + scenario.id);
-        if (totalEl) totalEl.textContent = currency(total);
+        setCardTotal('housing', total);
 
         BudgetApp.setLockedAmount('housing', scenario.id, total);
       });
@@ -1361,35 +1353,13 @@ body.menu-open .side-menu { transform: none; visibility: visible; transition-del
       return row;
     }
 
-    function buildTotalRow() {
-      const row = el('div', 'flex-row payment-row');
-      row.appendChild(el('div', 'row-label', '<span class="field-label">Total food expense</span>'));
-      const values = el('div', 'row-values');
-      ScenarioRegistry.list().forEach(scenario => {
-        const cell = el('div', 'value-cell');
-        const span = document.createElement('span');
-        span.className = 'value-text';
-        span.id = 'food-total-' + scenario.id;
-        span.textContent = '$0';
-        cell.appendChild(span);
-        values.appendChild(cell);
-      });
-      row.appendChild(values);
-      return row;
-    }
-
     function render() {
       const root = document.getElementById('food-table-root');
       root.innerHTML = '';
 
       const section = el('div', 'section');
-      section.appendChild(el('div', 'section-head', '<h2>Food spending</h2>'));
       FOOD_FIELDS.forEach(f => section.appendChild(buildInputRow(f)));
       root.appendChild(section);
-
-      const totalBlock = el('div', 'summary-block payment-block');
-      totalBlock.appendChild(buildTotalRow());
-      root.appendChild(totalBlock);
 
       recalculateAll();
       sizeAllCurrencyInputs();
@@ -1402,8 +1372,7 @@ body.menu-open .side-menu { transform: none; visibility: visible; transition-del
         const eatingOut = parseFloat(v.eatingOut) || 0;
         const total = groceries + eatingOut;
 
-        const totalEl = document.getElementById('food-total-' + scenario.id);
-        if (totalEl) totalEl.textContent = currency(total);
+        setCardTotal('food', total);
 
         BudgetApp.setLockedAmount('food', scenario.id, total);
       });
@@ -1503,35 +1472,13 @@ body.menu-open .side-menu { transform: none; visibility: visible; transition-del
       return row;
     }
 
-    function buildTotalRow() {
-      const row = el('div', 'flex-row payment-row');
-      row.appendChild(el('div', 'row-label', '<span class="field-label">Total car expense</span>'));
-      const values = el('div', 'row-values');
-      ScenarioRegistry.list().forEach(scenario => {
-        const cell = el('div', 'value-cell');
-        const span = document.createElement('span');
-        span.className = 'value-text';
-        span.id = 'car-total-' + scenario.id;
-        span.textContent = '$0';
-        cell.appendChild(span);
-        values.appendChild(cell);
-      });
-      row.appendChild(values);
-      return row;
-    }
-
     function render() {
       const root = document.getElementById('car-table-root');
       root.innerHTML = '';
 
       const section = el('div', 'section');
-      section.appendChild(el('div', 'section-head', '<h2>Car spending</h2>'));
       CAR_FIELDS.forEach(f => section.appendChild(buildInputRow(f)));
       root.appendChild(section);
-
-      const totalBlock = el('div', 'summary-block payment-block');
-      totalBlock.appendChild(buildTotalRow());
-      root.appendChild(totalBlock);
 
       recalculateAll();
       sizeAllCurrencyInputs();
@@ -1546,8 +1493,7 @@ body.menu-open .side-menu { transform: none; visibility: visible; transition-del
           total += f.annual ? val / 12 : val;
         });
 
-        const totalEl = document.getElementById('car-total-' + scenario.id);
-        if (totalEl) totalEl.textContent = currency(total);
+        setCardTotal('car', total);
 
         BudgetApp.setLockedAmount('car', scenario.id, total);
       });
@@ -1635,35 +1581,13 @@ body.menu-open .side-menu { transform: none; visibility: visible; transition-del
       return row;
     }
 
-    function buildTotalRow() {
-      const row = el('div', 'flex-row payment-row');
-      row.appendChild(el('div', 'row-label', '<span class="field-label">Total utilities expense</span>'));
-      const values = el('div', 'row-values');
-      ScenarioRegistry.list().forEach(scenario => {
-        const cell = el('div', 'value-cell');
-        const span = document.createElement('span');
-        span.className = 'value-text';
-        span.id = 'utilities-total-' + scenario.id;
-        span.textContent = '$0';
-        cell.appendChild(span);
-        values.appendChild(cell);
-      });
-      row.appendChild(values);
-      return row;
-    }
-
     function render() {
       const root = document.getElementById('utilities-table-root');
       root.innerHTML = '';
 
       const section = el('div', 'section');
-      section.appendChild(el('div', 'section-head', '<h2>Utilities spending</h2>'));
       UTILITIES_FIELDS.forEach(f => section.appendChild(buildInputRow(f)));
       root.appendChild(section);
-
-      const totalBlock = el('div', 'summary-block payment-block');
-      totalBlock.appendChild(buildTotalRow());
-      root.appendChild(totalBlock);
 
       recalculateAll();
       sizeAllCurrencyInputs();
@@ -1675,8 +1599,7 @@ body.menu-open .side-menu { transform: none; visibility: visible; transition-del
         let total = 0;
         UTILITIES_FIELDS.forEach(f => { total += parseFloat(v[f.key]) || 0; });
 
-        const totalEl = document.getElementById('utilities-total-' + scenario.id);
-        if (totalEl) totalEl.textContent = currency(total);
+        setCardTotal('utilities', total);
 
         BudgetApp.setLockedAmount('utilities', scenario.id, total);
       });
@@ -1785,39 +1708,17 @@ body.menu-open .side-menu { transform: none; visibility: visible; transition-del
       return row;
     }
 
-    function buildMonthlyRow() {
-      const row = el('div', 'flex-row payment-row');
-      row.appendChild(el('div', 'row-label', '<span class="field-label">Monthly contribution</span>'));
-      const values = el('div', 'row-values');
-      ScenarioRegistry.list().forEach(scenario => {
-        const cell = el('div', 'value-cell');
-        const span = document.createElement('span');
-        span.className = 'value-text';
-        span.id = 'savings-monthly-' + scenario.id;
-        span.textContent = '$0';
-        cell.appendChild(span);
-        values.appendChild(cell);
-      });
-      row.appendChild(values);
-      return row;
-    }
-
     function render() {
       const root = document.getElementById('savings-table-root');
       root.innerHTML = '';
 
       const section = el('div', 'section');
-      section.appendChild(el('div', 'section-head', '<h2>Yearly savings goals</h2>'));
       SAVINGS_FIELDS.forEach(f => section.appendChild(buildInputRow(f)));
       root.appendChild(section);
 
       const totalsBlock = el('div', 'summary-block');
       totalsBlock.appendChild(buildOutputRow('Total yearly goal', 'savings-yearly'));
       root.appendChild(totalsBlock);
-
-      const monthlyBlock = el('div', 'summary-block payment-block');
-      monthlyBlock.appendChild(buildMonthlyRow());
-      root.appendChild(monthlyBlock);
 
       recalculateAll();
       sizeAllCurrencyInputs();
@@ -1832,8 +1733,7 @@ body.menu-open .side-menu { transform: none; visibility: visible; transition-del
 
         const yearlyEl = document.getElementById('savings-yearly-' + scenario.id);
         if (yearlyEl) yearlyEl.textContent = currency(yearlyTotal);
-        const monthlyEl = document.getElementById('savings-monthly-' + scenario.id);
-        if (monthlyEl) monthlyEl.textContent = currency(monthlyTotal);
+        setCardTotal('savings', monthlyTotal);
 
         BudgetApp.setLockedAmount('savings', scenario.id, monthlyTotal);
       });
@@ -1947,30 +1847,12 @@ body.menu-open .side-menu { transform: none; visibility: visible; transition-del
       return row;
     }
 
-    function buildTotalRow() {
-      const row = el('div', 'flex-row payment-row');
-      row.appendChild(el('div', 'row-label', '<span class="field-label">Total monthly subscriptions</span>'));
-      const values = el('div', 'row-values');
-      ScenarioRegistry.list().forEach(scenario => {
-        const cell = el('div', 'value-cell');
-        const span = document.createElement('span');
-        span.className = 'value-text';
-        span.id = 'sub-total-' + scenario.id;
-        span.textContent = '$0';
-        cell.appendChild(span);
-        values.appendChild(cell);
-      });
-      row.appendChild(values);
-      return row;
-    }
-
     function render() {
       ensureValues();
       const root = document.getElementById('subscriptions-table-root');
       root.innerHTML = '';
 
       const section = el('div', 'section');
-      section.appendChild(el('div', 'section-head', '<h2>Subscriptions</h2>'));
       rows.forEach(r => section.appendChild(buildInputRow(r)));
       root.appendChild(section);
 
@@ -1979,10 +1861,6 @@ body.menu-open .side-menu { transform: none; visibility: visible; transition-del
       addRowBtn.textContent = '+ Add subscription';
       addRowBtn.onclick = () => addSubscriptionRow();
       root.appendChild(addRowBtn);
-
-      const totalBlock = el('div', 'summary-block payment-block');
-      totalBlock.appendChild(buildTotalRow());
-      root.appendChild(totalBlock);
 
       recalculateAll();
       sizeAllCurrencyInputs();
@@ -1993,8 +1871,7 @@ body.menu-open .side-menu { transform: none; visibility: visible; transition-del
         const values = valuesByScenario[scenario.id];
         let total = 0;
         rows.forEach(r => { total += parseFloat(values[r.id]) || 0; });
-        const totalEl = document.getElementById('sub-total-' + scenario.id);
-        if (totalEl) totalEl.textContent = currency(total);
+        setCardTotal('subscriptions', total);
         BudgetApp.setLockedAmount('subscriptions', scenario.id, total);
       });
     }
