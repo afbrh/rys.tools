@@ -554,9 +554,7 @@ function optionList(list, cur) {
 const ISO = /^\d{4}-\d{2}-\d{2}$/;
 const fmtDue = v => { if (!ISO.test(v || "")) return v || ""; const [y, m, d] = v.split("-").map(Number); return "Due " + new Date(y, m - 1, d).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }); };
 function metaHtml(it) {
-  const tags = [
-    it.priority ? `<span class="tag p-${sKey(it.priority)}">${esc(it.priority)}</span>` : ""].join("");
-  return tags + [it.room, fmtDue(it.dependency), it.lastInstalled ? "installed " + it.lastInstalled : ""].filter(Boolean).map(esc).join(" · ");
+  return [it.lastInstalled ? "installed " + it.lastInstalled : ""].filter(Boolean).map(esc).join(" · ");
 }
 function rowHtml(it) {
   let detail = "";
@@ -564,11 +562,7 @@ function rowHtml(it) {
     const f = (k, label, cls) => `<label class="${cls || ""}">${label}<input type="text" data-f="${k}" value="${esc(it[k])}"></label>`;
     detail = `<div class="det">
       <label class="wide">Description<input type="text" data-f="title" value="${esc(it.title)}"></label>
-      ${f("room", "Room / area")}
-      <label>Priority<select data-f="priority">${optionList(PRIORITIES, it.priority)}</select></label>
-      <div class="fld">Maintain / upgrade<div class="seg">${TYPES.map(v => `<button type="button" data-type="${v}" class="${it.type === v ? "on" : ""}">${v}</button>`).join("")}</div></div>
       <label>Cost<input type="text" inputmode="decimal" data-f="cost" value="${it.cost || 0}"></label>
-      <label>Due Date<input type="date" data-f="dependency" value="${ISO.test(it.dependency || "") ? it.dependency : ""}"></label>
       ${f("lastInstalled", "Last installed")}
       <label class="wide">Notes<textarea data-f="notes">${esc(it.notes)}</textarea></label>
       <div class="acts"><button type="button" class="savebtn" data-save="1">Save</button></div></div>`;
