@@ -496,7 +496,6 @@ const STATUSES = ["Backlog", "Planned", "In Progress", "When it breaks", "Done"]
 const SECTION_ORDER = ["In Progress", "Planned", "Backlog", "When it breaks", "Done"];
 const sKey = s => s.replace(/\s+/g, "");
 const PRIORITIES = ["", "High", "Medium", "Low"], TYPES = ["Maintain", "Upgrade"];
-const WHO = ["", "Hire Contractor", "DIY"];
 let groups = [], items = [], filter = "Open", openId = null;
 const inFilter = i => filter === "Done" ? i.status === "Done" : i.status !== "Done";
 let accountEmail = "", allowed = false, dirty = false;
@@ -556,9 +555,8 @@ const ISO = /^\d{4}-\d{2}-\d{2}$/;
 const fmtDue = v => { if (!ISO.test(v || "")) return v || ""; const [y, m, d] = v.split("-").map(Number); return "Due " + new Date(y, m - 1, d).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }); };
 function metaHtml(it) {
   const tags = [
-    it.priority ? `<span class="tag p-${sKey(it.priority)}">${esc(it.priority)}</span>` : "",
-    it.who ? `<span class="tag">${esc(it.who)}</span>` : ""].join("");
-  return tags + [it.room, it.timing, fmtDue(it.dependency), it.lastInstalled ? "installed " + it.lastInstalled : ""].filter(Boolean).map(esc).join(" · ");
+    it.priority ? `<span class="tag p-${sKey(it.priority)}">${esc(it.priority)}</span>` : ""].join("");
+  return tags + [it.room, fmtDue(it.dependency), it.lastInstalled ? "installed " + it.lastInstalled : ""].filter(Boolean).map(esc).join(" · ");
 }
 function rowHtml(it) {
   let detail = "";
@@ -569,12 +567,8 @@ function rowHtml(it) {
       ${f("room", "Room / area")}
       <label>Priority<select data-f="priority">${optionList(PRIORITIES, it.priority)}</select></label>
       <div class="fld">Maintain / upgrade<div class="seg">${TYPES.map(v => `<button type="button" data-type="${v}" class="${it.type === v ? "on" : ""}">${v}</button>`).join("")}</div></div>
-      <label>Estimated cost<input type="text" inputmode="decimal" data-f="cost" value="${it.cost || 0}"></label>
-      ${f("timing", "Target timing")}
+      <label>Cost<input type="text" inputmode="decimal" data-f="cost" value="${it.cost || 0}"></label>
       <label>Due Date<input type="date" data-f="dependency" value="${ISO.test(it.dependency || "") ? it.dependency : ""}"></label>
-      ${f("duration", "Time to complete")}
-      <label>Contractor or DIY<select data-f="who">${optionList(WHO, it.who)}</select></label>
-      ${f("bids", "Contractors for bids")}
       ${f("lastInstalled", "Last installed")}
       <label class="wide">Notes<textarea data-f="notes">${esc(it.notes)}</textarea></label>
       <div class="acts"><button type="button" class="savebtn" data-save="1">Save</button></div></div>`;
