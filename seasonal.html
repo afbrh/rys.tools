@@ -28,6 +28,9 @@
     border:1px solid var(--line); background:var(--card); color:var(--ink); }
   button:hover { border-color:var(--accent); }
   main { padding:16px; }
+  #app { display:grid; grid-template-columns:1fr 1fr; gap:14px; align-items:start; }
+  #app section { margin-bottom:0; }
+  @media (max-width:560px) { #app { grid-template-columns:1fr; } }
   section { background:var(--card); border:1px solid var(--line); border-radius:12px; margin-bottom:14px; overflow:hidden; }
   .sh { display:flex; align-items:center; gap:10px; padding:10px 14px; background:var(--bg); border-bottom:1px solid var(--line); }
   .sh h2 { margin:0; font-size:14px; font-weight:600; flex:1; }
@@ -354,6 +357,8 @@ async function mergeAndSave(toolData) {
 
 /* ================= page state ================= */
 const SEASONS = ["Spring", "Summer", "Fall", "Winter"];
+// Only these are shown for now. Summer and Winter are hidden, and any tasks already in them stay saved.
+const VISIBLE = ["Spring", "Fall"];
 const LS_KEY = "rys_seasonal_tasks";
 const DEFAULTS = [
   ["Fall", "Cover external air conditioner components"],
@@ -417,7 +422,7 @@ function taskHtml(t) {
 }
 function render() {
   const now = currentSeason();
-  $("app").innerHTML = SEASONS.map(s => {
+  $("app").innerHTML = VISIBLE.map(s => {
     const list = tasks.filter(t => t.season === s), nDone = list.filter(t => t.done).length;
     const form = addingTo === s ? `<form class="addform" data-form="${s}"><input type="text" name="title" placeholder="New ${s.toLowerCase()} task" autocomplete="off" required><button type="submit" class="ok">Add</button><button type="button" data-cancel="1">Cancel</button></form>` : "";
     return `<section data-season="${s}"><div class="sh"><h2>${s}${s === now ? '<span class="now">Now</span>' : ""}<span class="cnt">${nDone} of ${list.length} done</span></h2>
@@ -514,7 +519,8 @@ function endDrag(e) {
     const t = byId(r.dataset.id); if (t) { t.season = sec.dataset.season; order.push(t); }
   }));
   drag = null; justDragged = true; setTimeout(() => { justDragged = false; }, 80);
-  if (order.length === tasks.length) tasks = order;
+  const hidden = tasks.filter(t => !VISIBLE.includes(t.season));
+  if (order.length + hidden.length === tasks.length) tasks = order.concat(hidden);
   queueSave(); keepScroll(() => {});
 }
 app.addEventListener("pointerup", e => { clearPending(); endDrag(e); });
