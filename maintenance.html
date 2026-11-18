@@ -132,6 +132,7 @@ body.menu-open .side-menu { transform: none; visibility: visible; transition-del
   .chip { padding:4px 10px; font-size:12px; border-radius:999px; }
   .chip.on { background:var(--accent); color:#fff; border-color:var(--accent); }
   .chip b { font-weight:650; margin-left:4px; }
+  .addtop { margin-left:auto; padding:4px 14px; font-size:13px; border-radius:999px; font-weight:600; }
   .sh .grip-note { color:var(--muted); font-size:12px; font-weight:400; }
   .rows { min-height:8px; }
   .sfoot { display:flex; justify-content:space-between; gap:10px; padding:10px 14px; border-top:1px solid var(--line); background:var(--bg); font-weight:600; }
@@ -206,7 +207,7 @@ body.menu-open .side-menu { transform: none; visibility: visible; transition-del
 <main>
 <div class="wrap chips" id="chips" hidden></div>
 <div class="wrap"><section class="gate" id="gate"></section></div><div class="wrap" id="app" hidden></div>
-<div class="wrap bar" id="bar" hidden><button id="importBtn" type="button">Import data</button><input type="file" id="importFile" accept="application/json,.json" hidden><span class="hint">Drag a story's ⋮⋮ handle to reorder it or move it to another status section (or change its status in the dropdown). Click a story to edit it. Click Save to store changes in your Google Drive.</span></div>
+<input type="file" id="importFile" accept="application/json,.json" hidden>
 </main>
 
 <script>
@@ -523,31 +524,22 @@ function showGate(message, withImport) {
     gate.appendChild(b);
   }
   gate.hidden = false;
-  $("chips").hidden = true; $("bar").hidden = true; $("app").hidden = true;
+  $("chips").hidden = true; $("app").hidden = true;
 }
 function showApp() {
   $("gate").hidden = true;
-  $("chips").hidden = false; $("bar").hidden = false; $("app").hidden = false;
+  $("chips").hidden = false; $("app").hidden = false;
   render();
 }
 
 /* ---------- rendering ---------- */
 const app = $("app");
-// Totals sit at the bottom of the Backlog, When it breaks and Done sections.
-const sumOf = list => list.reduce((a, i) => a + (i.cost || 0), 0);
-function footHtml(id) {
-  let label, list;
-  if (id === "Backlog") { label = "Total: In Progress, Planned &amp; Backlog"; list = items.filter(i => ["In Progress", "Planned", "Backlog"].includes(i.status)); }
-  else if (id === "When it breaks") { label = "Total: When it breaks"; list = items.filter(i => i.status === id); }
-  else if (id === "Done") { label = "Total: Done"; list = items.filter(i => i.status === id); }
-  else return "";
-  return `<div class="sfoot"><span>${label}</span><b>${fmt0(sumOf(list))}</b></div>`;
-}
 function renderChips() {
   const box = $("chips");
   const nDone = items.filter(i => i.status === "Done").length;
   box.innerHTML = [["Open", items.length - nDone], ["Done", nDone]].map(([s, n]) =>
-    `<button type="button" class="chip ${filter === s ? "on" : ""}" data-f="${s}">${s}<b>${n}</b></button>`).join("");
+    `<button type="button" class="chip ${filter === s ? "on" : ""}" data-f="${s}">${s}<b>${n}</b></button>`).join("") +
+    `<button type="button" class="addtop" data-addtop="1">+ Add</button>`;
 }
 function optionList(list, cur) {
   const vals = list.includes(cur) || cur == null ? list : list.concat([cur]);
@@ -571,7 +563,7 @@ function rowHtml(it) {
   }
   return `<div class="it st-${sKey(it.status)} ${it.status === "Done" ? "done" : ""}" data-id="${it.id}">
     <div class="ln"><span class="grip" title="Drag to move">⋮⋮</span>
-      <div class="tx" data-open="${it.id}"><span class="ti"><span class="chev">${openId === it.id ? "▴" : "▾"}</span>${esc(it.title)}</span> <span class="me">${metaHtml(it)}</span></div>
+      <div class="tx" data-open="${it.id}"><span class="ti">${esc(it.title)}</span> <span class="me">${metaHtml(it)}</span></div>
       <span class="co">${fmt0(it.cost || 0)}</span><button type="button" class="del" data-del="1" aria-label="Delete" title="Delete">−</button></div>${detail}</div>`;
 }
 function render() {
@@ -579,9 +571,8 @@ function render() {
   app.innerHTML = groups.filter(g => inFilter({ status: g.id })).map(g => {
     const all = items.filter(i => i.group === g.id), shown = all.filter(inFilter);
     const sum = all.reduce((a, i) => a + (i.cost || 0), 0);
-    return `<section data-group="${g.id}"><div class="sh"><h2>${esc(g.title)}</h2><span class="sub">${fmt0(sum)}<small>${all.length} ${all.length === 1 ? "story" : "stories"}</small></span>
-      <button type="button" data-add="${g.id}">+ Add</button></div>
-      <div class="rows">${shown.map(rowHtml).join("") || '<div class="empty">Nothing here.</div>'}</div>${footHtml(g.id)}</section>`;
+    return `<section data-group="${g.id}"><div class="sh"><h2>${esc(g.title)}</h2><span class="sub">${fmt0(sum)}<small>${all.length} ${all.length === 1 ? "story" : "stories"}</small></span></div>
+      <div class="rows">${shown.map(rowHtml).join("") || '<div class="empty">Nothing here.</div>'}</div></section>`;
   }).join("");
 }
 const keepScroll = fn => { const y = scrollY; fn(); render(); scrollTo(0, y); };
@@ -619,14 +610,17 @@ app.addEventListener("click", e => {
     return;
   }
   if (tx) { openId = openId === tx.dataset.open ? null : tx.dataset.open; keepScroll(() => {}); return; }
-  if (d.add) {
-    const it = { id: "u" + Date.now(), group: d.add, status: d.add, priority: "", lastInstalled: "", timing: "", dependency: "", type: "", room: "", title: "New story", cost: 0, duration: "", who: "", bids: "", notes: "" };
-    const last = items.map((x, i) => x.group === d.add ? i : -1).filter(i => i >= 0).pop();
-    items.splice(last === undefined ? items.length : last + 1, 0, it);
-    openId = it.id; markDirty(); keepScroll(() => {}); return;
-  }
 });
+function addStory() {
+  // One Add button for the whole page: a new story starts in Backlog and opens for editing.
+  const it = { id: "u" + Date.now(), group: "Backlog", status: "Backlog", priority: "", lastInstalled: "", timing: "", dependency: "", type: "", room: "", title: "New story", cost: 0, duration: "", who: "", bids: "", notes: "" };
+  const last = items.map((x, i) => x.group === "Backlog" ? i : -1).filter(i => i >= 0).pop();
+  items.splice(last === undefined ? items.length : last + 1, 0, it);
+  filter = "Open"; openId = it.id; markDirty(); render();
+  const el = app.querySelector('[data-id="' + it.id + '"]'); if (el) el.scrollIntoView({ block: "center" });
+}
 $("chips").addEventListener("click", e => {
+  if (e.target.closest("[data-addtop]")) { addStory(); return; }
   if (e.target.closest("[data-f]") === null) return;
   filter = e.target.closest("[data-f]").dataset.f; render();
 });
@@ -777,7 +771,6 @@ async function signInFlow() {
   catch (e) { setStatus("Google sign-in failed: " + e.message, "err"); }
 }
 $("acct-btn").addEventListener("click", () => { if (GoogleDriveSync.isSignedIn() && allowed) saveToDrive(); else signInFlow(); });
-$("importBtn").addEventListener("click", () => $("importFile").click());
 $("importFile").addEventListener("change", async e => {
   const file = e.target.files && e.target.files[0];
   e.target.value = "";
