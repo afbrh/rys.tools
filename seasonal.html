@@ -91,6 +91,21 @@
   .t.off .tx { color:#7c7c82; text-decoration:line-through; }
   .t.off .hasnote { opacity:.4; }
   @media (max-width:560px) { .pr { gap:8px; } .pr .t .ln { padding:9px 8px; gap:8px; } .pr .t .tx { font-size:14px; overflow-wrap:anywhere; } .pr .t .det { padding:4px 8px 12px; } .sh { padding:10px 10px; } }
+  /* headings instead of boxes */
+  .pr.hdr .sh { background:none; border:0; border-bottom:2px solid; border-radius:0; padding:4px 2px 6px; }
+  .pr.hdr .sh h2 { font-size:20px; font-weight:700; letter-spacing:.01em; }
+  .pr.hdr .sh .cnt { font-size:12px; font-weight:400; }
+  .pr.hdr .sh[data-season="Fall"] { border-bottom-color:#b8641f; }
+  .pr.hdr .sh[data-season="Fall"] h2 { color:#e58a43; }
+  .pr.hdr .sh[data-season="Spring"] { border-bottom-color:#3f7a4c; }
+  .pr.hdr .sh[data-season="Spring"] h2 { color:#6fb07e; }
+  .pr.hdr .sh.off { border-bottom-color:#3a3a3e; }
+  .pr.hdr .sh.off h2, .pr.hdr .sh.off .cnt { color:#77777d; }
+  .pr.hdr .sh .cnt { color:var(--muted); white-space:nowrap; }
+  /* floating add button */
+  .toolbar { position:fixed; right:18px; bottom:18px; z-index:50; margin:0; }
+  .toolbar button { width:52px; height:52px; padding:0; border-radius:50%; font-size:30px; line-height:1; background:var(--accent); color:#fff; border-color:var(--accent); box-shadow:0 3px 12px rgba(0,0,0,.5); }
+  @media print { .toolbar { display:none !important; } }
   .toolbar { display:flex; justify-content:flex-end; margin-bottom:12px; }
   .toolbar button { background:var(--accent); color:#fff; border-color:var(--accent); }
   .note { color:#b9b2a3; font-size:12px; margin:4px 0 16px; }
@@ -487,7 +502,7 @@ function taskHtml(p, k) {
     <span class="tx" data-edit="1">${esc(sd.title)}${sd.notes ? ' <span class="hasnote" title="Has notes">📝</span>' : ""}</span></div>${det}</div>`;
 }
 function addFormHtml() {
-  if (!addingFrom) return `<div class="toolbar"><button type="button" data-add="1">+ Add task</button></div>`;
+  if (!addingFrom) return `<div class="toolbar"><button type="button" data-add="1" aria-label="Add task" title="Add task">+</button></div>`;
   return `<form class="addform2" data-form="1">
     <div class="afcols">
       <div><h3>Fall version</h3><input type="text" name="ft" placeholder="Fall task title" autocomplete="off" required><textarea name="fn" placeholder="Fall notes (optional)"></textarea></div>
@@ -498,7 +513,7 @@ function addFormHtml() {
 function render() {
   const now = currentSeason();
   $("addwrap").innerHTML = addFormHtml();
-  const head = `<div class="pr hdr">${COLS.map(([k, label]) => `<div class="sh ${isOff(k) ? "off" : ""}" data-season="${label}"><h2>${label}${label === now ? '<span class="now">Now</span>' : ""}<span class="cnt">${pairs.filter(p => p.phase === k).length} to do</span></h2></div>`).join("")}</div>`;
+  const head = `<div class="pr hdr">${COLS.map(([k, label]) => `<div class="sh ${isOff(k) ? "off" : ""}" data-season="${label}"><h2>${label}${label === now ? '<span class="now">Now</span>' : ""}<span class="cnt">${pairs.filter(p => p.phase === k).length}</span></h2></div>`).join("")}</div>`;
   $("app").innerHTML = head + pairs.map(p => `<div class="pr" data-id="${p.id}">${COLS.map(([k]) => p.phase === k ? taskHtml(p, k) : '<div class="t blank"></div>').join("")}</div>`).join("");
   const inp = document.querySelector("#addwrap input"); if (inp) inp.focus();
 }
