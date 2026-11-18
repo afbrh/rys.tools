@@ -206,11 +206,12 @@ body.locked #splash{display:flex;min-height:100vh;flex-direction:column;align-it
 #splash h1{margin:0;font-size:28px;font-weight:700}
 #splash p{margin:0;color:#9b9ba1;font-size:15px}
 #splash button{margin-top:6px;font:inherit;font-weight:600;font-size:16px;padding:12px 26px;border-radius:10px;border:1px solid #45454a;background:#2e2e31;color:#d6d6d9;cursor:pointer}
+#splash-fine{margin-top:18px;font-size:12px;color:#9b9ba1}#splash-fine a{color:#9b9ba1}
 #splash button:disabled{opacity:.6;cursor:default}
 </style>
 </head>
 <body class="locked">
-<div id="splash"><h1>Maintenance</h1><p id="splash-msg">Sign in with Google to continue.</p><button type="button" id="splash-btn">Sign in with Google</button></div>
+<div id="splash"><p id="splash-msg">Sign in to continue.</p><button type="button" id="splash-btn">Sign in with Google</button><small id="splash-fine">Ry's Tools &middot; <a href="privacy.html">Privacy</a> &middot; <a href="terms.html">Terms</a></small></div>
 
 <div class="side-overlay" id="side-overlay"></div>
 <nav class="side-menu" id="side-menu" aria-label="Tools">
@@ -917,7 +918,7 @@ window.addEventListener("load", boot);
   b.addEventListener("click",function(){
     b.disabled=true;m.textContent="Opening Google sign-in…";
     document.getElementById("acct-btn").click();
-    setTimeout(function(){b.disabled=false;m.textContent="Sign in with Google to continue.";},6000);
+    setTimeout(function(){b.disabled=false;m.textContent="Sign in to continue.";},6000);
   });
   var t=setInterval(function(){
     var a=document.getElementById("acct-btn");if(a&&a.textContent.trim()!=="Google Sign-In"){document.body.classList.remove("locked");clearInterval(t);}
