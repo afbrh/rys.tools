@@ -86,6 +86,11 @@
   .pr .t { background:var(--card); border:1px solid var(--line); border-radius:10px; min-width:0; }
   .pr .t:last-child { border-bottom:1px solid var(--line); }
   .pr .t.blank { background:none; border:0; }
+  .sh.off[data-season] { background:#3a3a3e; border-color:#4a4a50; }
+  .sh.off h2, .sh.off .cnt { color:#8e8e94; }
+  .t.off .tx { color:#7c7c82; text-decoration:line-through; }
+  .t.off .hasnote { opacity:.4; }
+  @media (max-width:560px) { .pr { gap:8px; } .pr .t .ln { padding:9px 8px; gap:8px; } .pr .t .tx { font-size:14px; overflow-wrap:anywhere; } .pr .t .det { padding:4px 8px 12px; } .sh { padding:10px 10px; } }
   .toolbar { display:flex; justify-content:flex-end; margin-bottom:12px; }
   .toolbar button { background:var(--accent); color:#fff; border-color:var(--accent); }
   .note { color:#b9b2a3; font-size:12px; margin:4px 0 16px; }
@@ -420,6 +425,7 @@ const esc = t => String(t == null ? "" : t).replace(/[&<>"]/g, c => ({"&":"&amp;
 const newId = () => "p" + Date.now().toString(36) + (uid++);
 const defaultPairs = () => DEFAULT_PAIRS.map(([f, s]) => ({ id: newId(), fall: { title: f, notes: "" }, spring: { title: s, notes: "" }, phase: "fall", done: false }));
 const other = k => k === "fall" ? "spring" : "fall";
+const isOff = k => currentSeason() !== (k === "fall" ? "Fall" : "Spring"); // a column is dimmed outside its own season
 const currentSeason = () => { const m = new Date().getMonth(); return m >= 2 && m <= 4 ? "Spring" : m >= 5 && m <= 7 ? "Summer" : m >= 8 && m <= 10 ? "Fall" : "Winter"; };
 
 function setStatus(text, cls) { const el = $("save-status"); el.textContent = text; el.className = "st" + (cls ? " " + cls : ""); }
@@ -476,7 +482,7 @@ function taskHtml(p, k) {
       <label>Notes<textarea data-f="notes" placeholder="Add notes…">${esc(sd.notes)}</textarea></label>
       ${o.title ? `<div class="pairnote">Comes back as: ${esc(o.title)}</div>` : ""}
       <div class="acts"><button type="button" class="delbtn" data-del="1">Delete</button></div></div>` : "";
-  return `<div class="t ${inPlace ? "done" : ""}" data-k="${k}">
+  return `<div class="t ${inPlace ? "done" : ""} ${isOff(k) ? "off" : ""}" data-k="${k}">
     <div class="ln"><input type="checkbox" ${inPlace ? "checked" : ""} data-check="1" aria-label="Done">
     <span class="tx" data-edit="1">${esc(sd.title)}${sd.notes ? ' <span class="hasnote" title="Has notes">📝</span>' : ""}</span></div>${det}</div>`;
 }
@@ -492,7 +498,7 @@ function addFormHtml() {
 function render() {
   const now = currentSeason();
   $("addwrap").innerHTML = addFormHtml();
-  const head = `<div class="pr hdr">${COLS.map(([k, label]) => `<div class="sh" data-season="${label}"><h2>${label}${label === now ? '<span class="now">Now</span>' : ""}<span class="cnt">${pairs.filter(p => p.phase === k).length} to do</span></h2></div>`).join("")}</div>`;
+  const head = `<div class="pr hdr">${COLS.map(([k, label]) => `<div class="sh ${isOff(k) ? "off" : ""}" data-season="${label}"><h2>${label}${label === now ? '<span class="now">Now</span>' : ""}<span class="cnt">${pairs.filter(p => p.phase === k).length} to do</span></h2></div>`).join("")}</div>`;
   $("app").innerHTML = head + pairs.map(p => `<div class="pr" data-id="${p.id}">${COLS.map(([k]) => p.phase === k ? taskHtml(p, k) : '<div class="t blank"></div>').join("")}</div>`).join("");
   const inp = document.querySelector("#addwrap input"); if (inp) inp.focus();
 }
