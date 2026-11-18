@@ -33,6 +33,12 @@
   @media (max-width:560px) { #app { grid-template-columns:1fr; } }
   section { background:var(--card); border:1px solid var(--line); border-radius:12px; margin-bottom:14px; overflow:hidden; }
   .sh { display:flex; align-items:center; gap:10px; padding:10px 14px; background:var(--bg); border-bottom:1px solid var(--line); }
+  /* season header colors: Spring dark green, Fall burnt orange */
+  section[data-season="Spring"] .sh { background:#2e4a34; border-bottom-color:#3d6046; }
+  section[data-season="Fall"] .sh { background:#85471f; border-bottom-color:#9d5a2c; }
+  section[data-season="Spring"] .sh, section[data-season="Fall"] .sh { color:#f3efe6; }
+  section[data-season="Spring"] .sh h2, section[data-season="Fall"] .sh h2 { color:#f3efe6; }
+  section[data-season="Spring"] .sh .cnt, section[data-season="Fall"] .sh .cnt { color:rgba(243,239,230,.72); }
   .sh h2 { margin:0; font-size:14px; font-weight:600; flex:1; }
   .sh .cnt { color:var(--muted); font-size:12px; font-weight:400; margin-left:8px; }
   .sh .now { font-size:11px; padding:0 7px; border-radius:999px; background:var(--accent); color:#fff; margin-left:8px; font-weight:600; }
