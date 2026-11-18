@@ -53,8 +53,8 @@
   .rows { min-height:8px; }
   body.is-dragging, body.is-dragging * { user-select:none !important; -webkit-user-select:none !important; cursor:grabbing !important; }
   .t.done .tx { text-decoration:line-through; opacity:.5; }
-  .t .x { background:none; border:0; color:#e5604b; font-size:18px; line-height:1; padding:0 4px; opacity:.55; }
-  .t .x:hover { opacity:1; }
+  .t .delbtn { color:#e5604b; border-color:#e5604b; background:transparent; }
+  .t .delbtn:hover { background:#e5604b; color:#fff; }
   .empty { padding:12px 14px; color:var(--muted); font-size:13px; }
   .addform { display:flex; gap:8px; flex-wrap:wrap; align-items:center; padding:10px 14px; border-top:1px solid var(--line); background:var(--hide); }
   .addform input[type=text] { flex:1 1 200px; font:inherit; font-size:14px; padding:6px 9px; border:1px solid var(--accent); border-radius:8px; background:var(--card); color:var(--ink); }
@@ -72,7 +72,7 @@
   .side-link:hover { background:var(--bg); }
   .side-link[aria-current="page"] { background:var(--hide); }
   @media (max-width:560px) { #acct-btn { max-width:30vw; } .acct .st { font-size:11px; max-width:30vw; } h1 { font-size:15px; white-space:nowrap; } }
-  @media print { header, .addform, .sh button, .t .x, .t select, .menu-btn, .side-menu, .side-overlay { display:none !important; } body { background:#fff; } }
+  @media print { header, .addform, .sh button, .t .delbtn, .t select, .menu-btn, .side-menu, .side-overlay { display:none !important; } body { background:#fff; } }
 </style>
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 </head>
@@ -419,11 +419,11 @@ function taskHtml(t) {
   const open = openId === t.id;
   const det = open ? `<div class="det">
       <label>Task<input type="text" data-f="title" value="${esc(t.title)}" autocomplete="off"></label>
-      <label>Notes<textarea data-f="notes" placeholder="Add notes…">${esc(t.notes)}</textarea></label></div>` : "";
+      <label>Notes<textarea data-f="notes" placeholder="Add notes…">${esc(t.notes)}</textarea></label>
+      <div class="acts"><button type="button" class="delbtn" data-del="1">Delete</button></div></div>` : "";
   return `<div class="t ${t.done ? "done" : ""}" data-id="${t.id}">
     <div class="ln"><input type="checkbox" ${t.done ? "checked" : ""} data-check="1" aria-label="Done">
-    <span class="tx" data-edit="1">${esc(t.title)}${t.notes ? ' <span class="hasnote" title="Has notes">📝</span>' : ""}</span>
-    <button type="button" class="x" data-del="1" aria-label="Delete task" title="Delete">×</button></div>${det}</div>`;
+    <span class="tx" data-edit="1">${esc(t.title)}${t.notes ? ' <span class="hasnote" title="Has notes">📝</span>' : ""}</span></div>${det}</div>`;
 }
 function render() {
   const now = currentSeason();
