@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Maintenance &amp; Upgrades Tracker</title>
+<title>Maintenance</title>
 <style>
   :root {
     color-scheme:light;
@@ -195,12 +195,12 @@ body.menu-open .side-menu { transform: none; visibility: visible; transition-del
 <div class="side-overlay" id="side-overlay"></div>
 <nav class="side-menu" id="side-menu" aria-label="Tools">
   <div class="side-title">Ry's Tools</div>
-  <a class="side-link" href="budget.html">Budget Planner</a>
-  <a class="side-link" href="seasonal.html">Seasonal Upkeep Tasks</a>
-  <a class="side-link" href="maintenance.html" aria-current="page">Maintenance &amp; Upgrades</a>
+  <a class="side-link" href="budget.html">Budget</a>
+  <a class="side-link" href="seasonal.html">Seasonal</a>
+  <a class="side-link" href="maintenance.html" aria-current="page">Maintenance</a>
 </nav>
 <header><div class="wrap">
-  <div class="titlebar"><button type="button" class="menu-btn" id="menu-btn" aria-label="Open menu" aria-expanded="false" aria-controls="side-menu"><span></span><span></span><span></span></button><h1><span class="long-t">Maintenance &amp; Upgrades Tracker</span><span class="short-t">Maint. &amp; Upgrades</span></h1>
+  <div class="titlebar"><button type="button" class="menu-btn" id="menu-btn" aria-label="Open menu" aria-expanded="false" aria-controls="side-menu"><span></span><span></span><span></span></button><h1>Maintenance</h1>
     <div class="acct"><span class="st" id="save-status"></span><button type="button" id="acct-btn">Google Sign-In</button></div></div>
 </div></header>
 <main>
@@ -744,7 +744,7 @@ async function afterSignIn() {
   updateButton();
   if (!allowed) {
     groups = []; items = [];
-    showGate("This account doesn't have access to this tool. Use the menu to open the Budget Planner, or switch to an approved account.", false);
+    showGate("This account doesn't have access to this tool. Use the menu to open the Budget, or switch to an approved account.", false);
     return;
   }
   const link = document.getElementById("side-maint-link"); if (link) link.hidden = false;
