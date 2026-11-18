@@ -84,6 +84,24 @@ body.menu-open .side-menu { transform: none; visibility: visible; transition-del
   #app-content .tab-panel .add-row-btn { margin-left: 20px; }
   @media (max-width: 560px) { #app-content { padding: 12px 10px; } #app-content .tab-panel .row { padding-left: 12px; } #app-content .tab-panel .add-row-btn { margin-left: 12px; } #app-content .tab-panel .page, #app-content .tab-panel .sheet { padding: 10px 10px 4px; } }
 
+  /* Seasonal-style look: section headings instead of title bars, line items as separate cards */
+  @media screen {
+    #app-content .tab-panel { background: none; border: 0; border-radius: 0; overflow: visible; margin: 0 0 26px; --shc: #55555b; --shh: #a9a9b0; }
+    #app-content #tab-income { --shc: #3f7a4c; --shh: #6fb07e; }
+    #app-content #tab-housing { --shc: #3f6f9c; --shh: #7fb0e3; }
+    #app-content #tab-food { --shc: #b8641f; --shh: #e58a43; }
+    #app-content #tab-car { --shc: #6f5a92; --shh: #b49ad6; }
+    #app-content #tab-utilities { --shc: #2f7d7d; --shh: #5fb8b8; }
+    #app-content #tab-savings { --shc: #3f7a4c; --shh: #6fb07e; }
+    #app-content #tab-subscriptions { --shc: #8f7a2f; --shh: #d6b25e; }
+    #app-content .tab-panel .card-title { background: none; border: 0; border-bottom: 2px solid var(--shc); border-radius: 0; padding: 4px 2px 6px; margin: 0 0 10px; font-size: 20px; font-weight: 700; letter-spacing: .02em; text-transform: uppercase; color: var(--shh); }
+    #app-content .tab-panel .card-title .card-total, #app-content .tab-panel .card-title .card-total.income { font-size: 13px; font-weight: 500; letter-spacing: 0; text-transform: none; color: var(--ink-soft); }
+    #app-content .tab-panel .page, #app-content .tab-panel .sheet { padding: 0; }
+    #app-content .tab-panel .row { background: var(--card); border: 1px solid var(--paper-line); border-radius: 10px; padding: 10px 14px; margin: 0 0 6px; }
+    #app-content .tab-panel .row.locked { background: var(--gold-bg); border-color: #4a4636; margin: 0 0 6px; padding: 10px 14px; }
+    #app-content .tab-panel .add-row-btn { margin-left: 0; }
+  }
+
   .save-bar { display: flex; align-items: center; justify-content: flex-start; flex-wrap: wrap; gap: 10px; margin-bottom: 10px; }
   .app-title { font-size: 16px; font-weight: 600; margin: 0; }
   .tool-controls { display: flex; align-items: center; flex-wrap: wrap; gap: 12px; margin-left: auto; }
