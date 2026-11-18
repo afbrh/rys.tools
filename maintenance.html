@@ -636,7 +636,7 @@ const fmtDue = v => { if (!ISO.test(v || "")) return v || ""; const [y, m, d] = 
 const fmtSize = n => { n = Number(n) || 0; return n >= 1048576 ? (n / 1048576).toFixed(1) + " MB" : n >= 1024 ? Math.round(n / 1024) + " KB" : n ? n + " B" : ""; };
 function metaHtml(it) {
   const n = (it.attachments || []).length;
-  return [it.lastInstalled ? "installed " + it.lastInstalled : "", n ? "📎 " + n : ""].filter(Boolean).map(esc).join(" · ");
+  return [it.estimate ? "est. " + it.estimate : "", it.lastInstalled ? "installed " + it.lastInstalled : "", n ? "📎 " + n : ""].filter(Boolean).map(esc).join(" · ");
 }
 function rowHtml(it) {
   let detail = "";
@@ -646,6 +646,7 @@ function rowHtml(it) {
       <label class="wide">Description<input type="text" data-f="title" value="${esc(it.title)}"></label>
       <label>Status<select data-status="1">${STATUSES.map(v => `<option ${v === it.status ? "selected" : ""} value="${esc(v)}">${esc(v)}</option>`).join("")}</select></label>
       <label>Cost<input type="text" inputmode="decimal" data-f="cost" value="${it.cost || 0}"></label>
+      ${f("estimate", "Estimate")}
       ${f("lastInstalled", "Last installed")}
       <label class="wide">Notes<textarea data-f="notes">${esc(it.notes)}</textarea></label>
       <div class="att">Attachments
