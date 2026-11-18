@@ -165,7 +165,7 @@ body.menu-open .side-menu { transform: none; visibility: visible; transition-del
   select.s-Whenitbreaks { background:#e6dff0; border-color:#c9bbdc; }
   select.s-InProgress { background:#e0e9cf; border-color:#b8ca95; }
   select.s-Done { background:#c9dfc4; border-color:#97bf8e; }
-  .det { padding:4px 14px 14px 44px; display:grid; grid-template-columns:repeat(auto-fill,minmax(180px,1fr)); gap:10px; background:var(--bg); border-top:1px solid var(--line); }
+  .det { padding:4px 12px 14px 12px; display:grid; grid-template-columns:repeat(auto-fill,minmax(180px,1fr)); gap:10px; background:var(--bg); border-top:1px solid var(--line); }
   .det label { display:flex; flex-direction:column; gap:3px; font-size:11px; text-transform:uppercase; letter-spacing:.04em; color:var(--muted); }
   .det .fld { display:flex; flex-direction:column; gap:3px; font-size:11px; text-transform:uppercase; letter-spacing:.04em; color:var(--muted); }
   .seg { display:flex; } .seg button { flex:1; border-radius:0; padding:5px 8px; text-transform:none; letter-spacing:0; font-size:13px; }
@@ -185,9 +185,9 @@ body.menu-open .side-menu { transform: none; visibility: visible; transition-del
   .det .acts { grid-column:1/-1; display:flex; justify-content:flex-end; gap:8px; }
   .chev { color:var(--muted); font-size:12px; margin-right:6px; }
   .det .savebtn { background:var(--accent); color:#fff; border-color:var(--accent); font-weight:600; padding:6px 22px; }
-  @media (max-width:560px) { .det { padding-left:14px; } .it .co { font-size:13px; margin-left:auto; } .ln { gap:6px 8px; padding:8px; flex-wrap:wrap; }
+  @media (max-width:560px) { .it .co { font-size:13px; margin-left:auto; } .ln { gap:6px 8px; padding:8px; flex-wrap:wrap; }
     .it .tx { flex:1 1 calc(100% - 40px); } .it .grip { align-self:flex-start; }
-    .it .co { padding-left:30px; } .long-t { display:none; } }
+    .long-t { display:none; } }
   .short-t { display:none; } @media (max-width:560px) { .short-t { display:inline; } }
   .det .delbtn { margin-right:auto; color:#e5604b; border-color:#e5604b; background:transparent; }
   .det .delbtn:hover { background:#e5604b; color:#fff; }
@@ -615,6 +615,7 @@ function rowHtml(it) {
     const f = (k, label, cls) => `<label class="${cls || ""}">${label}<input type="text" data-f="${k}" value="${esc(it[k])}"></label>`;
     detail = `<div class="det">
       <label class="wide">Description<input type="text" data-f="title" value="${esc(it.title)}"></label>
+      <label>Status<select data-status="1">${STATUSES.map(v => `<option ${v === it.status ? "selected" : ""} value="${esc(v)}">${esc(v)}</option>`).join("")}</select></label>
       <label>Cost<input type="text" inputmode="decimal" data-f="cost" value="${it.cost || 0}"></label>
       ${f("lastInstalled", "Last installed")}
       <label class="wide">Notes<textarea data-f="notes">${esc(it.notes)}</textarea></label>
@@ -624,7 +625,7 @@ function rowHtml(it) {
       <div class="acts"><button type="button" class="delbtn" data-del="1">Delete</button><button type="button" class="savebtn" data-save="1">Save</button></div></div>`;
   }
   return `<div class="it st-${sKey(it.status)} ${it.status === "Done" ? "done" : ""}" data-id="${it.id}">
-    <div class="ln"><span class="grip" title="Drag to move">⋮⋮</span>
+    <div class="ln">
       <div class="tx" data-open="${it.id}"><span class="ti">${esc(it.title)}</span> <span class="me">${metaHtml(it)}</span></div>
       <span class="co">${fmt0(it.cost || 0)}</span></div>${detail}</div>`;
 }
