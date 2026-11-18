@@ -19,12 +19,13 @@
     --gold: #6b4f2a;
     --gold-bg: #ecdfc0;
     --danger: #a8402a;
-    --font-header: "Palatino Linotype", Palatino, "Iowan Old Style", Georgia, serif;
-    --font-body: "Palatino Linotype", Palatino, "Iowan Old Style", Georgia, serif;
-    --font-mono: -apple-system, "SF Pro Display", BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    --font-header: -apple-system, BlinkMacSystemFont, "SF Pro Text", system-ui, "Helvetica Neue", Helvetica, Arial, sans-serif;
+    --font-body: -apple-system, BlinkMacSystemFont, "SF Pro Text", system-ui, "Helvetica Neue", Helvetica, Arial, sans-serif;
+    --font-mono: -apple-system, BlinkMacSystemFont, "SF Pro Text", system-ui, "Helvetica Neue", Helvetica, Arial, sans-serif;
     --bg-texture: none;
     --letter-spacing-header: -0.01em;
   }
+  button, input, select, textarea { font-family: inherit; }
   * { box-sizing: border-box; }
   body {
     margin: 0;
@@ -655,7 +656,6 @@ body.menu-open .side-menu { transform: none; visibility: visible; transition-del
 <nav class="side-menu" id="side-menu" aria-label="Tools">
   <div class="side-title">Ry's Tools</div>
   <a class="side-link" href="budget.html" aria-current="page">Budget Planner</a>
-  <a class="side-link" href="mortgage.html">Mortgage Calculator</a>
   <a class="side-link" href="seasonal.html">Seasonal Upkeep Tasks</a>
   <a class="side-link" href="maintenance.html" id="side-maint-link" hidden>Maintenance &amp; Upgrades</a>
 </nav>
@@ -2193,10 +2193,6 @@ body.menu-open .side-menu { transform: none; visibility: visible; transition-del
   async function mergeAndSave(toolData) {
     const remote = await GoogleDriveSync.load();
     const tools = withToolsWrapper(remote);
-    // Housing moved out to the Mortgage Calculator: carry what an older save held there over to it
-    // before this save replaces the Budget Planner's slice, so nothing typed there is lost.
-    const old = tools.budget;
-    if (old && old.mortgage && !tools.mortgage && old.scenarios) tools.mortgage = { scenarios: old.scenarios, mortgage: old.mortgage };
     tools[CURRENT_TOOL] = toolData;
     await GoogleDriveSync.save({ tools: tools });
   }
