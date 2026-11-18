@@ -65,6 +65,29 @@
   .addform { display:flex; gap:8px; flex-wrap:wrap; align-items:center; padding:10px 14px; border-top:1px solid var(--line); background:var(--hide); }
   .addform input[type=text] { flex:1 1 200px; font:inherit; font-size:14px; padding:6px 9px; border:1px solid var(--accent); border-radius:8px; background:var(--card); color:var(--ink); }
   .addform .ok { background:var(--accent); color:#fff; border-color:var(--accent); }
+  #addwrap:empty { display:none; }
+  #addwrap { margin-bottom:14px; }
+  .addform2 { background:var(--card); border:1px solid var(--line); border-radius:12px; padding:14px; }
+  .afcols { display:grid; grid-template-columns:1fr 1fr; gap:14px; }
+  @media (max-width:560px) { .afcols { grid-template-columns:1fr; } }
+  .afcols h3 { margin:0 0 8px; font-size:13px; }
+  .afcols input, .afcols textarea { width:100%; font:inherit; font-size:14px; padding:6px 9px; margin-bottom:8px; border:1px solid var(--line); border-radius:8px; background:var(--bg); color:var(--ink); }
+  .afcols textarea { min-height:64px; resize:vertical; }
+  .afbtn { display:flex; gap:8px; }
+  .afbtn .ok { background:var(--accent); color:#fff; border-color:var(--accent); }
+  .pairnote { font-size:12px; color:var(--muted); }
+  #app { display:block; }
+  .pr { display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-bottom:6px; }
+  .pr.hdr { margin-bottom:8px; }
+  .sh[data-season="Spring"] { background:#2e4a34; border:1px solid #3d6046; }
+  .sh[data-season="Fall"] { background:#85471f; border:1px solid #9d5a2c; }
+  .sh { border-radius:10px; color:#f3efe6; }
+  .sh h2 { color:#f3efe6; } .sh .cnt { color:rgba(243,239,230,.72); }
+  .pr .t { background:var(--card); border:1px solid var(--line); border-radius:10px; min-width:0; }
+  .pr .t:last-child { border-bottom:1px solid var(--line); }
+  .pr .t.blank { background:none; border:0; }
+  .toolbar { display:flex; justify-content:flex-end; margin-bottom:12px; }
+  .toolbar button { background:var(--accent); color:#fff; border-color:var(--accent); }
   .note { color:#b9b2a3; font-size:12px; margin:4px 0 16px; }
   /* slide-out menu */
   .menu-btn { width:34px; height:34px; padding:0; flex:none; display:inline-flex; flex-direction:column; align-items:center; justify-content:center; gap:4px; border:1px solid var(--line); border-radius:8px; background:var(--card); cursor:pointer; }
@@ -100,14 +123,13 @@ body.locked #splash{display:flex;min-height:100vh;flex-direction:column;align-it
   <div class="side-title">Ry's Tools</div>
   <a class="side-link" href="budget.html">Budget</a>
   <a class="side-link" href="seasonal.html" aria-current="page">Seasonal</a>
-  <a class="side-link" href="seasonal-2.html">Seasonal-2</a>
   <a class="side-link" href="maintenance.html" id="side-maint-link" hidden>Maintenance</a>
 </nav>
 <header><div class="wrap">
   <div class="titlebar"><button type="button" class="menu-btn" id="menu-btn" aria-label="Open menu" aria-expanded="false" aria-controls="side-menu"><span></span><span></span><span></span></button><h1>Seasonal</h1>
     <div class="acct"><span class="st" id="save-status"></span><button type="button" id="acct-btn">Google Sign-In</button></div></div>
 </div></header>
-<main><div class="wrap" id="app"></div>
+<main><div class="wrap" id="addwrap"></div><div class="wrap" id="app"></div>
 <div class="wrap note" id="note">Not signed in: changes are kept in this browser only. Sign in with Google to keep them in your Drive.</div></main>
 
 <script>
@@ -364,8 +386,8 @@ body.locked #splash{display:flex;min-height:100vh;flex-direction:column;align-it
 
 /* ================= shared Drive file ================= */
 // One Drive file holds every tool's data, each under tools[<name>]. Saving here only ever
-// replaces tools.seasonal and leaves the other tools' slices untouched.
-const CURRENT_TOOL = "seasonal";
+// replaces tools.seasonal2 and leaves the other tools' slices untouched.
+const CURRENT_TOOL = "seasonal2";
 function withToolsWrapper(remote) {
   if (!remote) return {};
   if (remote.tools) return Object.assign({}, remote.tools);
@@ -379,28 +401,25 @@ async function mergeAndSave(toolData) {
 }
 
 /* ================= page state ================= */
-const SEASONS = ["Spring", "Summer", "Fall", "Winter"];
-// Only these are shown for now. Summer and Winter are hidden, and any tasks already in them stay saved.
-const VISIBLE = ["Spring", "Fall"];
-const LS_KEY = "rys_seasonal_tasks";
-const DEFAULTS = [
-  ["Fall", "Cover external air conditioner components"],
-  ["Fall", "Take in hoses"],
-  ["Fall", "Stow porch furniture"],
-  ["Fall", "Stow pots and planters"],
-  ["Fall", "Disconnect gutters from subterranean gutters"],
-  ["Fall", "External dryer vent"],
-  ["Spring", "Set out porch furniture"],
-  ["Spring", "Set out pots and planters"],
-  ["Spring", "Uncover external air conditioner components"],
-  ["Spring", "Put out hoses"],
-  ["Spring", "Reconnect gutters to subterranean gutters"]
+// Each task is a PAIR: a fall version and a spring version. Only one side shows at a time (p.phase).
+// Checking the visible side hides it and brings the other side into view.
+const LS_KEY = "rys_seasonal2_pairs";
+const OLD_LS_KEY = "rys_seasonal_tasks";
+const DEFAULT_PAIRS = [
+  ["Cover external air conditioner components", "Uncover external air conditioner components"],
+  ["Take in hoses", "Put out hoses"],
+  ["Stow porch furniture", "Set out porch furniture"],
+  ["Stow pots and planters", "Set out pots and planters"],
+  ["Disconnect gutters from subterranean gutters", "Reconnect gutters to subterranean gutters"],
+  ["External dryer vent", ""]
 ];
-let tasks = [], addingTo = null, openId = null, accountEmail = "", uid = 0;
+const COLS = [["fall", "Fall"], ["spring", "Spring"]];
+let pairs = [], addingFrom = null, openId = null, accountEmail = "", uid = 0;
 const $ = id => document.getElementById(id);
 const esc = t => String(t == null ? "" : t).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
-const newId = () => "t" + Date.now().toString(36) + (uid++);
-const defaultTasks = () => DEFAULTS.map(([season, title]) => ({ id: newId(), season, title, done: false }));
+const newId = () => "p" + Date.now().toString(36) + (uid++);
+const defaultPairs = () => DEFAULT_PAIRS.map(([f, s]) => ({ id: newId(), fall: { title: f, notes: "" }, spring: { title: s, notes: "" }, phase: "fall", done: false }));
+const other = k => k === "fall" ? "spring" : "fall";
 const currentSeason = () => { const m = new Date().getMonth(); return m >= 2 && m <= 4 ? "Spring" : m >= 5 && m <= 7 ? "Summer" : m >= 8 && m <= 10 ? "Fall" : "Winter"; };
 
 function setStatus(text, cls) { const el = $("save-status"); el.textContent = text; el.className = "st" + (cls ? " " + cls : ""); }
@@ -410,15 +429,31 @@ function updateButton() {
   $("note").hidden = GoogleDriveSync.isSignedIn();
 }
 
-/* ---------- storage: this browser always, Drive when signed in ---------- */
-const getData = () => ({ v: 1, tasks });
-function cleanTasks(arr) {
-  return arr.filter(t => t && typeof t.title === "string").map(t => ({
-    id: String(t.id || newId()), title: t.title, notes: typeof t.notes === "string" ? t.notes : "", season: SEASONS.includes(t.season) ? t.season : "Spring", done: !!t.done }));
+/* ---------- data helpers ---------- */
+const getData = () => ({ v: 2, pairs });
+const side = o => ({ title: o && typeof o.title === "string" ? o.title : "", notes: o && typeof o.notes === "string" ? o.notes : "" });
+function cleanPairs(arr) {
+  return arr.filter(p => p && p.fall && p.spring).map(p => {
+    const q = { id: String(p.id || newId()), fall: side(p.fall), spring: side(p.spring), phase: p.phase === "spring" ? "spring" : "fall", done: !!p.done };
+    if (!q[q.phase].title.trim() && q[other(q.phase)].title.trim()) q.phase = other(q.phase);
+    return q;
+  });
+}
+// Build pairs from the old Seasonal page: row i of Fall lines up with row i of Spring.
+function pairsFromSeasonal(arr) {
+  const t = (arr || []).filter(x => x && typeof x.title === "string");
+  const f = t.filter(x => x.season === "Fall"), s = t.filter(x => x.season === "Spring");
+  const out = [];
+  for (let i = 0; i < Math.max(f.length, s.length); i++) {
+    const a = f[i], b = s[i];
+    out.push({ id: newId(), fall: side(a), spring: side(b), phase: (!a || (a.done && b && !b.done)) ? "spring" : "fall", done: false });
+  }
+  return cleanPairs(out);
 }
 function saveLocal() { try { localStorage.setItem(LS_KEY, JSON.stringify(getData())); } catch (e) {} }
 function loadLocal() {
-  try { const d = JSON.parse(localStorage.getItem(LS_KEY) || "null"); if (d && Array.isArray(d.tasks)) return cleanTasks(d.tasks); } catch (e) {}
+  try { const d = JSON.parse(localStorage.getItem(LS_KEY) || "null"); if (d && Array.isArray(d.pairs)) return cleanPairs(d.pairs); } catch (e) {}
+  try { const d = JSON.parse(localStorage.getItem(OLD_LS_KEY) || "null"); if (d && Array.isArray(d.tasks)) { const p = pairsFromSeasonal(d.tasks); if (p.length) return p; } } catch (e) {}
   return null;
 }
 let saveTimer = null;
@@ -434,75 +469,94 @@ function queueSave() {
 }
 
 /* ---------- rendering ---------- */
-function taskHtml(t) {
-  const open = openId === t.id;
+function taskHtml(p, k) {
+  const sd = p[k], open = openId === p.id, o = p[other(k)], inPlace = p.done && !o.title.trim();
   const det = open ? `<div class="det">
-      <label>Task<input type="text" data-f="title" value="${esc(t.title)}" autocomplete="off"></label>
-      <label>Notes<textarea data-f="notes" placeholder="Add notes…">${esc(t.notes)}</textarea></label>
+      <label>${k === "fall" ? "Fall" : "Spring"} task<input type="text" data-f="title" value="${esc(sd.title)}" autocomplete="off"></label>
+      <label>Notes<textarea data-f="notes" placeholder="Add notes…">${esc(sd.notes)}</textarea></label>
+      ${o.title ? `<div class="pairnote">Comes back as: ${esc(o.title)}</div>` : ""}
       <div class="acts"><button type="button" class="delbtn" data-del="1">Delete</button></div></div>` : "";
-  return `<div class="t ${t.done ? "done" : ""}" data-id="${t.id}">
-    <div class="ln"><input type="checkbox" ${t.done ? "checked" : ""} data-check="1" aria-label="Done">
-    <span class="tx" data-edit="1">${esc(t.title)}${t.notes ? ' <span class="hasnote" title="Has notes">📝</span>' : ""}</span></div>${det}</div>`;
+  return `<div class="t ${inPlace ? "done" : ""}" data-k="${k}">
+    <div class="ln"><input type="checkbox" ${inPlace ? "checked" : ""} data-check="1" aria-label="Done">
+    <span class="tx" data-edit="1">${esc(sd.title)}${sd.notes ? ' <span class="hasnote" title="Has notes">📝</span>' : ""}</span></div>${det}</div>`;
+}
+function addFormHtml() {
+  if (!addingFrom) return `<div class="toolbar"><button type="button" data-add="1">+ Add task</button></div>`;
+  return `<form class="addform2" data-form="1">
+    <div class="afcols">
+      <div><h3>Fall version</h3><input type="text" name="ft" placeholder="Fall task title" autocomplete="off" required><textarea name="fn" placeholder="Fall notes (optional)"></textarea></div>
+      <div><h3>Spring version</h3><input type="text" name="st" placeholder="Spring task title" autocomplete="off" required><textarea name="sn" placeholder="Spring notes (optional)"></textarea></div>
+    </div>
+    <div class="afbtn"><button type="submit" class="ok">Add task</button><button type="button" data-cancel="1">Cancel</button></div></form>`;
 }
 function render() {
   const now = currentSeason();
-  $("app").innerHTML = VISIBLE.map(s => {
-    const list = tasks.filter(t => t.season === s), nDone = list.filter(t => t.done).length;
-    const form = addingTo === s ? `<form class="addform" data-form="${s}"><input type="text" name="title" placeholder="New ${s.toLowerCase()} task" autocomplete="off" required><button type="submit" class="ok">Add</button><button type="button" data-cancel="1">Cancel</button></form>` : "";
-    return `<section data-season="${s}"><div class="sh"><h2>${s}${s === now ? '<span class="now">Now</span>' : ""}<span class="cnt">${nDone} of ${list.length} done</span></h2>
-      <button type="button" data-add="${s}">+ Add task</button></div>
-      <div class="rows">${list.map(taskHtml).join("") || '<div class="empty">No tasks yet.</div>'}</div>${form}</section>`;
-  }).join("");
-  const inp = document.querySelector(".addform input"); if (inp) inp.focus();
+  $("addwrap").innerHTML = addFormHtml();
+  const head = `<div class="pr hdr">${COLS.map(([k, label]) => `<div class="sh" data-season="${label}"><h2>${label}${label === now ? '<span class="now">Now</span>' : ""}<span class="cnt">${pairs.filter(p => p.phase === k).length} to do</span></h2></div>`).join("")}</div>`;
+  $("app").innerHTML = head + pairs.map(p => `<div class="pr" data-id="${p.id}">${COLS.map(([k]) => p.phase === k ? taskHtml(p, k) : '<div class="t blank"></div>').join("")}</div>`).join("");
+  const inp = document.querySelector("#addwrap input"); if (inp) inp.focus();
 }
 const keepScroll = fn => { const y = scrollY; fn(); render(); scrollTo(0, y); };
 
 /* ---------- editing ---------- */
-const app = $("app");
-const byId = id => tasks.find(t => t.id === id);
+const app = $("app"), addwrap = $("addwrap");
+const byId = id => pairs.find(p => p.id === id);
+const rowInfo = el => {
+  const cell = el.closest(".t"); if (!cell || cell.classList.contains("blank")) return null;
+  const pr = cell.closest(".pr"), p = pr && byId(pr.dataset.id);
+  return p ? { row: cell, p, k: cell.dataset.k } : null;
+};
 app.addEventListener("change", e => {
-  const row = e.target.closest(".t"), t = row && byId(row.dataset.id); if (!t) return;
+  const i = rowInfo(e.target); if (!i) return;
+  const { row, p, k } = i;
   if (e.target.dataset.f) {
-    const k = e.target.dataset.f;
-    if (k === "title") {
+    const f = e.target.dataset.f;
+    if (f === "title") {
       const v = e.target.value.trim();
-      if (!v) { e.target.value = t.title; return; }
-      t.title = v; const tx = row.querySelector(".tx"); if (tx) tx.firstChild.textContent = v;
-    } else t[k] = e.target.value;
+      if (!v) { e.target.value = p[k].title; return; }
+      p[k].title = v; const tx = row.querySelector(".tx"); if (tx) tx.firstChild.textContent = v;
+    } else p[k].notes = e.target.value;
     queueSave(); return;
   }
-  if (e.target.dataset.check) t.done = e.target.checked;
-  else return;
+  if (!e.target.dataset.check) return;
+  if (p[other(k)].title.trim()) { p.phase = other(k); p.done = false; if (openId === p.id) openId = null; }
+  else p.done = e.target.checked; // no counterpart: just mark it done in place
   queueSave(); keepScroll(() => {});
 });
 app.addEventListener("click", e => {
   if (justDragged) { justDragged = false; return; }
-  const d = e.target.dataset;
-  if (d.edit) { const row = e.target.closest(".t"); if (row) { openId = openId === row.dataset.id ? null : row.dataset.id; keepScroll(() => {}); } return; }
-  if (d.add) { addingTo = d.add; keepScroll(() => {}); return; }
-  if (d.cancel) { addingTo = null; keepScroll(() => {}); return; }
-  if (d.del) {
-    const row = e.target.closest(".t"), t = row && byId(row.dataset.id);
-    if (t && confirm('Delete "' + t.title + '"?')) { tasks = tasks.filter(x => x !== t); queueSave(); keepScroll(() => {}); }
-  }
+  const d = e.target.dataset, i = rowInfo(e.target);
+  if (d.edit && i) { openId = openId === i.p.id ? null : i.p.id; keepScroll(() => {}); return; }
+  if (d.del && i && confirm('Delete "' + i.p[i.k].title + '" and its ' + other(i.k) + ' version?')) { pairs = pairs.filter(x => x !== i.p); queueSave(); keepScroll(() => {}); }
 });
-/* ---------- drag to reorder / move between seasons (mouse drags from the row, touch holds first) ---------- */
+addwrap.addEventListener("click", e => {
+  if (e.target.dataset.add) { addingFrom = true; keepScroll(() => {}); }
+  else if (e.target.dataset.cancel) { addingFrom = null; keepScroll(() => {}); }
+});
+addwrap.addEventListener("submit", e => {
+  e.preventDefault();
+  const f = e.target.elements, ft = f.ft.value.trim(), st = f.st.value.trim(); if (!ft || !st) return;
+  pairs.push({ id: newId(), fall: { title: ft, notes: f.fn.value }, spring: { title: st, notes: f.sn.value }, phase: "fall", done: false });
+  addingFrom = null; queueSave(); keepScroll(() => {});
+});
+
+/* ---------- drag to reorder rows (mouse drags from the row, touch holds first) ---------- */
 let drag = null, pending = null, justDragged = false, lastPointerType = "mouse";
 const HOLD_MS = 320, MOVE_PX = 6;
 function clearSelection() { try { const s = getSelection(); if (s) s.removeAllRanges(); } catch (err) {} }
 function startDrag(p) {
   clearTimeout(p.timer); pending = null;
-  try { p.row.setPointerCapture(p.id); } catch (err) {}
-  drag = { row: p.row, id: p.id };
-  p.row.classList.add("dragging"); document.body.classList.add("is-dragging"); clearSelection();
+  try { p.cell.setPointerCapture(p.id); } catch (err) {}
+  drag = { row: p.row, cell: p.cell, id: p.id };
+  p.cell.classList.add("dragging"); document.body.classList.add("is-dragging"); clearSelection();
   if (p.touch && navigator.vibrate) navigator.vibrate(12);
 }
 app.addEventListener("pointerdown", e => {
   lastPointerType = e.pointerType;
   if (e.button > 0 || e.target.closest("input, button, select, textarea, a")) return;
   const ln = e.target.closest(".ln"); if (!ln) return;
-  const row = ln.closest(".t");
-  const p = { row, id: e.pointerId, x: e.clientX, y: e.clientY, touch: e.pointerType === "touch" };
+  const cell = ln.closest(".t"), row = ln.closest(".pr");
+  const p = { cell, row, id: e.pointerId, x: e.clientX, y: e.clientY, touch: e.pointerType === "touch" };
   if (p.touch) p.timer = setTimeout(() => { if (pending === p) startDrag(p); }, HOLD_MS);
   pending = p;
 });
@@ -516,23 +570,19 @@ app.addEventListener("pointermove", e => {
   if (!drag || e.pointerId !== drag.id) return;
   if (e.clientY < 70) scrollBy(0, -14); else if (e.clientY > innerHeight - 70) scrollBy(0, 14);
   const under = document.elementFromPoint(e.clientX, e.clientY); if (!under) return;
-  const over = under.closest(".t"), sec = under.closest("section"), rows = sec && sec.querySelector(".rows");
-  if (over && over !== drag.row) {
+  const over = under.closest(".pr");
+  if (over && over !== drag.row && !over.classList.contains("hdr")) {
     const r = over.getBoundingClientRect();
     over.parentNode.insertBefore(drag.row, e.clientY < r.top + r.height / 2 ? over : over.nextSibling);
-  } else if (!over && rows && !rows.contains(drag.row)) rows.appendChild(drag.row);
+  }
 });
 function clearPending() { if (pending) clearTimeout(pending.timer); pending = null; }
 function endDrag(e) {
   if (!drag || e.pointerId !== drag.id) { clearPending(); return; }
-  drag.row.classList.remove("dragging"); document.body.classList.remove("is-dragging");
-  const order = [];
-  app.querySelectorAll("section").forEach(sec => sec.querySelectorAll(".t").forEach(r => {
-    const t = byId(r.dataset.id); if (t) { t.season = sec.dataset.season; order.push(t); }
-  }));
+  drag.cell.classList.remove("dragging"); document.body.classList.remove("is-dragging");
+  const newOrder = Array.from(app.querySelectorAll(".pr[data-id]")).map(r => byId(r.dataset.id)).filter(Boolean);
+  if (newOrder.length === pairs.length) pairs = newOrder;
   drag = null; justDragged = true; setTimeout(() => { justDragged = false; }, 80);
-  const hidden = tasks.filter(t => !VISIBLE.includes(t.season));
-  if (order.length + hidden.length === tasks.length) tasks = order.concat(hidden);
   queueSave(); keepScroll(() => {});
 }
 app.addEventListener("pointerup", e => { clearPending(); endDrag(e); });
@@ -541,13 +591,6 @@ app.addEventListener("touchmove", e => { if (drag) e.preventDefault(); }, { pass
 app.addEventListener("contextmenu", e => { if (lastPointerType === "touch" && e.target.closest(".t")) e.preventDefault(); });
 app.addEventListener("selectstart", e => { if ((drag || pending) && !e.target.closest(".det")) e.preventDefault(); });
 
-app.addEventListener("submit", e => {
-  e.preventDefault();
-  const season = e.target.dataset.form, title = e.target.elements.title.value.trim(); if (!title) return;
-  tasks.push({ id: newId(), season, title, notes: "", done: false });
-  addingTo = season; queueSave(); keepScroll(() => {});
-});
-
 /* ---------- sign-in ---------- */
 async function afterSignIn() {
   try { accountEmail = (await GoogleDriveSync.getUserEmail()) || ""; } catch (e) { accountEmail = ""; }
@@ -555,9 +598,15 @@ async function afterSignIn() {
   const link = $("side-maint-link");
   if (link && accountEmail) isAllowedEmail(accountEmail).then(ok => { link.hidden = !ok; });
   try {
-    const own = withToolsWrapper(await GoogleDriveSync.load())[CURRENT_TOOL];
-    if (own && Array.isArray(own.tasks)) { tasks = cleanTasks(own.tasks); saveLocal(); render(); setStatus("", ""); }
-    else { await mergeAndSave(getData()); setStatus("Saved to Drive", "ok"); } // first sign-in: keep what is on screen
+    const tools = withToolsWrapper(await GoogleDriveSync.load());
+    const own = tools[CURRENT_TOOL];
+    if (own && Array.isArray(own.pairs)) { pairs = cleanPairs(own.pairs); saveLocal(); render(); setStatus("", ""); }
+    else {
+      // First time here: start from the order on the original Seasonal page.
+      const old = tools.seasonal && Array.isArray(tools.seasonal.tasks) ? pairsFromSeasonal(tools.seasonal.tasks) : [];
+      if (old.length) { pairs = old; saveLocal(); render(); }
+      await mergeAndSave(getData()); setStatus("Saved to Drive", "ok");
+    }
   } catch (e) { setStatus("Couldn't reach Google Drive: " + e.message, "err"); }
 }
 // Same SHA-256 allowlist as the other pages; it only decides whether the Maintenance menu link shows.
@@ -574,7 +623,7 @@ async function signInFlow() {
 }
 $("acct-btn").addEventListener("click", () => { if (!GoogleDriveSync.isSignedIn()) signInFlow(); });
 
-tasks = loadLocal() || defaultTasks();
+pairs = loadLocal() || defaultPairs();
 saveLocal();
 render();
 window.addEventListener("load", async () => {
