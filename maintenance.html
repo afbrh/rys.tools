@@ -6,9 +6,9 @@
 <title>Maintenance</title>
 <style>
   :root {
-    color-scheme:light;
-    --bg:#f4ecd8; --card:#fbf6e9; --ink:#3b3226; --muted:#85796a; --line:#e2d7bd;
-    --accent:#6b4f2a; --accent-soft:#ecdfc0; --neg:#a8402a; --hide:#efe5cb;
+    color-scheme:dark;
+    --bg:#222224; --card:#2e2e31; --ink:#d6d6d9; --muted:#9b9ba1; --line:#45454a;
+    --accent:#6a6a72; --accent-soft:#3b3b40; --neg:#e0765f; --hide:#262628;
   }
   * { box-sizing:border-box; }
   body { margin:0; background:#000; color:var(--ink);
@@ -62,26 +62,26 @@
   .row .c.neg { color:var(--neg); }
   .row.off { background:var(--hide); }
   .row.off .n, .row.off .d, .row.off .c { text-decoration:line-through; opacity:.45; }
-  .row.custom .n, .row.custom .c, .row.custom .d { color:#c0261b; }
+  .row.custom .n, .row.custom .c, .row.custom .d { color:#e5604b; }
   .row.custom .d { font-size:12px; font-style:italic; }
-  .row .x { background:none; border:0; color:#c0261b; font-size:18px; line-height:1; padding:0 4px; opacity:.6; }
+  .row .x { background:none; border:0; color:#e5604b; font-size:18px; line-height:1; padding:0 4px; opacity:.6; }
   .row .x:hover { opacity:1; }
   .addbar { padding:8px 14px; border-top:1px solid var(--line); }
   .plus { width:30px; height:30px; padding:0; border-radius:50%; font-size:20px; line-height:1;
-    color:#c0261b; border-color:#c0261b; background:transparent; }
-  .plus:hover { background:#c0261b; color:#fff; }
+    color:#e5604b; border-color:#e5604b; background:transparent; }
+  .plus:hover { background:#e5604b; color:#fff; }
   .addform { display:flex; gap:8px; flex-wrap:wrap; align-items:center; padding:10px 14px;
     border-top:1px solid var(--line); background:var(--hide); }
-  .addform input[type=text] { font:inherit; font-size:14px; padding:6px 9px; border:1px solid #c0261b;
+  .addform input[type=text] { font:inherit; font-size:14px; padding:6px 9px; border:1px solid #e5604b;
     border-radius:8px; background:var(--card); color:var(--ink); }
   .addform .ttl { flex:2 1 200px; } .addform .amt { flex:1 1 110px; }
-  .addform .ok { background:#c0261b; color:#fff; border-color:#c0261b; }
+  .addform .ok { background:#e5604b; color:#fff; border-color:#e5604b; }
   .row .nb { background:none; border:0; padding:0 4px; font-size:15px; color:var(--muted); opacity:.55; }
-  .row .nb:hover { opacity:1; color:#c0261b; }
-  .note-t { color:#c0261b; font-size:13px; margin-top:2px; white-space:pre-wrap; }
+  .row .nb:hover { opacity:1; color:#e5604b; }
+  .note-t { color:#e5604b; font-size:13px; margin-top:2px; white-space:pre-wrap; }
   .noteform { display:flex; gap:6px; flex-wrap:wrap; margin-top:5px; }
-  .noteform input { flex:1 1 200px; font:inherit; font-size:13px; padding:4px 8px; border:1px solid #c0261b;
-    border-radius:6px; background:var(--card); color:#c0261b; }
+  .noteform input { flex:1 1 200px; font:inherit; font-size:13px; padding:4px 8px; border:1px solid #e5604b;
+    border-radius:6px; background:var(--card); color:#e5604b; }
   .noteform button { padding:3px 10px; font-size:12px; }
   .th { width:64px; height:64px; object-fit:contain; background:#fff; border:1px solid var(--line); border-radius:6px; flex:none; }
   .row.off .th { opacity:.35; }
@@ -143,9 +143,6 @@ body.menu-open .side-menu { transform: none; visibility: visible; transition-del
   .it { border-bottom:1px solid var(--line); background:var(--card); }
   .it:last-child { border-bottom:0; }
   /* A story is tinted by the status of the section it is in. */
-  .it.st-InProgress { background:#e0e9cf; }
-  .it.st-Planned { background:#e3ecf7; }
-  .it.st-Whenitbreaks { background:#e6dff0; }
   .it.dragging { background:var(--accent-soft); box-shadow:0 2px 10px rgba(0,0,0,.18); position:relative; z-index:2; }
   .it.done .ti { text-decoration:line-through; opacity:.5; }
   .ln { display:flex; gap:10px; align-items:center; padding:8px 12px; }
@@ -175,6 +172,14 @@ body.menu-open .side-menu { transform: none; visibility: visible; transition-del
   .seg button:first-child { border-radius:8px 0 0 8px; } .seg button:last-child { border-radius:0 8px 8px 0; margin-left:-1px; }
   .seg button.on { background:var(--accent); color:#000; border-color:var(--accent); font-weight:600; }
   .det label.wide { grid-column:1/-1; }
+  .att { grid-column:1/-1; display:flex; flex-direction:column; gap:6px; font-size:11px; text-transform:uppercase; letter-spacing:.04em; color:var(--muted); }
+  .att .alist { display:flex; flex-direction:column; gap:4px; text-transform:none; letter-spacing:0; font-size:13px; color:var(--ink); }
+  .att .arow { display:flex; align-items:center; gap:8px; }
+  .att .arow a { color:var(--accent); flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .att .arow small { color:var(--muted); white-space:nowrap; }
+  .att .arow .rm { background:none; border:0; color:#e5604b; font-size:16px; line-height:1; padding:0 4px; opacity:.6; }
+  .att .arow .rm:hover { opacity:1; }
+  .att .apick { align-self:flex-start; text-transform:none; letter-spacing:0; font-size:13px; }
   .det input, .det textarea, .det select { width:100%; text-transform:none; letter-spacing:0; }
   .det textarea { min-height:60px; resize:vertical; }
   .det .acts { grid-column:1/-1; display:flex; justify-content:flex-end; gap:8px; }
@@ -184,9 +189,12 @@ body.menu-open .side-menu { transform: none; visibility: visible; transition-del
     .it .tx { flex:1 1 calc(100% - 40px); } .it .grip { align-self:flex-start; }
     .it .co { padding-left:30px; } .long-t { display:none; } }
   .short-t { display:none; } @media (max-width:560px) { .short-t { display:inline; } }
-  .det .delbtn { margin-right:auto; color:#c0261b; border-color:#c0261b; background:transparent; }
-  .det .delbtn:hover { background:#c0261b; color:#fff; }
+  .det .delbtn { margin-right:auto; color:#e5604b; border-color:#e5604b; background:transparent; }
+  .det .delbtn:hover { background:#e5604b; color:#fff; }
   @media print { .det .delbtn { display:none !important; } }
+  @media print {
+    :root { --bg:#f4ecd8; --card:#fbf6e9; --ink:#3b3226; --muted:#85796a; --line:#e2d7bd; --accent:#6b4f2a; --accent-soft:#ecdfc0; --hide:#efe5cb; }
+  }
   .empty { padding:14px; color:var(--muted); font-size:13px; }
   @media print { .grip, select.stsel, .chips { display:none !important; } }
 </style>
@@ -382,7 +390,7 @@ async function isAllowedEmail(email) {
       if (!accessToken) throw new Error('not signed in');
       const headers = Object.assign({ 'Authorization': 'Bearer ' + accessToken }, (options && options.headers) || {});
       const controller = new AbortController();
-      const timer = setTimeout(() => controller.abort(), 15000);
+      const timer = setTimeout(() => controller.abort(), (options && options.timeoutMs) || 15000);
       let resp;
       try {
         resp = await fetch(url, Object.assign({ cache: 'no-store' }, options, { headers, signal: controller.signal }));
@@ -473,7 +481,56 @@ async function isAllowedEmail(email) {
       return json.email || '';
     }
 
-    return { isSignedIn, signIn, trySilentSignIn, load, save, getUserEmail, restoreSession };
+    // Attachments live as real files in the user's own Drive, in one app-created folder, so they
+    // survive even if this page disappears. (drive.file scope: this app can only touch files it made.)
+    const FOLDER_NAME = 'rys.tools attachments';
+    const FOLDER_KEY = 'munny_drive_attach_folder';
+    async function ensureFolder() {
+      let id = '';
+      try { id = localStorage.getItem(FOLDER_KEY) || ''; } catch (e) {}
+      if (id) {
+        const r0 = await api('https://www.googleapis.com/drive/v3/files/' + id + '?fields=id,trashed');
+        if (r0.ok) { const j0 = await r0.json(); if (!j0.trashed) return id; }
+      }
+      const q = encodeURIComponent("name='" + FOLDER_NAME + "' and mimeType='application/vnd.google-apps.folder' and trashed=false");
+      let r = await api('https://www.googleapis.com/drive/v3/files?q=' + q + '&fields=files(id)&spaces=drive');
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+      const j = await r.json();
+      if (j.files && j.files.length) id = j.files[0].id;
+      else {
+        r = await api('https://www.googleapis.com/drive/v3/files?fields=id', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name: FOLDER_NAME, mimeType: 'application/vnd.google-apps.folder' })
+        });
+        if (!r.ok) throw new Error('HTTP ' + r.status);
+        id = (await r.json()).id;
+      }
+      try { localStorage.setItem(FOLDER_KEY, id); } catch (e) {}
+      return id;
+    }
+    async function uploadFile(file, description) {
+      const parent = await ensureFolder();
+      const boundary = 'rysattach' + Date.now();
+      const meta = { name: file.name, parents: [parent], description: description || '' };
+      const body = new Blob([
+        '--' + boundary + '\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n' + JSON.stringify(meta) + '\r\n' +
+        '--' + boundary + '\r\nContent-Type: ' + (file.type || 'application/octet-stream') + '\r\n\r\n',
+        file,
+        '\r\n--' + boundary + '--'
+      ]);
+      const resp = await api('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id,name,mimeType,size,webViewLink', {
+        method: 'POST', headers: { 'Content-Type': 'multipart/related; boundary=' + boundary }, body, timeoutMs: 180000
+      });
+      if (!resp.ok) throw new Error('HTTP ' + resp.status);
+      return resp.json();
+    }
+    async function trashFile(id) {
+      const resp = await api('https://www.googleapis.com/drive/v3/files/' + id, {
+        method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ trashed: true })
+      });
+      return resp.ok;
+    }
+    return { isSignedIn, signIn, trySilentSignIn, load, save, getUserEmail, restoreSession, uploadFile, trashFile };
   })();
 
 /* ================= shared Drive file ================= */
@@ -547,8 +604,10 @@ function optionList(list, cur) {
 }
 const ISO = /^\d{4}-\d{2}-\d{2}$/;
 const fmtDue = v => { if (!ISO.test(v || "")) return v || ""; const [y, m, d] = v.split("-").map(Number); return "Due " + new Date(y, m - 1, d).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }); };
+const fmtSize = n => { n = Number(n) || 0; return n >= 1048576 ? (n / 1048576).toFixed(1) + " MB" : n >= 1024 ? Math.round(n / 1024) + " KB" : n ? n + " B" : ""; };
 function metaHtml(it) {
-  return [it.lastInstalled ? "installed " + it.lastInstalled : ""].filter(Boolean).map(esc).join(" · ");
+  const n = (it.attachments || []).length;
+  return [it.lastInstalled ? "installed " + it.lastInstalled : "", n ? "📎 " + n : ""].filter(Boolean).map(esc).join(" · ");
 }
 function rowHtml(it) {
   let detail = "";
@@ -559,6 +618,9 @@ function rowHtml(it) {
       <label>Cost<input type="text" inputmode="decimal" data-f="cost" value="${it.cost || 0}"></label>
       ${f("lastInstalled", "Last installed")}
       <label class="wide">Notes<textarea data-f="notes">${esc(it.notes)}</textarea></label>
+      <div class="att">Attachments
+        <div class="alist">${(it.attachments || []).map((a, i) => `<div class="arow"><a href="${esc(a.link)}" target="_blank" rel="noopener">${esc(a.name)}</a><small>${esc(fmtSize(a.size))}</small><button type="button" class="rm" data-rmatt="${i}" aria-label="Remove attachment" title="Remove">×</button></div>`).join("")}</div>
+        <button type="button" class="apick" data-pick="1">+ Add attachment</button><input type="file" multiple hidden data-attach="1"></div>
       <div class="acts"><button type="button" class="delbtn" data-del="1">Delete</button><button type="button" class="savebtn" data-save="1">Save</button></div></div>`;
   }
   return `<div class="it st-${sKey(it.status)} ${it.status === "Done" ? "done" : ""}" data-id="${it.id}">
@@ -577,12 +639,33 @@ function render() {
 }
 const keepScroll = fn => { const y = scrollY; fn(); render(); scrollTo(0, y); };
 
+/* ---------- attachments ---------- */
+const MAX_ATTACH = 25 * 1024 * 1024;
+async function uploadAttachments(it, files) {
+  if (!files.length) return;
+  if (!GoogleDriveSync.isSignedIn()) { setStatus("Sign in to add attachments.", "err"); return; }
+  let added = 0; const failed = [];
+  for (const f of files) {
+    if (f.size > MAX_ATTACH) { failed.push(f.name + " (over 25 MB)"); continue; }
+    setStatus("Uploading " + f.name + "…", "");
+    try {
+      const r = await GoogleDriveSync.uploadFile(f, "Maintenance story: " + it.title);
+      (it.attachments = it.attachments || []).push({ id: r.id, name: r.name || f.name, type: r.mimeType || f.type, size: Number(r.size) || f.size, link: r.webViewLink || ("https://drive.google.com/file/d/" + r.id + "/view") });
+      added++;
+    } catch (err) { failed.push(f.name + " (" + err.message + ")"); }
+  }
+  if (added) markDirty();
+  setStatus(failed.length ? "Couldn't upload: " + failed.join(", ") : added ? "Attached. Click Save to keep it on the story." : "", failed.length ? "err" : "ok");
+  keepScroll(() => {});
+}
+
 /* ---------- editing ---------- */
 const byId = id => items.find(i => i.id === id);
 app.addEventListener("change", e => {
   const el = e.target, row = el.closest(".it"); if (!row) return;
   const it = byId(row.dataset.id); if (!it) return;
   if (el.dataset.status) { it.status = it.group = el.value; markDirty(); keepScroll(() => {}); return; }
+  if (el.dataset.attach) { const files = Array.from(el.files || []); el.value = ""; uploadAttachments(it, files); return; }
   const k = el.dataset.f; if (!k) return;
   if (k === "cost") { const n = parseFloat(String(el.value).replace(/[$,\s]/g, "")); it.cost = isNaN(n) ? 0 : n; }
   else it[k] = el.value;
@@ -597,6 +680,15 @@ app.addEventListener("click", e => {
   if (d.type) {
     const row = e.target.closest(".it"), it = row && byId(row.dataset.id);
     if (it) { it.type = it.type === d.type ? "" : d.type; markDirty(); keepScroll(() => {}); }
+    return;
+  }
+  if (d.pick) { const inp = e.target.parentNode.querySelector("[data-attach]"); if (inp) inp.click(); return; }
+  if (d.rmatt !== undefined) {
+    const row = e.target.closest(".it"), it = row && byId(row.dataset.id), a = it && (it.attachments || [])[+d.rmatt];
+    if (a && confirm('Remove "' + a.name + '"? The file is moved to the trash in your Google Drive.')) {
+      it.attachments.splice(+d.rmatt, 1); markDirty(); keepScroll(() => {});
+      GoogleDriveSync.trashFile(a.id).catch(() => {});
+    }
     return;
   }
   if (d.del) {
