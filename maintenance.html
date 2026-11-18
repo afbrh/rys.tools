@@ -197,6 +197,23 @@ body.menu-open .side-menu { transform: none; visibility: visible; transition-del
   }
   .empty { padding:14px; color:var(--muted); font-size:13px; }
   @media print { .grip, select.stsel, .chips { display:none !important; } }
+  /* Seasonal-style look: headings instead of boxes, stories as separate cards */
+  @media screen {
+    #app section { background:none; border:0; border-radius:0; overflow:visible; margin-bottom:24px; }
+    #app .sh { background:none; border:0; border-bottom:2px solid var(--shc, #45454a); border-radius:0; padding:4px 2px 6px; margin-bottom:10px; gap:10px; }
+    #app .sh h2 { font-size:20px; font-weight:700; letter-spacing:.02em; color:var(--shh, var(--ink)); }
+    #app .sh .sub { color:var(--muted); font-size:13px; font-weight:500; }
+    #app section[data-group="In Progress"] { --shc:#b8641f; --shh:#e58a43; }
+    #app section[data-group="Planned"] { --shc:#3f6f9c; --shh:#7fb0e3; }
+    #app section[data-group="Backlog"] { --shc:#55555b; --shh:#a9a9b0; }
+    #app section[data-group="When it breaks"] { --shc:#6f5a92; --shh:#b49ad6; }
+    #app section[data-group="Done"] { --shc:#3f7a4c; --shh:#6fb07e; }
+    #app .it { background:var(--card); border:1px solid var(--line); border-radius:10px; margin-bottom:6px; overflow:hidden; }
+    #app .it:last-child { border-bottom:1px solid var(--line); }
+    #app .it .ln { padding:10px 14px; }
+    #app .it.dragging { background:var(--accent-soft); box-shadow:0 2px 10px rgba(0,0,0,.4); }
+    #app .empty { padding:6px 2px; }
+  }
 </style>
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 <style id="lock-css">
