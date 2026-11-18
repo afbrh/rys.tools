@@ -37,12 +37,18 @@
   .sh .cnt { color:var(--muted); font-size:12px; font-weight:400; margin-left:8px; }
   .sh .now { font-size:11px; padding:0 7px; border-radius:999px; background:var(--accent); color:#fff; margin-left:8px; font-weight:600; }
   .sh button { padding:3px 9px; font-size:12px; white-space:nowrap; }
-  .t { display:flex; align-items:center; gap:10px; padding:9px 14px; border-bottom:1px solid var(--line); }
+  .t { border-bottom:1px solid var(--line); }
   .t:last-child { border-bottom:0; }
   .t input[type=checkbox] { width:18px; height:18px; flex:none; accent-color:var(--accent); cursor:pointer; }
   .t { user-select:none; -webkit-user-select:none; -webkit-touch-callout:none; -webkit-tap-highlight-color:transparent; }
-  .t .tx { flex:1; min-width:0; font-weight:500; cursor:text; padding:2px 0; }
-  .t .edit { flex:1; min-width:0; font:inherit; font-weight:500; padding:2px 6px; margin:-3px 0; border:1px solid var(--accent); border-radius:6px; background:var(--bg); color:var(--ink); user-select:text; -webkit-user-select:text; }
+  .t .tx { flex:1; min-width:0; font-weight:500; padding:2px 0; }
+  .t .ln { display:flex; align-items:center; gap:10px; padding:9px 14px; }
+  .t .tx { cursor:pointer; }
+  .t .hasnote { font-size:12px; opacity:.7; }
+  .t .det { display:flex; flex-direction:column; gap:8px; padding:4px 14px 14px 42px; user-select:text; -webkit-user-select:text; }
+  .t .det label { display:flex; flex-direction:column; gap:3px; font-size:11px; text-transform:uppercase; letter-spacing:.04em; color:var(--muted); }
+  .t .det input, .t .det textarea { font:inherit; font-size:14px; text-transform:none; letter-spacing:0; padding:6px 9px; border:1px solid var(--line); border-radius:8px; background:var(--bg); color:var(--ink); width:100%; }
+  .t .det textarea { min-height:70px; resize:vertical; }
   .t.dragging { background:var(--accent-soft); box-shadow:0 2px 10px rgba(0,0,0,.4); position:relative; z-index:2; }
   .rows { min-height:8px; }
   body.is-dragging, body.is-dragging * { user-select:none !important; -webkit-user-select:none !important; cursor:grabbing !important; }
@@ -371,7 +377,7 @@ const DEFAULTS = [
   ["Spring", "Put out hoses"],
   ["Spring", "Reconnect gutters to subterranean gutters"]
 ];
-let tasks = [], addingTo = null, accountEmail = "", uid = 0;
+let tasks = [], addingTo = null, openId = null, accountEmail = "", uid = 0;
 const $ = id => document.getElementById(id);
 const esc = t => String(t == null ? "" : t).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 const newId = () => "t" + Date.now().toString(36) + (uid++);
@@ -389,7 +395,7 @@ function updateButton() {
 const getData = () => ({ v: 1, tasks });
 function cleanTasks(arr) {
   return arr.filter(t => t && typeof t.title === "string").map(t => ({
-    id: String(t.id || newId()), title: t.title, season: SEASONS.includes(t.season) ? t.season : "Spring", done: !!t.done }));
+    id: String(t.id || newId()), title: t.title, notes: typeof t.notes === "string" ? t.notes : "", season: SEASONS.includes(t.season) ? t.season : "Spring", done: !!t.done }));
 }
 function saveLocal() { try { localStorage.setItem(LS_KEY, JSON.stringify(getData())); } catch (e) {} }
 function loadLocal() {
@@ -410,13 +416,14 @@ function queueSave() {
 
 /* ---------- rendering ---------- */
 function taskHtml(t) {
-  const body = editingId === t.id
-    ? `<input type="text" class="edit" value="${esc(t.title)}" aria-label="Edit task" autocomplete="off">`
-    : `<span class="tx" data-edit="1">${esc(t.title)}</span>`;
+  const open = openId === t.id;
+  const det = open ? `<div class="det">
+      <label>Task<input type="text" data-f="title" value="${esc(t.title)}" autocomplete="off"></label>
+      <label>Notes<textarea data-f="notes" placeholder="Add notes…">${esc(t.notes)}</textarea></label></div>` : "";
   return `<div class="t ${t.done ? "done" : ""}" data-id="${t.id}">
-    <input type="checkbox" ${t.done ? "checked" : ""} data-check="1" aria-label="Done">
-    ${body}
-    <button type="button" class="x" data-del="1" aria-label="Delete task" title="Delete">×</button></div>`;
+    <div class="ln"><input type="checkbox" ${t.done ? "checked" : ""} data-check="1" aria-label="Done">
+    <span class="tx" data-edit="1">${esc(t.title)}${t.notes ? ' <span class="hasnote" title="Has notes">📝</span>' : ""}</span>
+    <button type="button" class="x" data-del="1" aria-label="Delete task" title="Delete">×</button></div>${det}</div>`;
 }
 function render() {
   const now = currentSeason();
@@ -427,9 +434,7 @@ function render() {
       <button type="button" data-add="${s}">+ Add task</button></div>
       <div class="rows">${list.map(taskHtml).join("") || '<div class="empty">No tasks yet.</div>'}</div>${form}</section>`;
   }).join("");
-  const ed = document.querySelector(".t .edit");
-  if (ed) { ed.focus(); ed.select(); }
-  else { const inp = document.querySelector(".addform input"); if (inp) inp.focus(); }
+  const inp = document.querySelector(".addform input"); if (inp) inp.focus();
 }
 const keepScroll = fn => { const y = scrollY; fn(); render(); scrollTo(0, y); };
 
@@ -438,6 +443,15 @@ const app = $("app");
 const byId = id => tasks.find(t => t.id === id);
 app.addEventListener("change", e => {
   const row = e.target.closest(".t"), t = row && byId(row.dataset.id); if (!t) return;
+  if (e.target.dataset.f) {
+    const k = e.target.dataset.f;
+    if (k === "title") {
+      const v = e.target.value.trim();
+      if (!v) { e.target.value = t.title; return; }
+      t.title = v; const tx = row.querySelector(".tx"); if (tx) tx.firstChild.textContent = v;
+    } else t[k] = e.target.value;
+    queueSave(); return;
+  }
   if (e.target.dataset.check) t.done = e.target.checked;
   else return;
   queueSave(); keepScroll(() => {});
@@ -445,7 +459,7 @@ app.addEventListener("change", e => {
 app.addEventListener("click", e => {
   if (justDragged) { justDragged = false; return; }
   const d = e.target.dataset;
-  if (d.edit) { const row = e.target.closest(".t"); if (row) { editingId = row.dataset.id; cancelEdit = false; keepScroll(() => {}); } return; }
+  if (d.edit) { const row = e.target.closest(".t"); if (row) { openId = openId === row.dataset.id ? null : row.dataset.id; keepScroll(() => {}); } return; }
   if (d.add) { addingTo = d.add; keepScroll(() => {}); return; }
   if (d.cancel) { addingTo = null; keepScroll(() => {}); return; }
   if (d.del) {
@@ -453,24 +467,6 @@ app.addEventListener("click", e => {
     if (t && confirm('Delete "' + t.title + '"?')) { tasks = tasks.filter(x => x !== t); queueSave(); keepScroll(() => {}); }
   }
 });
-/* ---------- editing a task's text: tap the text, type, Enter or tap away to keep ---------- */
-let editingId = null, cancelEdit = false;
-function finishEdit(input) {
-  if (editingId === null) return;
-  const t = byId(editingId); editingId = null;
-  const v = cancelEdit ? "" : input.value.trim(); cancelEdit = false;
-  if (t && v && v !== t.title) { t.title = v; queueSave(); }
-  // swap the box back to plain text in place (no full redraw, so a tap on a checkbox right after still lands)
-  const span = document.createElement("span"); span.className = "tx"; span.dataset.edit = "1"; span.textContent = t ? t.title : input.value;
-  input.replaceWith(span);
-}
-app.addEventListener("focusout", e => { if (e.target.classList && e.target.classList.contains("edit")) finishEdit(e.target); });
-app.addEventListener("keydown", e => {
-  if (!e.target.classList || !e.target.classList.contains("edit")) return;
-  if (e.key === "Enter") { e.preventDefault(); e.target.blur(); }
-  else if (e.key === "Escape") { cancelEdit = true; e.target.blur(); }
-});
-
 /* ---------- drag to reorder / move between seasons (mouse drags from the row, touch holds first) ---------- */
 let drag = null, pending = null, justDragged = false, lastPointerType = "mouse";
 const HOLD_MS = 320, MOVE_PX = 6;
@@ -485,7 +481,8 @@ function startDrag(p) {
 app.addEventListener("pointerdown", e => {
   lastPointerType = e.pointerType;
   if (e.button > 0 || e.target.closest("input, button, select, textarea, a")) return;
-  const row = e.target.closest(".t"); if (!row) return;
+  const ln = e.target.closest(".ln"); if (!ln) return;
+  const row = ln.closest(".t");
   const p = { row, id: e.pointerId, x: e.clientX, y: e.clientY, touch: e.pointerType === "touch" };
   if (p.touch) p.timer = setTimeout(() => { if (pending === p) startDrag(p); }, HOLD_MS);
   pending = p;
@@ -523,12 +520,12 @@ app.addEventListener("pointerup", e => { clearPending(); endDrag(e); });
 app.addEventListener("pointercancel", e => { clearPending(); endDrag(e); });
 app.addEventListener("touchmove", e => { if (drag) e.preventDefault(); }, { passive: false });
 app.addEventListener("contextmenu", e => { if (lastPointerType === "touch" && e.target.closest(".t")) e.preventDefault(); });
-app.addEventListener("selectstart", e => { if ((drag || pending) && !e.target.closest(".edit")) e.preventDefault(); });
+app.addEventListener("selectstart", e => { if ((drag || pending) && !e.target.closest(".det")) e.preventDefault(); });
 
 app.addEventListener("submit", e => {
   e.preventDefault();
   const season = e.target.dataset.form, title = e.target.elements.title.value.trim(); if (!title) return;
-  tasks.push({ id: newId(), season, title, done: false });
+  tasks.push({ id: newId(), season, title, notes: "", done: false });
   addingTo = season; queueSave(); keepScroll(() => {});
 });
 
