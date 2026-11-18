@@ -321,7 +321,7 @@ body.locked #splash{display:flex;min-height:100vh;flex-direction:column;align-it
       const fileId = await findFileId();
       if (!fileId) return null;
       const resp = await api('https://www.googleapis.com/drive/v3/files/' + fileId + '?alt=media');
-      if (resp.status === 404) {
+      if (resp.status === 404 || resp.status === 403) {
         setCachedFileId('');
         return null;
       }
@@ -341,7 +341,7 @@ body.locked #splash{display:flex;min-height:100vh;flex-direction:column;align-it
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(dataObj, null, 2)
       });
-      if (resp.status === 404) {
+      if (resp.status === 404 || resp.status === 403) {
         setCachedFileId('');
         await createFile(dataObj);
         return true;
