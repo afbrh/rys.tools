@@ -46,7 +46,7 @@
   section { background:var(--card); border:1px solid var(--line); border-radius:12px; margin-bottom:14px; overflow:hidden; }
   .sh { display:flex; align-items:center; gap:10px; padding:10px 14px; background:var(--bg);
     border-bottom:1px solid var(--line); }
-  .sh h2 { margin:0; font-size:14px; font-weight:600; flex:1; }
+  .sh h2 { margin:0; font-size:14px; font-weight:700; text-transform:uppercase; letter-spacing:.04em; flex:1; }
   .sh .sub { font-variant-numeric:tabular-nums; font-weight:600; }
   .sh .sub small { color:var(--muted); font-weight:400; margin-left:6px; }
   .sh button { padding:3px 9px; font-size:12px; }
@@ -184,9 +184,9 @@ body.menu-open .side-menu { transform: none; visibility: visible; transition-del
     .it .tx { flex:1 1 calc(100% - 40px); } .it .grip { align-self:flex-start; }
     .it .co { padding-left:30px; } .long-t { display:none; } }
   .short-t { display:none; } @media (max-width:560px) { .short-t { display:inline; } }
-  .it .del { flex:none; width:26px; height:26px; padding:0; border-radius:50%; font-size:18px; line-height:1; color:#c0261b; border-color:#c0261b; background:transparent; }
-  .it .del:hover { background:#c0261b; color:#fff; }
-  @media print { .it .del { display:none !important; } }
+  .det .delbtn { margin-right:auto; color:#c0261b; border-color:#c0261b; background:transparent; }
+  .det .delbtn:hover { background:#c0261b; color:#fff; }
+  @media print { .det .delbtn { display:none !important; } }
   .empty { padding:14px; color:var(--muted); font-size:13px; }
   @media print { .grip, select.stsel, .chips { display:none !important; } }
 </style>
@@ -559,19 +559,19 @@ function rowHtml(it) {
       <label>Cost<input type="text" inputmode="decimal" data-f="cost" value="${it.cost || 0}"></label>
       ${f("lastInstalled", "Last installed")}
       <label class="wide">Notes<textarea data-f="notes">${esc(it.notes)}</textarea></label>
-      <div class="acts"><button type="button" class="savebtn" data-save="1">Save</button></div></div>`;
+      <div class="acts"><button type="button" class="delbtn" data-del="1">Delete</button><button type="button" class="savebtn" data-save="1">Save</button></div></div>`;
   }
   return `<div class="it st-${sKey(it.status)} ${it.status === "Done" ? "done" : ""}" data-id="${it.id}">
     <div class="ln"><span class="grip" title="Drag to move">⋮⋮</span>
       <div class="tx" data-open="${it.id}"><span class="ti">${esc(it.title)}</span> <span class="me">${metaHtml(it)}</span></div>
-      <span class="co">${fmt0(it.cost || 0)}</span><button type="button" class="del" data-del="1" aria-label="Delete" title="Delete">−</button></div>${detail}</div>`;
+      <span class="co">${fmt0(it.cost || 0)}</span></div>${detail}</div>`;
 }
 function render() {
   renderChips();
   app.innerHTML = groups.filter(g => inFilter({ status: g.id })).map(g => {
     const all = items.filter(i => i.group === g.id), shown = all.filter(inFilter);
     const sum = all.reduce((a, i) => a + (i.cost || 0), 0);
-    return `<section data-group="${g.id}"><div class="sh"><h2>${esc(g.title)}</h2><span class="sub">${fmt0(sum)}<small>${all.length} ${all.length === 1 ? "story" : "stories"}</small></span></div>
+    return `<section data-group="${g.id}"><div class="sh"><h2>${esc(g.title)}</h2><span class="sub">${fmt0(sum)}</span></div>
       <div class="rows">${shown.map(rowHtml).join("") || '<div class="empty">Nothing here.</div>'}</div></section>`;
   }).join("");
 }
