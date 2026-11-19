@@ -183,6 +183,12 @@ body.menu-open .side-menu { transform: none; visibility: visible; transition-del
   .att .apick { align-self:flex-start; text-transform:none; letter-spacing:0; font-size:13px; }
   .det input, .det textarea, .det select { width:100%; text-transform:none; letter-spacing:0; }
   .det textarea { min-height:60px; resize:vertical; }
+  .det .costfld { grid-column:1/-1; max-width:460px; }
+  .det .costpair { display:flex; align-items:center; border:1px solid var(--line); border-radius:999px; background:var(--card); overflow:hidden; text-transform:none; letter-spacing:0; }
+  .det .costpair input { flex:1 1 0; min-width:0; border:0; border-radius:0; background:transparent; text-align:center; padding:7px 4px; font-size:13px; text-overflow:ellipsis; }
+  .det .costpair input:focus { outline:none; background:rgba(255,255,255,.06); }
+  .det .costpair input::placeholder { color:var(--muted); opacity:.55; font-size:11px; }
+  .det .costpair .sl { color:var(--muted); font-size:15px; padding:0 2px; user-select:none; }
   .det .acts { grid-column:1/-1; display:flex; justify-content:flex-end; gap:8px; }
   .chev { color:var(--muted); font-size:12px; margin-right:6px; }
   .det .savebtn { background:var(--accent); color:#fff; border-color:var(--accent); font-weight:600; padding:6px 22px; }
@@ -653,6 +659,8 @@ function toYM(v) {
   mo = +mo; if (!(mo >= 1 && mo <= 12)) mo = 1;
   return y + "-" + String(mo).padStart(2, "0");
 }
+// Cost boxes show whole dollars with a $; an older text estimate (like "2 days") is shown as typed until it is edited.
+const dollarVal = v => { v = String(v == null ? "" : v).trim(); if (!v) return ""; const n = parseFloat(v.replace(/[~$,\s]/g, "")); return /^~?\$?[\d,.]+$/.test(v) && !isNaN(n) ? (Math.round(n) ? "$" + Math.round(n).toLocaleString("en-US") : "") : v; };
 function metaHtml(it) {
   const n = (it.attachments || []).length, note = String(it.notes || "").replace(/\s+/g, " ").trim();
   return [(it.cost > 0 && (!it.estimate || fmtEst(it.estimate).startsWith("~$"))) ? fmt0(it.cost) : fmtEst(it.estimate), it.estYear ? "est. year " + it.estYear : "", it.lastInstalled ? "installed " + fmtMonth(it.lastInstalled) : "", note ? "notes: " + (note.length > 60 ? note.slice(0, 60) + "…" : note) : "", n ? "📎 " + n : ""].filter(Boolean).map(esc).join(" · ");
@@ -663,9 +671,7 @@ function rowHtml(it) {
     const f = (k, label, cls) => `<label class="${cls || ""}">${label}<input type="text" data-f="${k}" value="${esc(it[k])}"></label>`;
     detail = `<div class="det">
       <label class="wide">Description<input type="text" data-f="title" value="${esc(it.title)}"></label>
-      <label>Status<select data-status="1">${STATUSES.map(v => `<option ${v === it.status ? "selected" : ""} value="${esc(v)}">${esc(v)}</option>`).join("")}</select></label>
-      <label>Cost<input type="text" inputmode="decimal" data-f="cost" value="${it.cost || 0}"></label>
-      ${f("estimate", "Estimate")}
+      <div class="fld costfld">Cost<div class="costpair"><input type="text" inputmode="numeric" data-f="cost" aria-label="Actual Cost" placeholder="Enter Actual Cost Here" value="${esc(dollarVal(it.cost))}"><span class="sl">/</span><input type="text" inputmode="numeric" data-f="estimate" aria-label="Estimated Cost" placeholder="Enter Estimated Cost here" value="${esc(dollarVal(it.estimate))}"></div></div>
       ${f("estYear", "Estimated year")}
       <label>Last installed<input type="month" data-f="lastInstalled" value="${esc(it.lastInstalled)}"></label>
       <label class="wide">Notes<textarea data-f="notes">${esc(it.notes)}</textarea></label>
@@ -718,7 +724,8 @@ app.addEventListener("change", e => {
   if (el.dataset.status) { it.status = it.group = el.value; markDirty(); keepScroll(() => {}); return; }
   if (el.dataset.attach) { const files = Array.from(el.files || []); el.value = ""; uploadAttachments(it, files); return; }
   const k = el.dataset.f; if (!k) return;
-  if (k === "cost") { const n = parseFloat(String(el.value).replace(/[$,\s]/g, "")); it.cost = isNaN(n) ? 0 : n; }
+  if (k === "cost") { const n = parseFloat(String(el.value).replace(/[$,\s]/g, "")); it.cost = isNaN(n) ? 0 : Math.round(n); }
+  else if (k === "estimate") { const v = String(el.value).trim(), n = parseFloat(v.replace(/[~$,\s]/g, "")); it.estimate = !v ? "" : /^~?\$?[\d,.]+$/.test(v) && !isNaN(n) ? (Math.round(n) ? String(Math.round(n)) : "") : v; }
   else it[k] = el.value;
   markDirty();
   // A date box fires change while it is still being typed in, so only refresh the line, not the whole list.
