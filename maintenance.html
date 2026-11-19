@@ -152,6 +152,9 @@ body.menu-open .side-menu { transform: none; visibility: visible; transition-del
   .it .ln { user-select:none; -webkit-user-select:none; -webkit-touch-callout:none; -webkit-tap-highlight-color:transparent; }
   body.is-dragging, body.is-dragging * { user-select:none !important; -webkit-user-select:none !important; cursor:grabbing !important; }
   .it .ti { font-weight:500; }
+  .it .ti-edit { font:inherit; font-weight:500; color:inherit; background:transparent; border:0; border-bottom:1px dashed var(--line); border-radius:0; padding:0 0 1px; width:100%; min-width:0; outline:none; user-select:text; -webkit-user-select:text; }
+  .it .ti-edit:focus { border-bottom-color:#fff; }
+  .it .tx:has(.ti-edit) { display:flex; flex-direction:column; gap:2px; }
   .it .me { color:var(--muted); font-size:12.5px; margin-left:6px; }
   .tag { display:inline-block; font-size:11px; padding:0 7px; border-radius:999px; border:1px solid var(--line); margin-right:4px; background:var(--bg); color:var(--ink); }
   .tag.p-High { background:#f3d6cf; border-color:#e3b3a8; color:#7d2a18; }
@@ -688,7 +691,6 @@ function rowHtml(it) {
   if (openId === it.id) {
     const f = (k, label, cls) => `<label class="${cls || ""}">${label}<input type="text" data-f="${k}" value="${esc(it[k])}"></label>`;
     detail = `<div class="det">
-      <label class="wide">Description<input type="text" data-f="title" value="${esc(it.title)}"></label>
       <div class="fld costfld">Cost<div class="costpair"><input type="text" inputmode="numeric" data-f="cost" aria-label="Actual Cost" placeholder="Enter Actual Cost Here" value="${esc(dollarVal(it.cost))}"><span class="sl">/</span><input type="text" inputmode="numeric" data-f="estimate" aria-label="Estimated Cost" placeholder="Enter Estimated Cost here" value="${esc(dollarVal(it.estimate))}"></div></div>
       <div class="fld costfld">Timing<div class="costpair"><input type="text" readonly data-mp="lastInstalled" aria-label="Last Replaced" placeholder="Enter Last Replaced here" value="${esc(fmtMonth(it.lastInstalled))}"><span class="sl">/</span><input type="text" readonly data-mp="estYear" aria-label="Forecasted" placeholder="Enter Forecasted date here" value="${esc(fmtMonth(it.estYear))}"></div>${pickerHtml(it)}</div>
       <label class="wide">Notes<textarea data-f="notes">${esc(it.notes)}</textarea></label>
@@ -699,7 +701,7 @@ function rowHtml(it) {
   }
   return `<div class="it st-${sKey(it.status)} ${it.status === "Done" ? "done" : ""}" data-id="${it.id}">
     <div class="ln">
-      <div class="tx" data-open="${it.id}"><span class="ti">${esc(it.title)}</span> <span class="me">${metaHtml(it)}</span></div>
+      <div class="tx" data-open="${it.id}">${openId === it.id ? `<input type="text" class="ti-edit" data-f="title" aria-label="Story title" value="${esc(it.title)}">` : `<span class="ti">${esc(it.title)}</span>`} <span class="me">${metaHtml(it)}</span></div>
       <span class="co">${fmt0(it.cost || 0)}</span></div>${detail}</div>`;
 }
 function render() {
@@ -799,6 +801,7 @@ app.addEventListener("click", e => {
     saveToDrive().then(ok => { if (ok) { openId = null; keepScroll(() => {}); } else e.target.disabled = false; });
     return;
   }
+  if (e.target.closest(".ti-edit")) return;
   if (tx) { pick = null; openId = openId === tx.dataset.open ? null : tx.dataset.open; keepScroll(() => {}); return; }
 });
 function addStory() {
