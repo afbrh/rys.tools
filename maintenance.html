@@ -701,8 +701,8 @@ function pickerHtml(it) {
   return `<div class="mp"><div class="mph"><button type="button" data-mpy="-1" aria-label="Previous year">‹</button><b>${pick.y}</b><button type="button" data-mpy="1" aria-label="Next year">›</button><span class="mpt">${pick.k === "estYear" ? "Forecasted" : "Last Replaced"}</span><button type="button" data-mpclear="1" class="mpc">Clear</button></div><div class="mpg">${MON.map((m, i) => { const v = pick.y + "-" + String(i + 1).padStart(2, "0"); return `<button type="button" data-mpm="${v}" class="${v === cur ? "on" : ""}">${m}</button>`; }).join("")}</div></div>`;
 }
 function metaHtml(it) {
-  const n = (it.attachments || []).length, note = String(it.notes || "").replace(/\s+/g, " ").trim();
-  return [(it.cost > 0 && (!it.estimate || fmtEst(it.estimate).startsWith("~$"))) ? fmt0(it.cost) : fmtEst(it.estimate), it.estYear ? "forecast " + fmtMonth(it.estYear) : "", it.lastInstalled ? "replaced " + fmtMonth(it.lastInstalled) : "", note ? "notes: " + (note.length > 60 ? note.slice(0, 60) + "…" : note) : "", n ? "📎 " + n : ""].filter(Boolean).map(esc).join(" · ");
+  const n = (it.attachments || []).length;
+  return [(it.cost > 0 && (!it.estimate || fmtEst(it.estimate).startsWith("~$"))) ? fmt0(it.cost) : fmtEst(it.estimate), it.estYear ? "forecast " + fmtMonth(it.estYear) : "", it.lastInstalled ? "replaced " + fmtMonth(it.lastInstalled) : "", n ? "📎 " + n : ""].filter(Boolean).map(esc).join(" · ");
 }
 function rowHtml(it) {
   let detail = "";
