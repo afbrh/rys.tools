@@ -654,7 +654,7 @@ function toYM(v) {
 }
 function metaHtml(it) {
   const n = (it.attachments || []).length, note = String(it.notes || "").replace(/\s+/g, " ").trim();
-  return [it.estimate ? fmtEst(it.estimate) : "", it.estYear ? "est. year " + it.estYear : "", it.lastInstalled ? "installed " + fmtMonth(it.lastInstalled) : "", note ? "notes: " + (note.length > 60 ? note.slice(0, 60) + "…" : note) : "", n ? "📎 " + n : ""].filter(Boolean).map(esc).join(" · ");
+  return [(it.cost > 0 && (!it.estimate || fmtEst(it.estimate).startsWith("~$"))) ? fmt0(it.cost) : fmtEst(it.estimate), it.estYear ? "est. year " + it.estYear : "", it.lastInstalled ? "installed " + fmtMonth(it.lastInstalled) : "", note ? "notes: " + (note.length > 60 ? note.slice(0, 60) + "…" : note) : "", n ? "📎 " + n : ""].filter(Boolean).map(esc).join(" · ");
 }
 function rowHtml(it) {
   let detail = "";
@@ -858,6 +858,8 @@ function applyData(d) {
     // Due Date is a real date now; keep any older free-text note by moving it into the notes.
     if (i.dependency && !ISO.test(i.dependency)) { i.notes = "Timing note: " + i.dependency + (i.notes ? "\n" + i.notes : ""); i.dependency = ""; }
     if (i.lastInstalled) { const ym = toYM(i.lastInstalled); if (ym === null) { i.notes = "Last installed: " + i.lastInstalled + (i.notes ? "\n" + i.notes : ""); i.lastInstalled = ""; } else i.lastInstalled = ym; }
+    // One-time (data version 3): a cost with no estimate was really an estimate, so move it over. Items with both are left alone.
+    if (!(d.v >= 3) && i.cost > 0 && !String(i.estimate || "").trim()) { i.estimate = String(i.cost); i.cost = 0; }
     if (i.status === "Getting Bids") i.status = "Planned";
     if (!STATUSES.includes(i.status)) i.status = "Backlog";
     // One-time (data version 2): the old Contingency items (furnace on down) wait for "When it breaks".
@@ -872,7 +874,7 @@ function applyData(d) {
   groups = SECTION_ORDER.map(id => ({ id, title: id }));
   filter = "Open"; openId = null;
 }
-const getData = () => ({ v: 2, groups, items });
+const getData = () => ({ v: 3, groups, items });
 
 async function afterSignIn() {
   setStatus("", "");
