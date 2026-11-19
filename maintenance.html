@@ -744,6 +744,10 @@ function rowHtml(it) {
       <span class="co">${fmt0(it.cost || 0)}</span></div>${detail}</div>`;
 }
 let byVal = "";
+// "By ____" is sorted by Forecasted date; stories with no forecast sit below, in the order you drag them.
+const BYG = "Within the next year";
+const fcKey = i => { const m = /(\d{4})(?:-(\d{2}))?/.exec(String(i.estYear || "")); return m ? +m[1] * 100 + (+m[2] || 0) : null; };
+const byOrder = list => { const a = list.filter(i => fcKey(i) !== null).map((i, k) => [i, k]).sort((x, y) => fcKey(x[0]) - fcKey(y[0]) || x[1] - y[1]).map(x => x[0]); return a.concat(list.filter(i => fcKey(i) === null)); };
 function render() {
   { const sp = $("spent"); if (sp) {
     const spent = items.reduce((a, i) => a + (Number(i.cost) || 0), 0), fc = spent + estItems().reduce((a, x) => a + x.n, 0);
@@ -753,7 +757,7 @@ function render() {
   } }
   renderChips();
   app.innerHTML = groups.filter(g => inFilter({ status: g.id })).map(g => {
-    const all = items.filter(i => i.group === g.id), shown = all.filter(inFilter);
+    const all = items.filter(i => i.group === g.id), shown = g.id === BYG ? byOrder(all.filter(inFilter)) : all.filter(inFilter);
     const sum = all.reduce((a, i) => a + (i.cost || 0), 0);
     return `<section data-group="${g.id}"><div class="sh"><h2>${g.id === "Within the next year" ? `By <input type="text" class="by" data-by="1" placeholder="_____" aria-label="By when" size="${Math.max(5, byVal.length + 1)}" value="${esc(byVal)}">` : esc(g.title)}</h2></div>
       <div class="rows">${shown.map(rowHtml).join("") || '<div class="empty">Nothing here.</div>'}</div></section>`;
@@ -969,12 +973,21 @@ function endDrag(e) {
   app.querySelectorAll("section").forEach(sec => sec.querySelectorAll(".it").forEach(r => {
     const it = byId(r.dataset.id); if (it) { it.group = it.status = sec.dataset.group; order.push(it); }
   }));
+  const moved = byId(drag.row.dataset.id);
   drag = null;
   justDragged = true; setTimeout(() => { justDragged = false; }, 80);
   // Stories hidden by the filter keep their slots; the visible ones are placed in the new order.
   const vis = new Set(order);
   if (order.length === items.filter(inFilter).length) {
     let k = 0; items = items.map(i => vis.has(i) ? order[k++] : i); markDirty();
+    // A story with no forecast dropped among the sorted ones goes to the top of the unsorted ones.
+    if (moved && moved.group === BYG && fcKey(moved) === null) {
+      const dom = order.filter(x => x.group === BYG), at = dom.indexOf(moved);
+      if (dom.slice(at + 1).some(x => fcKey(x) !== null)) {
+        const rest = items.filter(x => x !== moved), first = rest.findIndex(x => x.group === BYG && fcKey(x) === null);
+        if (first >= 0) { rest.splice(first, 0, moved); items = rest; }
+      }
+    }
   }
   keepScroll(() => {});
 }
