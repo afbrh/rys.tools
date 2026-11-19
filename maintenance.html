@@ -635,9 +635,26 @@ function optionList(list, cur) {
 const ISO = /^\d{4}-\d{2}-\d{2}$/;
 const fmtDue = v => { if (!ISO.test(v || "")) return v || ""; const [y, m, d] = v.split("-").map(Number); return "Due " + new Date(y, m - 1, d).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }); };
 const fmtSize = n => { n = Number(n) || 0; return n >= 1048576 ? (n / 1048576).toFixed(1) + " MB" : n >= 1024 ? Math.round(n / 1024) + " KB" : n ? n + " B" : ""; };
+const MON = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+const fmtMonth = v => { const m = /^(\d{4})-(\d{2})$/.exec(v || ""); return m ? MON[+m[2] - 1] + " " + m[1] : (v || ""); };
+const fmtEst = v => { v = String(v || "").trim(); if (!v) return ""; const n = parseFloat(v.replace(/[~$,\s]/g, "")); return /^~?\$?[\d,.]+$/.test(v) && !isNaN(n) ? "~$" + n.toLocaleString("en-US") : v; };
+// Old free-text "Last installed" values (2016, Spring 2019, 3/2020, Mar 2020...) become YYYY-MM; anything unreadable is kept in the notes.
+function toYM(v) {
+  v = String(v == null ? "" : v).trim(); if (!v) return "";
+  if (/^\d{4}-(0[1-9]|1[0-2])$/.test(v)) return v;
+  const yr = /(?:^|\D)((?:19|20)\d{2})(?!\d)/.exec(v); let y = yr && yr[1], mo = "";
+  let m;
+  if ((m = /^(\d{4})-(\d{1,2})-\d{1,2}$/.exec(v))) { y = m[1]; mo = m[2]; }
+  else if ((m = /^(\d{1,2})[\/\-.](?:\d{1,2}[\/\-.])?((?:19|20)\d{2})$/.exec(v))) { mo = m[1]; y = m[2]; }
+  else if ((m = /(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)/i.exec(v))) mo = String(MON.findIndex(x => x.toLowerCase() === m[1].toLowerCase()) + 1);
+  else if (/spring/i.test(v)) mo = "4"; else if (/summer/i.test(v)) mo = "7"; else if (/fall|autumn/i.test(v)) mo = "10"; else if (/winter/i.test(v)) mo = "1";
+  if (!y) return null;
+  mo = +mo; if (!(mo >= 1 && mo <= 12)) mo = 1;
+  return y + "-" + String(mo).padStart(2, "0");
+}
 function metaHtml(it) {
   const n = (it.attachments || []).length, note = String(it.notes || "").replace(/\s+/g, " ").trim();
-  return [it.estimate ? "est. " + it.estimate : "", it.estYear ? "est. year " + it.estYear : "", it.lastInstalled ? "installed " + it.lastInstalled : "", note ? "notes: " + (note.length > 60 ? note.slice(0, 60) + "…" : note) : "", n ? "📎 " + n : ""].filter(Boolean).map(esc).join(" · ");
+  return [it.estimate ? fmtEst(it.estimate) : "", it.estYear ? "est. year " + it.estYear : "", it.lastInstalled ? "installed " + fmtMonth(it.lastInstalled) : "", note ? "notes: " + (note.length > 60 ? note.slice(0, 60) + "…" : note) : "", n ? "📎 " + n : ""].filter(Boolean).map(esc).join(" · ");
 }
 function rowHtml(it) {
   let detail = "";
@@ -649,7 +666,7 @@ function rowHtml(it) {
       <label>Cost<input type="text" inputmode="decimal" data-f="cost" value="${it.cost || 0}"></label>
       ${f("estimate", "Estimate")}
       ${f("estYear", "Estimated year")}
-      ${f("lastInstalled", "Last installed")}
+      <label>Last installed<input type="month" data-f="lastInstalled" value="${esc(it.lastInstalled)}"></label>
       <label class="wide">Notes<textarea data-f="notes">${esc(it.notes)}</textarea></label>
       <div class="att">Attachments
         <div class="alist">${(it.attachments || []).map((a, i) => `<div class="arow"><a href="${esc(a.link)}" target="_blank" rel="noopener">${esc(a.name)}</a><small>${esc(fmtSize(a.size))}</small><button type="button" class="rm" data-rmatt="${i}" aria-label="Remove attachment" title="Remove">×</button></div>`).join("")}</div>
@@ -704,7 +721,7 @@ app.addEventListener("change", e => {
   else it[k] = el.value;
   markDirty();
   // A date box fires change while it is still being typed in, so only refresh the line, not the whole list.
-  if (el.type === "date") { const me = row.querySelector(".me"); if (me) me.innerHTML = metaHtml(it); return; }
+  if (el.type === "date" || el.type === "month") { const me = row.querySelector(".me"); if (me) me.innerHTML = metaHtml(it); return; }
   keepScroll(() => {});
 });
 app.addEventListener("click", e => {
@@ -840,6 +857,7 @@ function applyData(d) {
     }
     // Due Date is a real date now; keep any older free-text note by moving it into the notes.
     if (i.dependency && !ISO.test(i.dependency)) { i.notes = "Timing note: " + i.dependency + (i.notes ? "\n" + i.notes : ""); i.dependency = ""; }
+    if (i.lastInstalled) { const ym = toYM(i.lastInstalled); if (ym === null) { i.notes = "Last installed: " + i.lastInstalled + (i.notes ? "\n" + i.notes : ""); i.lastInstalled = ""; } else i.lastInstalled = ym; }
     if (i.status === "Getting Bids") i.status = "Planned";
     if (!STATUSES.includes(i.status)) i.status = "Backlog";
     // One-time (data version 2): the old Contingency items (furnace on down) wait for "When it breaks".
