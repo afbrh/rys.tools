@@ -672,7 +672,7 @@ function rowHtml(it) {
     detail = `<div class="det">
       <label class="wide">Description<input type="text" data-f="title" value="${esc(it.title)}"></label>
       <div class="fld costfld">Cost<div class="costpair"><input type="text" inputmode="numeric" data-f="cost" aria-label="Actual Cost" placeholder="Enter Actual Cost Here" value="${esc(dollarVal(it.cost))}"><span class="sl">/</span><input type="text" inputmode="numeric" data-f="estimate" aria-label="Estimated Cost" placeholder="Enter Estimated Cost here" value="${esc(dollarVal(it.estimate))}"></div></div>
-      <div class="fld costfld">Timing<div class="costpair"><input type="text" data-f="lastInstalled" data-month="1" data-raw="${esc(it.lastInstalled)}" aria-label="Last Replaced" placeholder="Enter Last Replaced here" value="${esc(fmtMonth(it.lastInstalled))}"><span class="sl">/</span><input type="text" inputmode="numeric" data-f="estYear" aria-label="Forecasted" placeholder="Enter Forecasted year here" value="${esc(it.estYear)}"></div></div>
+      <div class="fld costfld">Timing<div class="costpair"><input type="text" data-f="lastInstalled" data-month="1" data-raw="${esc(it.lastInstalled)}" aria-label="Last Replaced" placeholder="Enter Last Replaced here" value="${esc(fmtMonth(it.lastInstalled))}"><span class="sl">/</span><input type="text" data-f="estYear" data-month="1" data-raw="${esc(it.estYear)}" aria-label="Forecasted" placeholder="Enter Forecasted date here" value="${esc(fmtMonth(it.estYear))}"></div></div>
       <label class="wide">Notes<textarea data-f="notes">${esc(it.notes)}</textarea></label>
       <div class="att">Attachments
         <div class="alist">${(it.attachments || []).map((a, i) => `<div class="arow"><a href="${esc(a.link)}" target="_blank" rel="noopener">${esc(a.name)}</a><small>${esc(fmtSize(a.size))}</small><button type="button" class="rm" data-rmatt="${i}" aria-label="Remove attachment" title="Remove">×</button></div>`).join("")}</div>
@@ -717,8 +717,8 @@ async function uploadAttachments(it, files) {
 
 /* ---------- editing ---------- */
 const byId = id => items.find(i => i.id === id);
-// "Last Replaced" is a plain-looking box that turns into a month picker while you edit it.
-app.addEventListener("focusin", e => { const el = e.target; if (el.dataset && el.dataset.month && el.type !== "month") { el.type = "month"; el.value = el.dataset.raw || ""; try { el.showPicker && el.showPicker(); } catch (err) {} } });
+// "Last Replaced" and "Forecasted" are plain-looking boxes that turns into a month picker while you edit it.
+app.addEventListener("focusin", e => { const el = e.target; if (el.dataset && el.dataset.month && el.type !== "month") { el.type = "month"; const r = el.dataset.raw || ""; el.value = /^\d{4}-\d{2}$/.test(r) ? r : /^\d{4}$/.test(r) ? r + "-01" : ""; try { el.showPicker && el.showPicker(); } catch (err) {} } });
 app.addEventListener("focusout", e => { const el = e.target; if (el.dataset && el.dataset.month && el.type === "month") { el.type = "text"; el.value = fmtMonth(el.dataset.raw || ""); } });
 app.addEventListener("change", e => {
   const el = e.target, row = el.closest(".it"); if (!row) return;
