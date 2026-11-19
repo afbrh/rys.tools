@@ -117,11 +117,11 @@ body.menu-open .side-menu { transform: none; visibility: visible; transition-del
 @media print { .menu-btn, .side-menu, .side-overlay, .acct, .gate { display: none !important; } }
   .titlebar { display:flex; align-items:center; gap:10px; margin-bottom:6px; }
   .titlebar h1 { margin:0; }
-  .spent { display:flex; flex-direction:column; align-items:flex-start; line-height:1.15; margin-left:6px; padding-left:12px; border-left:1px solid var(--line); }
-  .spent small { font-size:10.5px; text-transform:uppercase; letter-spacing:.05em; color:var(--muted); }
+  .spent { display:flex; flex-direction:column; align-items:flex-end; line-height:1.1; text-align:right; }
+  .spent small { font-size:11px; text-transform:uppercase; letter-spacing:.05em; color:var(--muted); }
   .spent .sm { display:none; }
-  .spent b { font-size:15px; font-weight:600; font-variant-numeric:tabular-nums; }
-  @media (max-width:560px) { .spent .lg { display:none; } .spent .sm { display:inline; } .spent { margin-left:0; padding-left:8px; } .spent b { font-size:14px; } }
+  .spent b { font-size:24px; font-weight:700; font-variant-numeric:tabular-nums; }
+  @media (max-width:560px) { .spent .lg { display:none; } .spent .sm { display:inline; } .spent b { font-size:18px; } }
   [hidden] { display:none !important; }
   main > .note, .bar .hint, body > .note { color:#b9b2a3; }
   .acct { margin-left:auto; display:flex; align-items:center; gap:10px; flex-wrap:wrap; justify-content:flex-end; }
@@ -274,8 +274,8 @@ body.locked #splash{display:flex;min-height:100vh;flex-direction:column;align-it
   <a class="side-link" href="maintenance.html" aria-current="page">Maintenance</a>
 </nav>
 <header><div class="wrap">
-  <div class="titlebar"><button type="button" class="menu-btn" id="menu-btn" aria-label="Open menu" aria-expanded="false" aria-controls="side-menu"><span></span><span></span><span></span></button><h1>Maintenance</h1><div class="spent" id="spent" hidden><small><span class="lg">Total spent</span><span class="sm">Spent</span></small><b id="spent-v"></b></div>
-    <div class="acct"><span class="st" id="save-status"></span><button type="button" id="acct-btn">Google Sign-In</button></div></div>
+  <div class="titlebar"><button type="button" class="menu-btn" id="menu-btn" aria-label="Open menu" aria-expanded="false" aria-controls="side-menu"><span></span><span></span><span></span></button><h1>Maintenance</h1>
+    <div class="acct"><span class="st" id="save-status"></span><div class="spent" id="spent" hidden><small><span class="lg">Total spent</span><span class="sm">Spent</span></small><b id="spent-v"></b></div><button type="button" id="acct-btn">Google Sign-In</button></div></div>
 </div></header>
 <main>
 <div class="wrap chips" id="chips" hidden></div>
