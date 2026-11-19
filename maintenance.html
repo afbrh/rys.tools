@@ -245,6 +245,7 @@ body.menu-open .side-menu { transform: none; visibility: visible; transition-del
     }
     #app section[data-group="Within the next year"] { --shc:#3f6f9c; --shh:#7fb0e3; }
     #app section[data-group="Before 2032"] { --shc:#55555b; --shh:#a9a9b0; }
+    #app section[data-group="Wishlist"] { --shc:#3f8a86; --shh:#7cc7c2; }
     #app section[data-group="Assets"] { --shc:#6f5a92; --shh:#b49ad6; }
     #app section[data-group="Done"] { --shc:#3f7a4c; --shh:#6fb07e; }
     #app .it { background:var(--card); border:1px solid var(--line); border-radius:10px; margin-bottom:6px; overflow:hidden; }
@@ -619,9 +620,9 @@ async function mergeAndSave(toolData) {
 
 /* ================= page state ================= */
 // The page holds no data of its own. Groups and stories come from the signed-in user's Drive file.
-const STATUSES = ["Before 2032", "Within the next year", "In Progress", "Assets", "Done"];
+const STATUSES = ["Before 2032", "Within the next year", "In Progress", "Wishlist", "Assets", "Done"];
 // Sections are fixed and always shown in this order.
-const SECTION_ORDER = ["Within the next year", "In Progress", "Before 2032", "Assets", "Done"];
+const SECTION_ORDER = ["Within the next year", "In Progress", "Before 2032", "Wishlist", "Assets", "Done"];
 const sKey = s => s.replace(/\s+/g, "");
 const PRIORITIES = ["", "High", "Medium", "Low"], TYPES = ["Maintain", "Upgrade"];
 let groups = [], items = [], filter = "Open", openId = null;
@@ -726,7 +727,7 @@ function render() {
   { const sp = $("spent"); if (sp) {
     const spent = items.reduce((a, i) => a + (Number(i.cost) || 0), 0);
     // Forecast = what is spent + the estimate of every story that has no actual cost yet, outside Assets.
-    const fc = spent + items.reduce((a, i) => { const n = parseFloat(String(i.estimate == null ? "" : i.estimate).replace(/[~$,\s]/g, "")); return a + (!(Number(i.cost) > 0) && i.group !== "Assets" && /^~?\$?[\d,.]+$/.test(String(i.estimate || "").trim()) && !isNaN(n) ? n : 0); }, 0);
+    const fc = spent + items.reduce((a, i) => { const n = parseFloat(String(i.estimate == null ? "" : i.estimate).replace(/[~$,\s]/g, "")); return a + (!(Number(i.cost) > 0) && i.group !== "Assets" && i.group !== "Wishlist" && /^~?\$?[\d,.]+$/.test(String(i.estimate || "").trim()) && !isNaN(n) ? n : 0); }, 0);
     sp.hidden = false; $("spent-v").textContent = fmt0(spent);
     $("fspent").hidden = false; $("fspent-v").textContent = fmt0(fc);
   } }
