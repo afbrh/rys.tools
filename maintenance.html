@@ -120,10 +120,11 @@ body.menu-open .side-menu { transform: none; visibility: visible; transition-del
   .spent { display:flex; flex-direction:column; align-items:flex-end; line-height:1.1; text-align:right; }
   .spent small { font-size:11px; text-transform:uppercase; letter-spacing:.05em; color:var(--muted); }
   .spent .sm { display:none; }
+  .spsl { font-size:24px; color:var(--muted); margin:0 8px; align-self:flex-end; line-height:1.1; }
   #fspent { margin-right:10px; }
   #fspent b { color:var(--muted); }
   .spent b { font-size:24px; font-weight:700; font-variant-numeric:tabular-nums; }
-  @media (max-width:560px) { .spent .lg { display:none; } .spent .sm { display:inline; } .spent b { font-size:18px; } }
+  @media (max-width:560px) { .spent .lg { display:none; } .spent .sm { display:inline; } .spent b { font-size:18px; } .spsl { font-size:18px; margin:0 5px; } }
   [hidden] { display:none !important; }
   main > .note, .bar .hint, body > .note { color:#b9b2a3; }
   .acct { margin-left:auto; display:flex; align-items:center; gap:10px; flex-wrap:wrap; justify-content:flex-end; }
@@ -277,7 +278,7 @@ body.locked #splash{display:flex;min-height:100vh;flex-direction:column;align-it
 </nav>
 <header><div class="wrap">
   <div class="titlebar"><button type="button" class="menu-btn" id="menu-btn" aria-label="Open menu" aria-expanded="false" aria-controls="side-menu"><span></span><span></span><span></span></button><h1>Maintenance</h1>
-    <div class="acct"><span class="st" id="save-status"></span><div class="spent" id="fspent" hidden><small><span class="lg">Forecasted spend</span><span class="sm">Forecast</span></small><b id="fspent-v"></b></div><div class="spent" id="spent" hidden><small><span class="lg">Total spent</span><span class="sm">Spent</span></small><b id="spent-v"></b></div><button type="button" id="acct-btn">Google Sign-In</button></div></div>
+    <div class="acct"><span class="st" id="save-status"></span><div class="spent" id="spent" hidden><small><span class="lg">Total spent</span><span class="sm">Spent</span></small><b id="spent-v"></b></div><span class="spsl" aria-hidden="true">/</span><div class="spent" id="fspent" hidden><small><span class="lg">Forecasted spend</span><span class="sm">Forecast</span></small><b id="fspent-v"></b></div><button type="button" id="acct-btn">Google Sign-In</button></div></div>
 </div></header>
 <main>
 <div class="wrap chips" id="chips" hidden></div>
