@@ -186,6 +186,7 @@ body.menu-open .side-menu { transform: none; visibility: visible; transition-del
   .att .apick { align-self:flex-start; text-transform:none; letter-spacing:0; font-size:13px; }
   .det input, .det textarea, .det select { width:100%; text-transform:none; letter-spacing:0; }
   .det textarea { min-height:60px; resize:vertical; }
+  .it:has(.det) { max-width:484px; }
   .det .costfld { grid-column:1/-1; max-width:460px; }
   .det label.wide { max-width:460px; }
   .det .costpair { display:flex; align-items:center; border:1px solid var(--line); border-radius:999px; background:var(--card); overflow:hidden; text-transform:none; letter-spacing:0; }
@@ -227,7 +228,7 @@ body.menu-open .side-menu { transform: none; visibility: visible; transition-del
     #app .sh h2 { font-size:20px; font-weight:700; letter-spacing:.02em; color:var(--shh, var(--ink)); }
     #app .sh .sub { color:var(--muted); font-size:13px; font-weight:500; }
     #app section[data-group="In Progress"] { --shc:#b8641f; --shh:#e58a43; }
-    #app section[data-group="Planned"] { --shc:#3f6f9c; --shh:#7fb0e3; }
+    #app section[data-group="Within the next year"] { --shc:#3f6f9c; --shh:#7fb0e3; }
     #app section[data-group="Backlog"] { --shc:#55555b; --shh:#a9a9b0; }
     #app section[data-group="Assets"] { --shc:#6f5a92; --shh:#b49ad6; }
     #app section[data-group="Done"] { --shc:#3f7a4c; --shh:#6fb07e; }
@@ -603,9 +604,9 @@ async function mergeAndSave(toolData) {
 
 /* ================= page state ================= */
 // The page holds no data of its own. Groups and stories come from the signed-in user's Drive file.
-const STATUSES = ["Backlog", "Planned", "In Progress", "Assets", "Done"];
+const STATUSES = ["Backlog", "Within the next year", "In Progress", "Assets", "Done"];
 // Sections are fixed and always shown in this order.
-const SECTION_ORDER = ["In Progress", "Planned", "Backlog", "Assets", "Done"];
+const SECTION_ORDER = ["In Progress", "Within the next year", "Backlog", "Assets", "Done"];
 const sKey = s => s.replace(/\s+/g, "");
 const PRIORITIES = ["", "High", "Medium", "Low"], TYPES = ["Maintain", "Upgrade"];
 let groups = [], items = [], filter = "Open", openId = null;
@@ -913,7 +914,7 @@ function applyData(d) {
     // One-time (data version 3): a cost with no estimate was really an estimate, so move it over. Items with both are left alone.
     if (!(d.v >= 3) && i.cost > 0 && !String(i.estimate || "").trim()) { i.estimate = String(i.cost); i.cost = 0; }
     if (i.status === "When it breaks") i.status = "Assets";
-    if (i.status === "Getting Bids") i.status = "Planned";
+    if (i.status === "Getting Bids" || i.status === "Planned") i.status = "Within the next year";
     if (!STATUSES.includes(i.status)) i.status = "Backlog";
     // One-time (data version 2): the old Contingency items (furnace on down) wait for "Assets".
     if (!(d.v >= 2) && /^Contingency/.test(i.origin || "") && i.status === "Backlog") i.status = "Assets";
