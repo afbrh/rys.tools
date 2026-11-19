@@ -224,6 +224,9 @@ body.menu-open .side-menu { transform: none; visibility: visible; transition-del
   @media screen {
     #app section { background:none; border:0; border-radius:0; overflow:visible; margin-bottom:24px; }
     #app .sh { background:none; border:0; border-bottom:2px solid var(--shc, #45454a); border-radius:0; padding:4px 2px 6px; margin-bottom:10px; gap:10px; }
+    #app .sh h2 .by { font:inherit; color:inherit; text-transform:inherit; letter-spacing:inherit; background:transparent; border:0; border-bottom:2px dashed var(--shc); border-radius:0; padding:0 2px; outline:none; min-width:3ch; max-width:100%; }
+    #app .sh h2 .by::placeholder { color:var(--shh); opacity:.7; }
+    #app .sh h2 .by:focus { border-bottom-style:solid; border-bottom-color:#fff; }
     #app .sh h2 { font-size:20px; font-weight:700; letter-spacing:.02em; color:var(--shh, var(--ink)); }
     #app .sh .sub { color:var(--muted); font-size:13px; font-weight:500; }
     #app section[data-group="In Progress"] { --shc:#b8641f; --shh:#e58a43; }
@@ -610,7 +613,7 @@ async function mergeAndSave(toolData) {
 // The page holds no data of its own. Groups and stories come from the signed-in user's Drive file.
 const STATUSES = ["Before 2032", "Within the next year", "In Progress", "Assets", "Done"];
 // Sections are fixed and always shown in this order.
-const SECTION_ORDER = ["In Progress", "Within the next year", "Before 2032", "Assets", "Done"];
+const SECTION_ORDER = ["Within the next year", "In Progress", "Before 2032", "Assets", "Done"];
 const sKey = s => s.replace(/\s+/g, "");
 const PRIORITIES = ["", "High", "Medium", "Low"], TYPES = ["Maintain", "Upgrade"];
 let groups = [], items = [], filter = "Open", openId = null;
@@ -710,12 +713,13 @@ function rowHtml(it) {
       <div class="tx" data-open="${it.id}">${openId === it.id ? `<input type="text" class="ti-edit" data-f="title" aria-label="Story title" value="${esc(it.title)}">` : `<span class="ti">${esc(it.title)}</span>`} <span class="me">${metaHtml(it)}</span></div>
       <span class="co">${fmt0(it.cost || 0)}</span></div>${detail}</div>`;
 }
+let byVal = "";
 function render() {
   renderChips();
   app.innerHTML = groups.filter(g => inFilter({ status: g.id })).map(g => {
     const all = items.filter(i => i.group === g.id), shown = all.filter(inFilter);
     const sum = all.reduce((a, i) => a + (i.cost || 0), 0);
-    return `<section data-group="${g.id}"><div class="sh"><h2>${esc(g.title)}</h2></div>
+    return `<section data-group="${g.id}"><div class="sh"><h2>${g.id === "Within the next year" ? `By <input type="text" class="by" data-by="1" placeholder="_____" aria-label="By when" size="${Math.max(5, byVal.length + 1)}" value="${esc(byVal)}">` : esc(g.title)}</h2></div>
       <div class="rows">${shown.map(rowHtml).join("") || '<div class="empty">Nothing here.</div>'}</div></section>`;
   }).join("");
 }
@@ -743,6 +747,7 @@ async function uploadAttachments(it, files) {
 
 /* ---------- editing ---------- */
 const byId = id => items.find(i => i.id === id);
+app.addEventListener("input", e => { const el = e.target; if (el.dataset && el.dataset.by) { byVal = el.value; el.size = Math.max(5, byVal.length + 1); markDirty(); } });
 app.addEventListener("change", e => {
   const el = e.target, row = el.closest(".it"); if (!row) return;
   const it = byId(row.dataset.id); if (!it) return;
@@ -930,10 +935,11 @@ function applyData(d) {
     if (i.type === "Replace") i.type = "Maintain";
     if (!TYPES.includes(i.type)) i.type = "";
   });
+  byVal = typeof d.by === "string" ? d.by : "";
   groups = SECTION_ORDER.map(id => ({ id, title: id }));
   filter = "Open"; openId = null;
 }
-const getData = () => ({ v: 3, groups, items });
+const getData = () => ({ v: 3, by: byVal, groups, items });
 
 async function afterSignIn() {
   setStatus("", "");
