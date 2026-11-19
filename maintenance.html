@@ -329,9 +329,8 @@ async function isAllowedEmail(email) {
     // Client IDs are meant to be public (unlike API tokens) — the real gate is the
     // Google sign-in + consent screen each user goes through, not a hidden secret.
     const CLIENT_ID = '575902569700-4l05lkmf0kbrgq5kdr58canigcvafv3j.apps.googleusercontent.com';
-    // Only what this page needs: Drive (app-created files) for saving, and the account
-    // email shown on the Save button.
-    const SCOPE = 'https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/userinfo.email';
+    // Only the account email: the server (not this page) is what touches Drive.
+    const SCOPE = 'https://www.googleapis.com/auth/userinfo.email';
     const FILE_NAME = 'munny-data.json';
     const FILE_ID_KEY = 'munny_drive_file_id';
     const TOKEN_KEY = 'munny_google_token';
@@ -476,168 +475,86 @@ async function isAllowedEmail(email) {
       });
     }
 
-    async function api(url, options) {
+    // ---- Shared backend ----
+    // Everything is read and saved through a small Google Apps Script that runs as the owner and keeps the
+    // data in the owner's Drive. Set this to the script's web app URL after deploying it.
+    const BACKEND_URL = "https://script.google.com/macros/s/AKfycbxZEStK6QE1yp8kf9wHSoqKPqu6bBRkn00jYri3EXq3JV3LLP7b8sX-RzHe1YTyMbC0bg/exec";
+    const revs = {};
+    async function call(payload, timeoutMs) {
       if (!accessToken) throw new Error('not signed in');
-      const headers = Object.assign({ 'Authorization': 'Bearer ' + accessToken }, (options && options.headers) || {});
+      if (!BACKEND_URL) throw new Error('The shared server is not set up yet.');
       const controller = new AbortController();
-      const timer = setTimeout(() => controller.abort(), (options && options.timeoutMs) || 15000);
+      const timer = setTimeout(() => controller.abort(), timeoutMs || 30000);
       let resp;
       try {
-        resp = await fetch(url, Object.assign({ cache: 'no-store' }, options, { headers, signal: controller.signal }));
+        resp = await fetch(BACKEND_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify(Object.assign({ token: accessToken }, payload)), signal: controller.signal, cache: 'no-store' });
       } catch (e) {
-        if (e.name === 'AbortError') throw new Error('Google Drive request timed out — check your connection and try again.');
-        throw new Error('Network error talking to Google Drive: ' + e.message);
-      } finally {
-        clearTimeout(timer);
-      }
-      if (resp.status === 401) { accessToken = null; clearPersistedToken(); } // expired/revoked — isSignedIn() will now correctly report false
-      return resp;
-    }
-
-    async function findFileId() {
-      const cached = getCachedFileId();
-      if (cached) return cached;
-      const q = encodeURIComponent("name='" + FILE_NAME + "' and trashed=false");
-      const resp = await api('https://www.googleapis.com/drive/v3/files?q=' + q + '&fields=files(id,name)&spaces=drive');
+        if (e.name === 'AbortError') throw new Error('The server took too long to answer. Check your connection and try again.');
+        throw new Error('Network error talking to the server: ' + e.message);
+      } finally { clearTimeout(timer); }
       if (!resp.ok) throw new Error('HTTP ' + resp.status);
-      const json = await resp.json();
-      if (json.files && json.files.length) {
-        setCachedFileId(json.files[0].id);
-        return json.files[0].id;
-      }
-      return null;
+      let out;
+      try { out = await resp.json(); } catch (e) { throw new Error('The server sent something unreadable.'); }
+      if (out && out.error === 'unauthenticated') { accessToken = null; clearPersistedToken(); }
+      return out || {};
     }
-
-    async function createFile(dataObj) {
-      const metadata = { name: FILE_NAME, mimeType: 'application/json' };
-      const boundary = 'munnyboundary' + Date.now();
-      const body =
-        '--' + boundary + '\r\n' +
-        'Content-Type: application/json; charset=UTF-8\r\n\r\n' +
-        JSON.stringify(metadata) + '\r\n' +
-        '--' + boundary + '\r\n' +
-        'Content-Type: application/json\r\n\r\n' +
-        JSON.stringify(dataObj, null, 2) + '\r\n' +
-        '--' + boundary + '--';
-      const resp = await api('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id', {
-        method: 'POST',
-        headers: { 'Content-Type': 'multipart/related; boundary=' + boundary },
-        body
-      });
-      if (!resp.ok) throw new Error('HTTP ' + resp.status);
-      const json = await resp.json();
-      setCachedFileId(json.id);
-      return json.id;
+    async function load(tool) {
+      const out = await call({ action: 'load', tool: tool });
+      if (!out.ok) { const e = new Error(out.error === 'forbidden' ? 'forbidden' : (out.message || out.error || 'load failed')); e.code = out.error; throw e; }
+      revs[tool] = out.rev;
+      return out;
     }
-
-    async function load() {
-      if (!accessToken) return null;
-      const fileId = await findFileId();
-      if (!fileId) return null;
-      const resp = await api('https://www.googleapis.com/drive/v3/files/' + fileId + '?alt=media');
-      if (resp.status === 404 || resp.status === 403) {
-        setCachedFileId('');
-        return null;
-      }
-      if (!resp.ok) throw new Error('HTTP ' + resp.status);
-      return resp.json();
+    async function save(tool, data, force) {
+      const out = await call({ action: 'save', tool: tool, data: data, baseRev: revs[tool] || 0, force: !!force });
+      if (out.ok) { revs[tool] = out.rev; return out; }
+      const e = new Error(out.error === 'conflict' ? 'conflict' : (out.message || out.error || 'save failed'));
+      e.code = out.error; e.remote = out;
+      throw e;
     }
-
-    async function save(dataObj) {
-      if (!accessToken) throw new Error('not signed in');
-      let fileId = getCachedFileId() || await findFileId();
-      if (!fileId) {
-        await createFile(dataObj);
-        return true;
-      }
-      const resp = await api('https://www.googleapis.com/upload/drive/v3/files/' + fileId + '?uploadType=media', {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(dataObj, null, 2)
-      });
-      if (resp.status === 404 || resp.status === 403) {
-        setCachedFileId('');
-        await createFile(dataObj);
-        return true;
-      }
-      if (!resp.ok) throw new Error('HTTP ' + resp.status);
-      return true;
-    }
+    const adopt = (tool, out) => { revs[tool] = out.rev; };
 
     async function getUserEmail() {
-      const resp = await api('https://www.googleapis.com/oauth2/v3/userinfo');
+      if (!accessToken) throw new Error('not signed in');
+      const resp = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', { headers: { Authorization: 'Bearer ' + accessToken } });
+      if (resp.status === 401) { accessToken = null; clearPersistedToken(); }
       if (!resp.ok) throw new Error('HTTP ' + resp.status);
-      const json = await resp.json();
-      return json.email || '';
+      return (await resp.json()).email || '';
     }
 
-    // Attachments live as real files in the user's own Drive, in one app-created folder, so they
-    // survive even if this page disappears. (drive.file scope: this app can only touch files it made.)
-    const FOLDER_NAME = 'rys.tools attachments';
-    const FOLDER_KEY = 'munny_drive_attach_folder';
-    async function ensureFolder() {
-      let id = '';
-      try { id = localStorage.getItem(FOLDER_KEY) || ''; } catch (e) {}
-      if (id) {
-        const r0 = await api('https://www.googleapis.com/drive/v3/files/' + id + '?fields=id,trashed');
-        if (r0.ok) { const j0 = await r0.json(); if (!j0.trashed) return id; }
-      }
-      const q = encodeURIComponent("name='" + FOLDER_NAME + "' and mimeType='application/vnd.google-apps.folder' and trashed=false");
-      let r = await api('https://www.googleapis.com/drive/v3/files?q=' + q + '&fields=files(id)&spaces=drive');
-      if (!r.ok) throw new Error('HTTP ' + r.status);
-      const j = await r.json();
-      if (j.files && j.files.length) id = j.files[0].id;
-      else {
-        r = await api('https://www.googleapis.com/drive/v3/files?fields=id', {
-          method: 'POST', headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ name: FOLDER_NAME, mimeType: 'application/vnd.google-apps.folder' })
-        });
+    // Attachments are uploaded through the server into the owner's Drive, and shared with everyone on the list.
+    const toB64 = f => new Promise((res, rej) => { const r = new FileReader(); r.onload = () => res(String(r.result).split(',')[1] || ''); r.onerror = () => rej(new Error('Could not read the file')); r.readAsDataURL(f); });
+    async function uploadFile(file) {
+      const out = await call({ action: 'upload', name: file.name, mime: file.type, data: await toB64(file) }, 180000);
+      if (!out.ok) throw new Error(out.error === 'too_big' ? 'over 10 MB' : (out.message || out.error || 'upload failed'));
+      return out.file;
+    }
+    async function trashFile(id) { const out = await call({ action: 'trash', id: id }); return !!out.ok; }
+
+    // One-time helper for the owner: read the old data file the pages used to keep in Drive, so it can be moved
+    // onto the server. Asks Google for Drive access separately; the normal sign-in no longer needs it.
+    async function legacyLoadFromDrive() {
+      if (!window.google || !google.accounts || !google.accounts.oauth2) throw new Error("Google sign-in script hasn't loaded yet.");
+      const tok = await new Promise((resolve, reject) => {
+        const tc = google.accounts.oauth2.initTokenClient({ client_id: CLIENT_ID, scope: 'https://www.googleapis.com/auth/drive.file', callback: r => r.error ? reject(new Error(r.error)) : resolve(r.access_token) });
+        tc.requestAccessToken({ prompt: 'consent' });
+      });
+      const h = { Authorization: 'Bearer ' + tok };
+      let id = ''; try { id = localStorage.getItem(FILE_ID_KEY) || ''; } catch (e) {}
+      if (!id) {
+        const q = encodeURIComponent("name='" + FILE_NAME + "' and trashed=false");
+        const r = await fetch('https://www.googleapis.com/drive/v3/files?q=' + q + '&fields=files(id)&spaces=drive', { headers: h });
         if (!r.ok) throw new Error('HTTP ' + r.status);
-        id = (await r.json()).id;
+        const j = await r.json(); id = j.files && j.files.length ? j.files[0].id : '';
       }
-      try { localStorage.setItem(FOLDER_KEY, id); } catch (e) {}
-      return id;
+      if (!id) return null;
+      const r2 = await fetch('https://www.googleapis.com/drive/v3/files/' + id + '?alt=media', { headers: h });
+      if (!r2.ok) throw new Error('HTTP ' + r2.status);
+      return r2.json();
     }
-    async function uploadFile(file, description) {
-      const parent = await ensureFolder();
-      const boundary = 'rysattach' + Date.now();
-      const meta = { name: file.name, parents: [parent], description: description || '' };
-      const body = new Blob([
-        '--' + boundary + '\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n' + JSON.stringify(meta) + '\r\n' +
-        '--' + boundary + '\r\nContent-Type: ' + (file.type || 'application/octet-stream') + '\r\n\r\n',
-        file,
-        '\r\n--' + boundary + '--'
-      ]);
-      const resp = await api('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id,name,mimeType,size,webViewLink', {
-        method: 'POST', headers: { 'Content-Type': 'multipart/related; boundary=' + boundary }, body, timeoutMs: 180000
-      });
-      if (!resp.ok) throw new Error('HTTP ' + resp.status);
-      return resp.json();
-    }
-    async function trashFile(id) {
-      const resp = await api('https://www.googleapis.com/drive/v3/files/' + id, {
-        method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ trashed: true })
-      });
-      return resp.ok;
-    }
-    return { isSignedIn, signIn, trySilentSignIn, load, save, getUserEmail, restoreSession, uploadFile, trashFile };
+    return { isSignedIn, signIn, trySilentSignIn, load, save, adopt, getUserEmail, restoreSession, uploadFile, trashFile, legacyLoadFromDrive };
   })();
 
-/* ================= shared Drive file ================= */
-// One Drive file holds every tool's data, each under tools[<name>]. Saving here only ever
-// replaces tools.maintenance and leaves the other tools' slices untouched.
 const CURRENT_TOOL = "maintenance";
-function withToolsWrapper(remote) {
-  if (!remote) return {};
-  if (remote.tools) return Object.assign({}, remote.tools);
-  return { budget: remote };
-}
-async function mergeAndSave(toolData) {
-  const remote = await GoogleDriveSync.load();
-  const tools = withToolsWrapper(remote);
-  tools[CURRENT_TOOL] = toolData;
-  await GoogleDriveSync.save({ tools: tools });
-}
 
 /* ================= page state ================= */
 // The page holds no data of its own. Groups and stories come from the signed-in user's Drive file.
@@ -659,12 +576,17 @@ function updateButton() {
   const btn = $("acct-btn");
   if (!GoogleDriveSync.isSignedIn()) { btn.textContent = "Google Sign-In"; return; }
   if (!allowed) { btn.textContent = "Switch account"; return; }
-  btn.textContent = accountEmail ? "Save to " + accountEmail : "Save to Google Drive";
+  btn.textContent = "Save"; btn.title = accountEmail ? "Signed in as " + accountEmail : "";
 }
 function showGate(message, withImport) {
   const gate = $("gate");
   gate.innerHTML = "";
   const p = document.createElement("p"); p.textContent = message; gate.appendChild(p);
+  if (withImport === "drive") {
+    const d = document.createElement("button"); d.type = "button"; d.textContent = "Bring over my Google Drive data";
+    d.onclick = () => importFromDrive();
+    gate.appendChild(d);
+  }
   if (withImport) {
     const b = document.createElement("button"); b.type = "button"; b.textContent = "Choose data file…";
     b.onclick = () => $("importFile").click();
@@ -807,13 +729,13 @@ function syncSpent() {
 const keepScroll = fn => { const y = scrollY; fn(); render(); scrollTo(0, y); };
 
 /* ---------- attachments ---------- */
-const MAX_ATTACH = 25 * 1024 * 1024;
+const MAX_ATTACH = 10 * 1024 * 1024;
 async function uploadAttachments(it, files) {
   if (!files.length) return;
   if (!GoogleDriveSync.isSignedIn()) { setStatus("Sign in to add attachments.", "err"); return; }
   let added = 0; const failed = [];
   for (const f of files) {
-    if (f.size > MAX_ATTACH) { failed.push(f.name + " (over 25 MB)"); continue; }
+    if (f.size > MAX_ATTACH) { failed.push(f.name + " (over 10 MB)"); continue; }
     setStatus("Uploading " + f.name + "…", "");
     try {
       const r = await GoogleDriveSync.uploadFile(f, "Maintenance story: " + it.title);
@@ -1034,32 +956,50 @@ const getData = () => ({ v: 3, by: byVal, groups, items });
 async function afterSignIn() {
   setStatus("", "");
   try { accountEmail = (await GoogleDriveSync.getUserEmail()) || ""; } catch (e) { accountEmail = ""; }
-  allowed = await isAllowedEmail(accountEmail);
-  updateButton();
-  if (!allowed) {
-    groups = []; items = [];
-    showGate("This account doesn't have access to this tool. Use the menu to open the Budget, or switch to an approved account.", false);
-    return;
-  }
-  const link = document.getElementById("side-maint-link"); if (link) link.hidden = false;
-  showGate("Loading your data from Google Drive…", false);
+  allowed = true; updateButton();
+  showGate("Loading your data…", false);
   try {
-    const remote = await GoogleDriveSync.load();
-    const own = withToolsWrapper(remote)[CURRENT_TOOL];
-    if (own && Array.isArray(own.items)) { applyData(own); dirty = false; showApp(); }
-    else showGate("No data in your Google Drive yet. Choose your data file to load it, then click Save.", true);
-  } catch (e) { showGate("Couldn't load from Google Drive: " + e.message, false); }
+    const out = await GoogleDriveSync.load(CURRENT_TOOL);
+    if (out.data && Array.isArray(out.data.items)) { applyData(out.data); dirty = false; showApp(); }
+    else if (out.owner) showGate("Nothing is saved on the server yet. Bring over the data you had in Google Drive, then click Save.", "drive");
+    else showGate("Nothing has been saved here yet. Ask the owner to add the data.", false);
+  } catch (e) {
+    if (e.code === "forbidden") {
+      allowed = false; updateButton(); groups = []; items = [];
+      showGate("This account doesn't have access to this tool. Switch to an approved account.", false);
+    } else showGate("Couldn't load your data: " + e.message, false);
+  }
+}
+async function importFromDrive() {
+  setStatus("Asking Google for one-time access to your old Drive data…", "");
+  try {
+    const remote = await GoogleDriveSync.legacyLoadFromDrive();
+    const own = remote && remote.tools ? remote.tools[CURRENT_TOOL] : null;
+    if (!own || !Array.isArray(own.items)) { setStatus("No Maintenance data found in your Google Drive.", "err"); return; }
+    applyData(own); dirty = true; showApp();
+    setStatus("Loaded from your Drive. Click Save to store it on the server.", "ok");
+  } catch (e) { setStatus("Couldn't read your Drive: " + e.message, "err"); }
 }
 async function saveToDrive() {
   if (!items.length && !groups.length) { setStatus("Nothing to save yet. Import your data file first.", "err"); return false; }
   const btn = $("acct-btn"); btn.disabled = true;
   setStatus("Saving…", "");
   try {
-    await mergeAndSave(getData());
+    await GoogleDriveSync.save(CURRENT_TOOL, getData());
     dirty = false; setStatus("Saved", "ok");
     setTimeout(() => { if ($("save-status").textContent === "Saved") setStatus("", ""); }, 2500);
     return true;
   } catch (e) {
+    if (e.code === "conflict") {
+      const who = (e.remote && e.remote.updatedBy) || "someone else";
+      if (confirm("Changes were saved by " + who + " since you opened this.\n\nOK = load their version (your unsaved edits here are lost)\nCancel = keep your version and replace theirs")) {
+        applyData(e.remote.data); GoogleDriveSync.adopt(CURRENT_TOOL, e.remote); dirty = false; showApp();
+        setStatus("Loaded the latest version.", "ok");
+        return false;
+      }
+      try { await GoogleDriveSync.save(CURRENT_TOOL, getData(), true); dirty = false; setStatus("Saved (replaced their changes)", "ok"); return true; }
+      catch (e2) { setStatus("Save failed: " + e2.message, "err"); return false; }
+    }
     setStatus(GoogleDriveSync.isSignedIn() ? "Save failed: " + e.message : "Session expired. Click Google Sign-In, then Save again.", "err");
     updateButton();
     return false;
@@ -1077,9 +1017,10 @@ $("importFile").addEventListener("change", async e => {
   if (!file) return;
   if (items.length && !confirm("Replace the current stories with this file?")) return;
   try {
-    applyData(JSON.parse(await file.text()));
+    const parsed = JSON.parse(await file.text());
+    applyData(parsed && parsed.tools && parsed.tools[CURRENT_TOOL] ? parsed.tools[CURRENT_TOOL] : parsed);
     dirty = true; showApp();
-    setStatus("Loaded. Click Save to store it in your Google Drive.", "ok");
+    setStatus("Loaded. Click Save to store it.", "ok");
   } catch (err) { setStatus("Import failed: " + err.message, "err"); }
 });
 window.addEventListener("beforeunload", e => { if (dirty) { e.preventDefault(); e.returnValue = ""; } });
