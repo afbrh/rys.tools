@@ -156,6 +156,7 @@ body.menu-open .side-menu { transform: none; visibility: visible; transition-del
   .tag { display:inline-block; font-size:11px; padding:0 7px; border-radius:999px; border:1px solid var(--line); margin-right:4px; background:var(--bg); color:var(--ink); }
   .tag.p-High { background:#f3d6cf; border-color:#e3b3a8; color:#7d2a18; }
   .tag.p-MedHigh { background:#f6e3c6; border-color:#e6cc9d; color:#6c4a12; }
+  .it .co { display:none !important; }
   .it .co { font-weight:600; white-space:nowrap; font-family:-apple-system, BlinkMacSystemFont, "SF Pro Text", system-ui, "Helvetica Neue", Helvetica, Arial, sans-serif; font-variant-numeric:lining-nums tabular-nums; }
   select, .det input, .det textarea { font:inherit; font-size:13px; padding:5px 8px; border:1px solid var(--line); border-radius:8px; background:var(--card); color:var(--ink); }
   select.stsel { font-weight:600; flex:none; }
@@ -635,8 +636,8 @@ const ISO = /^\d{4}-\d{2}-\d{2}$/;
 const fmtDue = v => { if (!ISO.test(v || "")) return v || ""; const [y, m, d] = v.split("-").map(Number); return "Due " + new Date(y, m - 1, d).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }); };
 const fmtSize = n => { n = Number(n) || 0; return n >= 1048576 ? (n / 1048576).toFixed(1) + " MB" : n >= 1024 ? Math.round(n / 1024) + " KB" : n ? n + " B" : ""; };
 function metaHtml(it) {
-  const n = (it.attachments || []).length;
-  return [it.estimate ? "est. " + it.estimate : "", it.lastInstalled ? "installed " + it.lastInstalled : "", n ? "📎 " + n : ""].filter(Boolean).map(esc).join(" · ");
+  const n = (it.attachments || []).length, note = String(it.notes || "").replace(/\s+/g, " ").trim();
+  return [it.estimate ? "est. " + it.estimate : "", it.estYear ? "est. year " + it.estYear : "", it.lastInstalled ? "installed " + it.lastInstalled : "", note ? "notes: " + (note.length > 60 ? note.slice(0, 60) + "…" : note) : "", n ? "📎 " + n : ""].filter(Boolean).map(esc).join(" · ");
 }
 function rowHtml(it) {
   let detail = "";
@@ -647,6 +648,7 @@ function rowHtml(it) {
       <label>Status<select data-status="1">${STATUSES.map(v => `<option ${v === it.status ? "selected" : ""} value="${esc(v)}">${esc(v)}</option>`).join("")}</select></label>
       <label>Cost<input type="text" inputmode="decimal" data-f="cost" value="${it.cost || 0}"></label>
       ${f("estimate", "Estimate")}
+      ${f("estYear", "Estimated year")}
       ${f("lastInstalled", "Last installed")}
       <label class="wide">Notes<textarea data-f="notes">${esc(it.notes)}</textarea></label>
       <div class="att">Attachments
