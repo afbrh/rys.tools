@@ -163,7 +163,6 @@ body.menu-open .side-menu { transform: none; visibility: visible; transition-del
   .it .co { font-weight:600; white-space:nowrap; font-family:-apple-system, BlinkMacSystemFont, "SF Pro Text", system-ui, "Helvetica Neue", Helvetica, Arial, sans-serif; font-variant-numeric:lining-nums tabular-nums; }
   select, .det input, .det textarea { font:inherit; font-size:13px; padding:5px 8px; border:1px solid var(--line); border-radius:8px; background:var(--card); color:var(--ink); }
   select.stsel { font-weight:600; flex:none; }
-  select.s-Backlog { background:var(--bg); }
   select.s-Planned { background:#e3ecf7; border-color:#b8cde6; }
   select.s-GettingBids { background:#f6e3c6; border-color:#e6cc9d; }
   select.s-Whenitbreaks { background:#e6dff0; border-color:#c9bbdc; }
@@ -229,7 +228,7 @@ body.menu-open .side-menu { transform: none; visibility: visible; transition-del
     #app .sh .sub { color:var(--muted); font-size:13px; font-weight:500; }
     #app section[data-group="In Progress"] { --shc:#b8641f; --shh:#e58a43; }
     #app section[data-group="Within the next year"] { --shc:#3f6f9c; --shh:#7fb0e3; }
-    #app section[data-group="Backlog"] { --shc:#55555b; --shh:#a9a9b0; }
+    #app section[data-group="Before 2032"] { --shc:#55555b; --shh:#a9a9b0; }
     #app section[data-group="Assets"] { --shc:#6f5a92; --shh:#b49ad6; }
     #app section[data-group="Done"] { --shc:#3f7a4c; --shh:#6fb07e; }
     #app .it { background:var(--card); border:1px solid var(--line); border-radius:10px; margin-bottom:6px; overflow:hidden; }
@@ -604,9 +603,9 @@ async function mergeAndSave(toolData) {
 
 /* ================= page state ================= */
 // The page holds no data of its own. Groups and stories come from the signed-in user's Drive file.
-const STATUSES = ["Backlog", "Within the next year", "In Progress", "Assets", "Done"];
+const STATUSES = ["Before 2032", "Within the next year", "In Progress", "Assets", "Done"];
 // Sections are fixed and always shown in this order.
-const SECTION_ORDER = ["In Progress", "Within the next year", "Backlog", "Assets", "Done"];
+const SECTION_ORDER = ["In Progress", "Within the next year", "Before 2032", "Assets", "Done"];
 const sKey = s => s.replace(/\s+/g, "");
 const PRIORITIES = ["", "High", "Medium", "Low"], TYPES = ["Maintain", "Upgrade"];
 let groups = [], items = [], filter = "Open", openId = null;
@@ -807,9 +806,9 @@ app.addEventListener("click", e => {
   if (tx) { pick = null; openId = openId === tx.dataset.open ? null : tx.dataset.open; keepScroll(() => {}); return; }
 });
 function addStory() {
-  // One Add button for the whole page: a new story starts in Backlog and opens for editing.
-  const it = { id: "u" + Date.now(), group: "Backlog", status: "Backlog", priority: "", lastInstalled: "", timing: "", dependency: "", type: "", room: "", title: "New story", cost: 0, duration: "", who: "", bids: "", notes: "" };
-  const last = items.map((x, i) => x.group === "Backlog" ? i : -1).filter(i => i >= 0).pop();
+  // One Add button for the whole page: a new story starts in Before 2032 and opens for editing.
+  const it = { id: "u" + Date.now(), group: "Before 2032", status: "Before 2032", priority: "", lastInstalled: "", timing: "", dependency: "", type: "", room: "", title: "New story", cost: 0, duration: "", who: "", bids: "", notes: "" };
+  const last = items.map((x, i) => x.group === "Before 2032" ? i : -1).filter(i => i >= 0).pop();
   items.splice(last === undefined ? items.length : last + 1, 0, it);
   filter = "Open"; openId = it.id; markDirty(); render();
   const el = app.querySelector('[data-id="' + it.id + '"]'); if (el) el.scrollIntoView({ block: "center" });
@@ -914,10 +913,11 @@ function applyData(d) {
     // One-time (data version 3): a cost with no estimate was really an estimate, so move it over. Items with both are left alone.
     if (!(d.v >= 3) && i.cost > 0 && !String(i.estimate || "").trim()) { i.estimate = String(i.cost); i.cost = 0; }
     if (i.status === "When it breaks") i.status = "Assets";
+    if (i.status === "Backlog") i.status = "Before 2032";
     if (i.status === "Getting Bids" || i.status === "Planned") i.status = "Within the next year";
-    if (!STATUSES.includes(i.status)) i.status = "Backlog";
+    if (!STATUSES.includes(i.status)) i.status = "Before 2032";
     // One-time (data version 2): the old Contingency items (furnace on down) wait for "Assets".
-    if (!(d.v >= 2) && /^Contingency/.test(i.origin || "") && i.status === "Backlog") i.status = "Assets";
+    if (!(d.v >= 2) && /^Contingency/.test(i.origin || "") && i.status === "Before 2032") i.status = "Assets";
     i.group = i.status;
     // Older data had extra priorities and types; fold them into the current options.
     if (i.priority === "Med High") i.priority = "High";
