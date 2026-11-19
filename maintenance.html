@@ -120,11 +120,12 @@ body.menu-open .side-menu { transform: none; visibility: visible; transition-del
   .spent { display:flex; flex-direction:column; align-items:flex-end; line-height:1.1; text-align:right; }
   .spent small { font-size:11px; text-transform:uppercase; letter-spacing:.05em; color:var(--muted); }
   .spent .sm { display:none; }
-  #spent { cursor:pointer; } #spent:hover b, #spent:focus-visible b { text-decoration:underline; }
+  #spent, #fspent { cursor:pointer; } #spent:hover b, #spent:focus-visible b, #fspent:hover b, #fspent:focus-visible b { text-decoration:underline; }
   header { position:sticky; }
   .spentpanel { position:absolute; left:12px; right:12px; top:100%; margin-top:6px; max-width:560px; margin-left:auto; max-height:70vh; overflow:auto; background:var(--card); border:1px solid var(--line); border-radius:12px; box-shadow:0 10px 30px rgba(0,0,0,.5); padding:6px 12px 10px; z-index:20; }
   .spentpanel .sp-h { display:flex; justify-content:space-between; align-items:baseline; padding:8px 0; border-bottom:1px solid var(--line); font-size:11px; text-transform:uppercase; letter-spacing:.05em; color:var(--muted); }
   .spentpanel .sp-h b { font-size:16px; color:var(--ink); font-variant-numeric:tabular-nums; }
+  .spentpanel .sp-b { margin:0; padding:8px 0 4px; font-size:12.5px; line-height:1.45; color:var(--muted); }
   .spentpanel .sp-i { padding:8px 0; border-bottom:1px solid var(--line); }
   .spentpanel .sp-i:last-child { border-bottom:0; }
   .spentpanel .sp-r { display:flex; gap:10px; align-items:baseline; }
@@ -296,7 +297,7 @@ body.locked #splash{display:flex;min-height:100vh;flex-direction:column;align-it
 </nav>
 <header><div class="wrap">
   <div class="titlebar"><button type="button" class="menu-btn" id="menu-btn" aria-label="Open menu" aria-expanded="false" aria-controls="side-menu"><span></span><span></span><span></span></button><h1>Maintenance</h1>
-    <div class="acct"><span class="st" id="save-status"></span><div class="spent" id="spent" role="button" tabindex="0" aria-expanded="false" title="See what is in this total" hidden><small><span class="lg">Total spent</span><span class="sm">Spent</span></small><b id="spent-v"></b></div><span class="spsl" aria-hidden="true">/</span><div class="spent" id="fspent" hidden><small><span class="lg">Forecasted spend</span><span class="sm">Forecast</span></small><b id="fspent-v"></b></div><button type="button" id="acct-btn">Google Sign-In</button></div></div>
+    <div class="acct"><span class="st" id="save-status"></span><div class="spent" id="spent" role="button" tabindex="0" aria-expanded="false" title="See what is in this total" hidden><small><span class="lg">Total spent</span><span class="sm">Spent</span></small><b id="spent-v"></b></div><span class="spsl" aria-hidden="true">/</span><div class="spent" id="fspent" role="button" tabindex="0" aria-expanded="false" title="See what is in this forecast" hidden><small><span class="lg">Forecasted spend</span><span class="sm">Forecast</span></small><b id="fspent-v"></b></div><button type="button" id="acct-btn">Google Sign-In</button></div></div>
   <div class="spentpanel" id="spentpanel" hidden></div>
 </div></header>
 <main>
@@ -743,9 +744,7 @@ function rowHtml(it) {
 let byVal = "";
 function render() {
   { const sp = $("spent"); if (sp) {
-    const spent = items.reduce((a, i) => a + (Number(i.cost) || 0), 0);
-    // Forecast = what is spent + the estimate of every story that has no actual cost yet, outside Assets.
-    const fc = spent + items.reduce((a, i) => { const n = parseFloat(String(i.estimate == null ? "" : i.estimate).replace(/[~$,\s]/g, "")); return a + (!(Number(i.cost) > 0) && i.group !== "Assets" && i.group !== "Wishlist" && /^~?\$?[\d,.]+$/.test(String(i.estimate || "").trim()) && !isNaN(n) ? n : 0); }, 0);
+    const spent = items.reduce((a, i) => a + (Number(i.cost) || 0), 0), fc = spent + estItems().reduce((a, x) => a + x.n, 0);
     sp.hidden = false; $("spent-v").textContent = fmt0(spent);
     syncSpent();
     $("fspent").hidden = false; $("fspent-v").textContent = fmt0(fc);
@@ -758,31 +757,43 @@ function render() {
       <div class="rows">${shown.map(rowHtml).join("") || '<div class="empty">Nothing here.</div>'}</div></section>`;
   }).join("");
 }
-/* ---------- total spent drop-down ---------- */
-let spentOpen = false;
+/* ---------- total spent / forecasted spend drop-downs ---------- */
+// An estimate counts toward the forecast when it is a dollar amount, the story has no actual cost, and it is not in Assets or Wishlist.
+const estItems = () => items.map(i => { const v = String(i.estimate == null ? "" : i.estimate).trim(), n = parseFloat(v.replace(/[~$,\s]/g, "")); return { i, n: !(Number(i.cost) > 0) && i.group !== "Assets" && i.group !== "Wishlist" && /^~?\$?[\d,.]+$/.test(v) && !isNaN(n) ? n : 0 }; }).filter(x => x.n > 0);
+let spentOpen = null; // null | "spent" | "fc"
 function spentPanelHtml() {
   const rank = id => { const k = SECTION_ORDER.indexOf(id); return k < 0 ? 99 : k; };
-  const list = items.filter(i => Number(i.cost) > 0).sort((a, b) => rank(a.group) - rank(b.group));
-  const total = list.reduce((a, i) => a + Number(i.cost), 0);
-  const title = g => g === "Within the next year" ? "By " + (byVal || "____") : g;
-  return `<div class="sp-h"><span>Counted in Total spent</span><b>${fmt0(total)}</b></div>` + (list.map(i => `<div class="sp-i"><div class="sp-r"><button type="button" class="sp-t" data-go="${esc(i.id)}">${esc(i.title)}</button><span class="sp-s">${esc(title(i.group))}</span><span class="sp-c">${fmt0(i.cost)}</span></div>${(i.attachments || []).length ? `<div class="sp-a">${i.attachments.map(a => `<div><a href="${esc(a.link)}" target="_blank" rel="noopener">📎 ${esc(a.name)}</a><small>${esc(fmtSize(a.size))}</small></div>`).join("")}</div>` : ""}</div>`).join("") || '<div class="sp-e">No story has an actual cost yet.</div>');
+  const secTitle = g => g === "Within the next year" ? "By " + (byVal || "____") : g;
+  const rows = [];
+  items.filter(i => Number(i.cost) > 0).forEach(i => rows.push({ i, amt: Number(i.cost), est: false }));
+  if (spentOpen === "fc") estItems().forEach(x => rows.push({ i: x.i, amt: x.n, est: true }));
+  rows.sort((a, b) => rank(a.i.group) - rank(b.i.group));
+  const total = rows.reduce((a, r) => a + r.amt, 0);
+  const head = spentOpen === "fc" ? "Counted in Forecasted Spend" : "Counted in Total Spent";
+  const blurb = spentOpen === "fc"
+    ? "Total spent plus the estimated cost of every story that doesn't have an actual cost yet. Stories in Assets and Wishlist are left out, and so is any estimate that isn't a dollar amount. A story with an actual cost counts that cost, not its estimate."
+    : "The sum of the Actual Cost on every story, in every section, including Done. Estimates aren't counted here.";
+  return `<div class="sp-h"><span>${head}</span><b>${fmt0(total)}</b></div><p class="sp-b">${blurb}</p>` + (rows.map(r => { const i = r.i; return `<div class="sp-i"><div class="sp-r"><button type="button" class="sp-t" data-go="${esc(i.id)}">${esc(i.title)}</button><span class="sp-s">${r.est ? "estimated · " : ""}${esc(secTitle(i.group))}</span><span class="sp-c">${r.est ? "~" : ""}${fmt0(r.amt)}</span></div>${(i.attachments || []).length ? `<div class="sp-a">${i.attachments.map(a => `<div><a href="${esc(a.link)}" target="_blank" rel="noopener">📎 ${esc(a.name)}</a><small>${esc(fmtSize(a.size))}</small></div>`).join("")}</div>` : ""}</div>`; }).join("") || '<div class="sp-e">Nothing is counted yet.</div>');
 }
 function syncSpent() {
-  const pnl = $("spentpanel"), sp = $("spent"); if (!pnl || !sp) return;
-  pnl.hidden = !spentOpen; sp.setAttribute("aria-expanded", spentOpen ? "true" : "false");
+  const pnl = $("spentpanel"), sp = $("spent"), fp = $("fspent"); if (!pnl || !sp || !fp) return;
+  pnl.hidden = !spentOpen; sp.setAttribute("aria-expanded", spentOpen === "spent" ? "true" : "false"); fp.setAttribute("aria-expanded", spentOpen === "fc" ? "true" : "false");
   if (spentOpen) pnl.innerHTML = spentPanelHtml();
 }
 (function () {
-  const sp = $("spent"), pnl = $("spentpanel"); if (!sp || !pnl) return;
-  const toggle = () => { spentOpen = !spentOpen; syncSpent(); };
-  sp.addEventListener("click", toggle);
-  sp.addEventListener("keydown", e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); toggle(); } });
-  document.addEventListener("click", e => { if (spentOpen && !e.target.closest("#spent, #spentpanel")) { spentOpen = false; syncSpent(); } });
-  document.addEventListener("keydown", e => { if (e.key === "Escape" && spentOpen) { spentOpen = false; syncSpent(); } });
+  const sp = $("spent"), fp = $("fspent"), pnl = $("spentpanel"); if (!sp || !fp || !pnl) return;
+  const wire = (el, mode) => {
+    const toggle = () => { spentOpen = spentOpen === mode ? null : mode; syncSpent(); };
+    el.addEventListener("click", toggle);
+    el.addEventListener("keydown", e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); toggle(); } });
+  };
+  wire(sp, "spent"); wire(fp, "fc");
+  document.addEventListener("click", e => { if (spentOpen && !e.target.closest("#spent, #fspent, #spentpanel")) { spentOpen = null; syncSpent(); } });
+  document.addEventListener("keydown", e => { if (e.key === "Escape" && spentOpen) { spentOpen = null; syncSpent(); } });
   pnl.addEventListener("click", e => {
     const go = e.target.closest("[data-go]"); if (!go) return;
     const it = byId(go.dataset.go); if (!it) return;
-    spentOpen = false; syncSpent();
+    spentOpen = null; syncSpent();
     filter = it.status === "Done" ? "Done" : "Open"; openId = it.id; pick = null; render();
     const row = document.querySelector('.it[data-id="' + it.id + '"]'); if (row) row.scrollIntoView({ block: "center" });
   });
