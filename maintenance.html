@@ -189,6 +189,17 @@ body.menu-open .side-menu { transform: none; visibility: visible; transition-del
   .det .costpair input:focus { outline:none; background:rgba(255,255,255,.06); }
   .det .costpair input::placeholder { color:var(--muted); opacity:.55; font-size:11px; }
   .det .costpair .sl { color:var(--muted); font-size:15px; padding:0 2px; user-select:none; }
+  .det .costpair input[readonly] { cursor:pointer; }
+  .det .mp { margin-top:8px; padding:8px; border:1px solid var(--line); border-radius:12px; background:var(--card); text-transform:none; letter-spacing:0; }
+  .det .mph { display:flex; align-items:center; gap:8px; margin-bottom:6px; color:var(--ink); font-size:14px; }
+  .det .mph b { min-width:44px; text-align:center; font-variant-numeric:tabular-nums; }
+  .det .mph button { font:inherit; font-size:15px; padding:2px 10px; border:1px solid var(--line); border-radius:8px; background:transparent; color:var(--ink); cursor:pointer; }
+  .det .mph .mpt { margin-left:auto; color:var(--muted); font-size:11px; text-transform:uppercase; letter-spacing:.04em; }
+  .det .mph .mpc { font-size:12px; color:var(--muted); }
+  .det .mpg { display:grid; grid-template-columns:repeat(4,1fr); gap:6px; }
+  .det .mpg button { font:inherit; font-size:13px; padding:7px 0; border:1px solid var(--line); border-radius:8px; background:transparent; color:var(--ink); cursor:pointer; }
+  .det .mpg button:hover { border-color:#fff; }
+  .det .mpg button.on { background:var(--accent); border-color:var(--accent); color:#fff; font-weight:600; }
   .det .acts { grid-column:1/-1; display:flex; justify-content:flex-end; gap:8px; }
   .chev { color:var(--muted); font-size:12px; margin-right:6px; }
   .det .savebtn { background:var(--accent); color:#fff; border-color:var(--accent); font-weight:600; padding:6px 22px; }
@@ -661,9 +672,16 @@ function toYM(v) {
 }
 // Cost boxes show whole dollars with a $; an older text estimate (like "2 days") is shown as typed until it is edited.
 const dollarVal = v => { v = String(v == null ? "" : v).trim(); if (!v) return ""; const n = parseFloat(v.replace(/[~$,\s]/g, "")); return /^~?\$?[\d,.]+$/.test(v) && !isNaN(n) ? (Math.round(n) ? "$" + Math.round(n).toLocaleString("en-US") : "") : v; };
+// Month/year selector: click a Timing box and a year + month grid folds down under it.
+let pick = null;
+function pickerHtml(it) {
+  if (!pick || pick.id !== it.id) return "";
+  const cur = String(it[pick.k] || "");
+  return `<div class="mp"><div class="mph"><button type="button" data-mpy="-1" aria-label="Previous year">‹</button><b>${pick.y}</b><button type="button" data-mpy="1" aria-label="Next year">›</button><span class="mpt">${pick.k === "estYear" ? "Forecasted" : "Last Replaced"}</span><button type="button" data-mpclear="1" class="mpc">Clear</button></div><div class="mpg">${MON.map((m, i) => { const v = pick.y + "-" + String(i + 1).padStart(2, "0"); return `<button type="button" data-mpm="${v}" class="${v === cur ? "on" : ""}">${m}</button>`; }).join("")}</div></div>`;
+}
 function metaHtml(it) {
   const n = (it.attachments || []).length, note = String(it.notes || "").replace(/\s+/g, " ").trim();
-  return [(it.cost > 0 && (!it.estimate || fmtEst(it.estimate).startsWith("~$"))) ? fmt0(it.cost) : fmtEst(it.estimate), it.estYear ? "forecast " + it.estYear : "", it.lastInstalled ? "replaced " + fmtMonth(it.lastInstalled) : "", note ? "notes: " + (note.length > 60 ? note.slice(0, 60) + "…" : note) : "", n ? "📎 " + n : ""].filter(Boolean).map(esc).join(" · ");
+  return [(it.cost > 0 && (!it.estimate || fmtEst(it.estimate).startsWith("~$"))) ? fmt0(it.cost) : fmtEst(it.estimate), it.estYear ? "forecast " + fmtMonth(it.estYear) : "", it.lastInstalled ? "replaced " + fmtMonth(it.lastInstalled) : "", note ? "notes: " + (note.length > 60 ? note.slice(0, 60) + "…" : note) : "", n ? "📎 " + n : ""].filter(Boolean).map(esc).join(" · ");
 }
 function rowHtml(it) {
   let detail = "";
@@ -672,7 +690,7 @@ function rowHtml(it) {
     detail = `<div class="det">
       <label class="wide">Description<input type="text" data-f="title" value="${esc(it.title)}"></label>
       <div class="fld costfld">Cost<div class="costpair"><input type="text" inputmode="numeric" data-f="cost" aria-label="Actual Cost" placeholder="Enter Actual Cost Here" value="${esc(dollarVal(it.cost))}"><span class="sl">/</span><input type="text" inputmode="numeric" data-f="estimate" aria-label="Estimated Cost" placeholder="Enter Estimated Cost here" value="${esc(dollarVal(it.estimate))}"></div></div>
-      <div class="fld costfld">Timing<div class="costpair"><input type="text" data-f="lastInstalled" data-month="1" data-raw="${esc(it.lastInstalled)}" aria-label="Last Replaced" placeholder="Enter Last Replaced here" value="${esc(fmtMonth(it.lastInstalled))}"><span class="sl">/</span><input type="text" data-f="estYear" data-month="1" data-raw="${esc(it.estYear)}" aria-label="Forecasted" placeholder="Enter Forecasted date here" value="${esc(fmtMonth(it.estYear))}"></div></div>
+      <div class="fld costfld">Timing<div class="costpair"><input type="text" readonly data-mp="lastInstalled" aria-label="Last Replaced" placeholder="Enter Last Replaced here" value="${esc(fmtMonth(it.lastInstalled))}"><span class="sl">/</span><input type="text" readonly data-mp="estYear" aria-label="Forecasted" placeholder="Enter Forecasted date here" value="${esc(fmtMonth(it.estYear))}"></div>${pickerHtml(it)}</div>
       <label class="wide">Notes<textarea data-f="notes">${esc(it.notes)}</textarea></label>
       <div class="att">Attachments
         <div class="alist">${(it.attachments || []).map((a, i) => `<div class="arow"><a href="${esc(a.link)}" target="_blank" rel="noopener">${esc(a.name)}</a><small>${esc(fmtSize(a.size))}</small><button type="button" class="rm" data-rmatt="${i}" aria-label="Remove attachment" title="Remove">×</button></div>`).join("")}</div>
@@ -689,7 +707,7 @@ function render() {
   app.innerHTML = groups.filter(g => inFilter({ status: g.id })).map(g => {
     const all = items.filter(i => i.group === g.id), shown = all.filter(inFilter);
     const sum = all.reduce((a, i) => a + (i.cost || 0), 0);
-    return `<section data-group="${g.id}"><div class="sh"><h2>${esc(g.title)}</h2><span class="sub">${fmt0(sum)}</span></div>
+    return `<section data-group="${g.id}"><div class="sh"><h2>${esc(g.title)}</h2></div>
       <div class="rows">${shown.map(rowHtml).join("") || '<div class="empty">Nothing here.</div>'}</div></section>`;
   }).join("");
 }
@@ -717,9 +735,6 @@ async function uploadAttachments(it, files) {
 
 /* ---------- editing ---------- */
 const byId = id => items.find(i => i.id === id);
-// "Last Replaced" and "Forecasted" are plain-looking boxes that turns into a month picker while you edit it.
-app.addEventListener("focusin", e => { const el = e.target; if (el.dataset && el.dataset.month && el.type !== "month") { el.type = "month"; const r = el.dataset.raw || ""; el.value = /^\d{4}-\d{2}$/.test(r) ? r : /^\d{4}$/.test(r) ? r + "-01" : ""; try { el.showPicker && el.showPicker(); } catch (err) {} } });
-app.addEventListener("focusout", e => { const el = e.target; if (el.dataset && el.dataset.month && el.type === "month") { el.type = "text"; el.value = fmtMonth(el.dataset.raw || ""); } });
 app.addEventListener("change", e => {
   const el = e.target, row = el.closest(".it"); if (!row) return;
   const it = byId(row.dataset.id); if (!it) return;
@@ -729,7 +744,6 @@ app.addEventListener("change", e => {
   if (k === "cost") { const n = parseFloat(String(el.value).replace(/[$,\s]/g, "")); it.cost = isNaN(n) ? 0 : Math.round(n); }
   else if (k === "estimate") { const v = String(el.value).trim(), n = parseFloat(v.replace(/[~$,\s]/g, "")); it.estimate = !v ? "" : /^~?\$?[\d,.]+$/.test(v) && !isNaN(n) ? (Math.round(n) ? String(Math.round(n)) : "") : v; }
   else it[k] = el.value;
-  if (el.dataset.month) el.dataset.raw = el.value;
   markDirty();
   // A date box fires change while it is still being typed in, so only refresh the line, not the whole list.
   if (el.type === "date" || el.type === "month") { const me = row.querySelector(".me"); if (me) me.innerHTML = metaHtml(it); return; }
@@ -752,6 +766,24 @@ app.addEventListener("click", e => {
     }
     return;
   }
+  if (d.mp) {
+    const row = e.target.closest(".it"), it = row && byId(row.dataset.id);
+    if (it) {
+      if (pick && pick.id === it.id && pick.k === d.mp) pick = null;
+      else { const m = /^(\d{4})/.exec(String(it[d.mp] || "")); pick = { id: it.id, k: d.mp, y: m ? +m[1] : new Date().getFullYear() }; }
+      keepScroll(() => {});
+    }
+    return;
+  }
+  if (d.mpy || d.mpm || d.mpclear) {
+    const row = e.target.closest(".it"), it = row && byId(row.dataset.id);
+    if (it && pick && pick.id === it.id) {
+      if (d.mpy) pick.y += +d.mpy;
+      else { it[pick.k] = d.mpclear ? "" : d.mpm; pick = null; markDirty(); }
+      keepScroll(() => {});
+    }
+    return;
+  }
   if (d.done) {
     const row = e.target.closest(".it"), it = row && byId(row.dataset.id);
     if (it) { it.status = it.group = it.status === "Done" ? "When it breaks" : "Done"; markDirty(); keepScroll(() => {}); }
@@ -767,7 +799,7 @@ app.addEventListener("click", e => {
     saveToDrive().then(ok => { if (ok) { openId = null; keepScroll(() => {}); } else e.target.disabled = false; });
     return;
   }
-  if (tx) { openId = openId === tx.dataset.open ? null : tx.dataset.open; keepScroll(() => {}); return; }
+  if (tx) { pick = null; openId = openId === tx.dataset.open ? null : tx.dataset.open; keepScroll(() => {}); return; }
 });
 function addStory() {
   // One Add button for the whole page: a new story starts in Backlog and opens for editing.
