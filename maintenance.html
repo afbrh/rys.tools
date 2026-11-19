@@ -229,7 +229,7 @@ body.menu-open .side-menu { transform: none; visibility: visible; transition-del
     #app section[data-group="In Progress"] { --shc:#b8641f; --shh:#e58a43; }
     #app section[data-group="Planned"] { --shc:#3f6f9c; --shh:#7fb0e3; }
     #app section[data-group="Backlog"] { --shc:#55555b; --shh:#a9a9b0; }
-    #app section[data-group="When it breaks"] { --shc:#6f5a92; --shh:#b49ad6; }
+    #app section[data-group="Assets"] { --shc:#6f5a92; --shh:#b49ad6; }
     #app section[data-group="Done"] { --shc:#3f7a4c; --shh:#6fb07e; }
     #app .it { background:var(--card); border:1px solid var(--line); border-radius:10px; margin-bottom:6px; overflow:hidden; }
     #app .it:last-child { border-bottom:1px solid var(--line); }
@@ -603,9 +603,9 @@ async function mergeAndSave(toolData) {
 
 /* ================= page state ================= */
 // The page holds no data of its own. Groups and stories come from the signed-in user's Drive file.
-const STATUSES = ["Backlog", "Planned", "In Progress", "When it breaks", "Done"];
+const STATUSES = ["Backlog", "Planned", "In Progress", "Assets", "Done"];
 // Sections are fixed and always shown in this order.
-const SECTION_ORDER = ["In Progress", "Planned", "Backlog", "When it breaks", "Done"];
+const SECTION_ORDER = ["In Progress", "Planned", "Backlog", "Assets", "Done"];
 const sKey = s => s.replace(/\s+/g, "");
 const PRIORITIES = ["", "High", "Medium", "Low"], TYPES = ["Maintain", "Upgrade"];
 let groups = [], items = [], filter = "Open", openId = null;
@@ -698,7 +698,7 @@ function rowHtml(it) {
       <div class="att">Attachments
         <div class="alist">${(it.attachments || []).map((a, i) => `<div class="arow"><a href="${esc(a.link)}" target="_blank" rel="noopener">${esc(a.name)}</a><small>${esc(fmtSize(a.size))}</small><button type="button" class="rm" data-rmatt="${i}" aria-label="Remove attachment" title="Remove">×</button></div>`).join("")}</div>
         <button type="button" class="apick" data-pick="1">+ Add attachment</button><input type="file" multiple hidden data-attach="1"></div>
-      <div class="acts"><button type="button" class="delbtn" data-del="1">Delete</button><button type="button" class="donebtn" data-done="1">${it.status === "Done" ? "Move back to When it breaks" : "Done"}</button><button type="button" class="savebtn" data-save="1">Save</button></div></div>`;
+      <div class="acts"><button type="button" class="delbtn" data-del="1">Delete</button><button type="button" class="donebtn" data-done="1">${it.status === "Done" ? "Move back to Assets" : "Done"}</button><button type="button" class="savebtn" data-save="1">Save</button></div></div>`;
   }
   return `<div class="it st-${sKey(it.status)} ${it.status === "Done" ? "done" : ""}" data-id="${it.id}">
     <div class="ln">
@@ -789,7 +789,7 @@ app.addEventListener("click", e => {
   }
   if (d.done) {
     const row = e.target.closest(".it"), it = row && byId(row.dataset.id);
-    if (it) { it.status = it.group = it.status === "Done" ? "When it breaks" : "Done"; markDirty(); keepScroll(() => {}); }
+    if (it) { it.status = it.group = it.status === "Done" ? "Assets" : "Done"; markDirty(); keepScroll(() => {}); }
     return;
   }
   if (d.del) {
@@ -912,10 +912,11 @@ function applyData(d) {
     if (i.lastInstalled) { const ym = toYM(i.lastInstalled); if (ym === null) { i.notes = "Last installed: " + i.lastInstalled + (i.notes ? "\n" + i.notes : ""); i.lastInstalled = ""; } else i.lastInstalled = ym; }
     // One-time (data version 3): a cost with no estimate was really an estimate, so move it over. Items with both are left alone.
     if (!(d.v >= 3) && i.cost > 0 && !String(i.estimate || "").trim()) { i.estimate = String(i.cost); i.cost = 0; }
+    if (i.status === "When it breaks") i.status = "Assets";
     if (i.status === "Getting Bids") i.status = "Planned";
     if (!STATUSES.includes(i.status)) i.status = "Backlog";
-    // One-time (data version 2): the old Contingency items (furnace on down) wait for "When it breaks".
-    if (!(d.v >= 2) && /^Contingency/.test(i.origin || "") && i.status === "Backlog") i.status = "When it breaks";
+    // One-time (data version 2): the old Contingency items (furnace on down) wait for "Assets".
+    if (!(d.v >= 2) && /^Contingency/.test(i.origin || "") && i.status === "Backlog") i.status = "Assets";
     i.group = i.status;
     // Older data had extra priorities and types; fold them into the current options.
     if (i.priority === "Med High") i.priority = "High";
