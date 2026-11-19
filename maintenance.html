@@ -663,7 +663,7 @@ function toYM(v) {
 const dollarVal = v => { v = String(v == null ? "" : v).trim(); if (!v) return ""; const n = parseFloat(v.replace(/[~$,\s]/g, "")); return /^~?\$?[\d,.]+$/.test(v) && !isNaN(n) ? (Math.round(n) ? "$" + Math.round(n).toLocaleString("en-US") : "") : v; };
 function metaHtml(it) {
   const n = (it.attachments || []).length, note = String(it.notes || "").replace(/\s+/g, " ").trim();
-  return [(it.cost > 0 && (!it.estimate || fmtEst(it.estimate).startsWith("~$"))) ? fmt0(it.cost) : fmtEst(it.estimate), it.estYear ? "est. year " + it.estYear : "", it.lastInstalled ? "installed " + fmtMonth(it.lastInstalled) : "", note ? "notes: " + (note.length > 60 ? note.slice(0, 60) + "…" : note) : "", n ? "📎 " + n : ""].filter(Boolean).map(esc).join(" · ");
+  return [(it.cost > 0 && (!it.estimate || fmtEst(it.estimate).startsWith("~$"))) ? fmt0(it.cost) : fmtEst(it.estimate), it.estYear ? "forecast " + it.estYear : "", it.lastInstalled ? "replaced " + fmtMonth(it.lastInstalled) : "", note ? "notes: " + (note.length > 60 ? note.slice(0, 60) + "…" : note) : "", n ? "📎 " + n : ""].filter(Boolean).map(esc).join(" · ");
 }
 function rowHtml(it) {
   let detail = "";
@@ -672,8 +672,7 @@ function rowHtml(it) {
     detail = `<div class="det">
       <label class="wide">Description<input type="text" data-f="title" value="${esc(it.title)}"></label>
       <div class="fld costfld">Cost<div class="costpair"><input type="text" inputmode="numeric" data-f="cost" aria-label="Actual Cost" placeholder="Enter Actual Cost Here" value="${esc(dollarVal(it.cost))}"><span class="sl">/</span><input type="text" inputmode="numeric" data-f="estimate" aria-label="Estimated Cost" placeholder="Enter Estimated Cost here" value="${esc(dollarVal(it.estimate))}"></div></div>
-      ${f("estYear", "Estimated year")}
-      <label>Last installed<input type="month" data-f="lastInstalled" value="${esc(it.lastInstalled)}"></label>
+      <div class="fld costfld">Timing<div class="costpair"><input type="text" data-f="lastInstalled" data-month="1" data-raw="${esc(it.lastInstalled)}" aria-label="Last Replaced" placeholder="Enter Last Replaced here" value="${esc(fmtMonth(it.lastInstalled))}"><span class="sl">/</span><input type="text" inputmode="numeric" data-f="estYear" aria-label="Forecasted" placeholder="Enter Forecasted year here" value="${esc(it.estYear)}"></div></div>
       <label class="wide">Notes<textarea data-f="notes">${esc(it.notes)}</textarea></label>
       <div class="att">Attachments
         <div class="alist">${(it.attachments || []).map((a, i) => `<div class="arow"><a href="${esc(a.link)}" target="_blank" rel="noopener">${esc(a.name)}</a><small>${esc(fmtSize(a.size))}</small><button type="button" class="rm" data-rmatt="${i}" aria-label="Remove attachment" title="Remove">×</button></div>`).join("")}</div>
@@ -718,6 +717,9 @@ async function uploadAttachments(it, files) {
 
 /* ---------- editing ---------- */
 const byId = id => items.find(i => i.id === id);
+// "Last Replaced" is a plain-looking box that turns into a month picker while you edit it.
+app.addEventListener("focusin", e => { const el = e.target; if (el.dataset && el.dataset.month && el.type !== "month") { el.type = "month"; el.value = el.dataset.raw || ""; try { el.showPicker && el.showPicker(); } catch (err) {} } });
+app.addEventListener("focusout", e => { const el = e.target; if (el.dataset && el.dataset.month && el.type === "month") { el.type = "text"; el.value = fmtMonth(el.dataset.raw || ""); } });
 app.addEventListener("change", e => {
   const el = e.target, row = el.closest(".it"); if (!row) return;
   const it = byId(row.dataset.id); if (!it) return;
@@ -727,6 +729,7 @@ app.addEventListener("change", e => {
   if (k === "cost") { const n = parseFloat(String(el.value).replace(/[$,\s]/g, "")); it.cost = isNaN(n) ? 0 : Math.round(n); }
   else if (k === "estimate") { const v = String(el.value).trim(), n = parseFloat(v.replace(/[~$,\s]/g, "")); it.estimate = !v ? "" : /^~?\$?[\d,.]+$/.test(v) && !isNaN(n) ? (Math.round(n) ? String(Math.round(n)) : "") : v; }
   else it[k] = el.value;
+  if (el.dataset.month) el.dataset.raw = el.value;
   markDirty();
   // A date box fires change while it is still being typed in, so only refresh the line, not the whole list.
   if (el.type === "date" || el.type === "month") { const me = row.querySelector(".me"); if (me) me.innerHTML = metaHtml(it); return; }
