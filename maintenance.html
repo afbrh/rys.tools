@@ -227,6 +227,11 @@ body.menu-open .side-menu { transform: none; visibility: visible; transition-del
     #app .sh h2 { font-size:20px; font-weight:700; letter-spacing:.02em; color:var(--shh, var(--ink)); }
     #app .sh .sub { color:var(--muted); font-size:13px; font-weight:500; }
     #app section[data-group="In Progress"] { --shc:#b8641f; --shh:#e58a43; }
+    @media (min-width:760px) {
+      #app:not([hidden]) { display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); column-gap:20px; align-items:start; }
+      #app section { grid-column:1/-1; }
+      #app section[data-group="In Progress"], #app section[data-group="Within the next year"] { grid-column:auto; }
+    }
     #app section[data-group="Within the next year"] { --shc:#3f6f9c; --shh:#7fb0e3; }
     #app section[data-group="Before 2032"] { --shc:#55555b; --shh:#a9a9b0; }
     #app section[data-group="Assets"] { --shc:#6f5a92; --shh:#b49ad6; }
