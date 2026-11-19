@@ -260,6 +260,8 @@ body.menu-open .side-menu { transform: none; visibility: visible; transition-del
       #app:not([hidden]) { display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); column-gap:20px; align-items:start; }
       #app section { grid-column:1/-1; }
       #app section[data-group="In Progress"], #app section[data-group="Within the next year"] { grid-column:auto; }
+      #app section[data-group="Before 2032"] .rows { display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); column-gap:20px; align-items:start; }
+      #app section[data-group="Before 2032"] .rows > .empty, #app section[data-group="Before 2032"] .rows > .it:has(.det) { grid-column:1/-1; }
     }
     #app section[data-group="Within the next year"] { --shc:#3f6f9c; --shh:#7fb0e3; }
     #app section[data-group="Before 2032"] { --shc:#55555b; --shh:#a9a9b0; }
