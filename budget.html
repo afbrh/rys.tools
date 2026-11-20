@@ -680,6 +680,7 @@ body.locked #splash{display:flex;min-height:100vh;flex-direction:column;align-it
 #splash-fine{margin-top:18px;font-size:12px;color:#9b9ba1}#splash-fine a{color:#9b9ba1}
 #splash button:disabled{opacity:.6;cursor:default}
 </style>
+<script>try{localStorage.setItem("rys_last_app","budget")}catch(e){}</script>
 </head>
 <body class="locked">
 <div id="splash"><p id="splash-msg">Sign in to continue.</p><button type="button" id="splash-btn">Sign in with Google</button><small id="splash-fine">Ry's Tools &middot; <a href="privacy.html">Privacy</a> &middot; <a href="terms.html">Terms</a></small></div>
@@ -2502,7 +2503,7 @@ body.locked #splash{display:flex;min-height:100vh;flex-direction:column;align-it
           if (a && a.textContent.trim() !== "Google Sign-In") document.body.classList.remove("locked");
           else release();
         } else if (out && (out.ok || out.error === "forbidden")) {
-          seen = t; window.__gateDenied = true;
+          seen = t; window.__gateDenied = true; try{if(localStorage.getItem("rys_last_app")==="budget")localStorage.removeItem("rys_last_app");}catch(e){}
           try { localStorage.removeItem(KEY); } catch (e) {}
           lock("Access denied.", true);
         } else if (out && out.error === "unauthenticated") {
