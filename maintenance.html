@@ -401,7 +401,14 @@ async function isAllowedEmail(email) {
           tokenClient = google.accounts.oauth2.initTokenClient({
             client_id: CLIENT_ID,
             scope: SCOPE,
-            callback: () => {} // replaced per-request below
+            callback: () => {}, // replaced per-request below
+            error_callback: (err) => {
+              // Tell the person why Google's window never showed up (shown on the sign-in screen).
+              var m = document.getElementById('splash-msg'), t = err && err.type;
+              window.__signinErr = true;
+              if (m) m.textContent = t === 'popup_failed_to_open' ? "Your browser blocked Google's sign-in window. Allow pop-ups for rys.tools, then tap Sign in again." : t === 'popup_closed' ? 'The sign-in window was closed. Tap Sign in to try again.' : 'Sign-in could not start (' + (t || 'unknown') + ').';
+              setTimeout(function () { window.__signinErr = false; }, 60000);
+            }
           });
         }
         let settled = false;
@@ -1056,7 +1063,7 @@ window.addEventListener("load", boot);
   b.addEventListener("click",function(){
     b.disabled=true;m.textContent="Opening Google sign-in…";
     document.getElementById("acct-btn").click();
-    setTimeout(function(){b.disabled=false;m.textContent="Sign in to continue.";},6000);
+    setTimeout(function(){b.disabled=false;if(!window.__signinErr)m.textContent="Sign in to continue.";},6000);
   });
   var t=setInterval(function(){
     var a=document.getElementById("acct-btn");if(!window.__denied&&a&&a.textContent.trim()!=="Google Sign-In"){document.body.classList.remove("locked");clearInterval(t);}
