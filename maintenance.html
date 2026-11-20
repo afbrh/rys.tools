@@ -497,6 +497,7 @@ async function isAllowedEmail(email) {
       let out;
       try { out = await resp.json(); } catch (e) { throw new Error('The server sent something unreadable.'); }
       if (out && out.error === 'unauthenticated') { accessToken = null; clearPersistedToken(); }
+      if (out && out.error === 'forbidden') { accessToken = null; clearPersistedToken(); if (window.__deny) window.__deny(); }
       return out || {};
     }
     async function load(tool) {
@@ -1058,8 +1059,16 @@ window.addEventListener("load", boot);
     setTimeout(function(){b.disabled=false;m.textContent="Sign in to continue.";},6000);
   });
   var t=setInterval(function(){
-    var a=document.getElementById("acct-btn");if(a&&a.textContent.trim()!=="Google Sign-In"){document.body.classList.remove("locked");clearInterval(t);}
+    var a=document.getElementById("acct-btn");if(!window.__denied&&a&&a.textContent.trim()!=="Google Sign-In"){document.body.classList.remove("locked");clearInterval(t);}
   },200);
+  // Signed in with an account that isn't on the allowed list: lock the whole page again, flat denial.
+  window.__deny=function(){
+    window.__denied=true;
+    document.body.classList.add("locked");
+    b.hidden=false;b.disabled=false;b.textContent="Try a different account";
+    m.textContent="Access denied.";
+    b.onclick=function(e){e.stopImmediatePropagation();location.reload();};
+  };
 })();
 </script>
 </body>
