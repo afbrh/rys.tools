@@ -684,7 +684,7 @@ window.addEventListener("load", async () => {
 (function(){
   var b=document.getElementById("splash-btn"),m=document.getElementById("splash-msg");
   var st=document.getElementById("save-status");
-  if(st)new MutationObserver(function(){var x=st.textContent.trim();if(document.body.classList.contains("locked")&&x&&!/^(Signing in|Loading)/.test(x)){window.__signinErr=true;m.textContent=x;setTimeout(function(){window.__signinErr=false;},60000);}}).observe(st,{childList:true,characterData:true,subtree:true});
+  if(st)new MutationObserver(function(){var x=st.textContent.trim();if(document.body.classList.contains("locked")&&x&&!/^(Signing in|Loading|Saved)/.test(x)){window.__signinErr=true;m.textContent=x;setTimeout(function(){window.__signinErr=false;},60000);}}).observe(st,{childList:true,characterData:true,subtree:true});
   b.addEventListener("click",function(){
     b.disabled=true;m.textContent="Opening Google sign-in…";
     if(!(window.google&&google.accounts&&google.accounts.oauth2)){window.__signinErr=true;m.textContent="Google's sign-in script didn't load. Check your connection or any content blocker, then reload this page.";b.disabled=false;setTimeout(function(){window.__signinErr=false;},60000);return;}
@@ -741,8 +741,8 @@ window.addEventListener("load", async () => {
         busy = false;
         if (out && out.ok && out.tools && out.tools.indexOf(TOOL) > -1) {
           seen = t; hold = false; window.__gateOk = true;
-          var a = el("acct-btn");
-          if (a && a.textContent.trim() !== "Google Sign-In") document.body.classList.remove("locked");
+          var a = el("acct-btn") || el("google-signin-btn");
+          if (!a || a.textContent.trim() !== "Google Sign-In") document.body.classList.remove("locked");
           else release();
         } else if (out && (out.ok || out.error === "forbidden")) {
           seen = t; window.__gateDenied = true; try{if(localStorage.getItem("rys_last_app")==="seasonal")localStorage.removeItem("rys_last_app");}catch(e){}
