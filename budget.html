@@ -2443,4 +2443,54 @@ body.locked #splash{display:flex;min-height:100vh;flex-direction:column;align-it
   },200);
 })();
 </script>
+<script>
+/* Access gate: only accounts on the owner's allowed list may use this tool. Anyone else gets a flat denial. */
+(function () {
+  var TOOL = "budget";
+  var API = "https://script.google.com/macros/s/AKfycbxZEStK6QE1yp8kf9wHSoqKPqu6bBRkn00jYri3EXq3JV3LLP7b8sX-RzHe1YTyMbC0bg/exec";
+  var KEY = "munny_google_token";
+  var hold = false, busy = false, seen = "", wait = 0;
+  function el(id) { return document.getElementById(id); }
+  function lock(msg, retry) {
+    hold = true; document.body.classList.add("locked");
+    var m = el("splash-msg"), b = el("splash-btn");
+    if (m) m.textContent = msg;
+    if (b) {
+      b.hidden = !retry; b.disabled = false;
+      if (retry) { b.textContent = "Try a different account"; b.onclick = function (e) { e.stopImmediatePropagation(); location.reload(); }; }
+    }
+  }
+  new MutationObserver(function () { if (hold && !document.body.classList.contains("locked")) document.body.classList.add("locked"); })
+    .observe(document.body, { attributes: true, attributeFilter: ["class"] });
+  function token() {
+    try { var s = JSON.parse(localStorage.getItem(KEY) || "null"); return s && s.access_token && Date.now() < s.expires_at ? s.access_token : ""; } catch (e) { return ""; }
+  }
+  function check() {
+    var t = token();
+    if (!t || t === seen || busy || Date.now() < wait) return;
+    busy = true; lock("Checking access…", false);
+    fetch(API, { method: "POST", headers: { "Content-Type": "text/plain;charset=utf-8" }, body: JSON.stringify({ token: t, action: "whoami" }), cache: "no-store" })
+      .then(function (r) { return r.json(); })
+      .then(function (out) {
+        busy = false;
+        if (out && out.ok && out.tools && out.tools.indexOf(TOOL) > -1) {
+          seen = t; hold = false; window.__gateOk = true;
+          var a = el("acct-btn");
+          if (a && a.textContent.trim() !== "Google Sign-In") document.body.classList.remove("locked");
+          else { var m = el("splash-msg"); if (m) m.textContent = "Sign in to continue."; }
+        } else if (out && (out.ok || out.error === "forbidden")) {
+          seen = t; window.__gateDenied = true;
+          try { localStorage.removeItem(KEY); } catch (e) {}
+          lock("Access denied.", true);
+        } else if (out && out.error === "unauthenticated") {
+          // Sign-in proof expired or invalid: drop it and let the page ask for a fresh sign-in.
+          try { localStorage.removeItem(KEY); } catch (e) {}
+          seen = ""; hold = false; var m2 = el("splash-msg"); if (m2) m2.textContent = "Sign in to continue.";
+        } else { seen = ""; wait = Date.now() + 5000; lock("Couldn't verify access. Retrying\u2026", false); }
+      })
+      .catch(function () { busy = false; seen = ""; wait = Date.now() + 5000; lock("Couldn't verify access. Retrying\u2026", false); });
+  }
+  setInterval(check, 250); check();
+})();
+</script>
 </body></html>
