@@ -73,10 +73,10 @@
 <div class="sheet">
   <a class="back-link" href="/">&larr; Back to Ry's Tools</a>
   <h1>Privacy Policy</h1>
-  <p class="updated">Last updated November 20, 2026</p>
+  <p class="updated">Last updated November 21, 2026</p>
   <p>Ry's Tools is a small private set of personal tools (budgeting, seasonal planning and home maintenance tracking) shared with a short list of approved people. This page explains what data it touches and how.</p>
   <h2>Who Can Use It</h2>
-  <p>Access is limited to Google accounts the site owner has approved. Everyone else who signs in is shown "Access denied" and nothing is loaded for them. Approval is checked by a small server script run by the site owner (see below).</p>
+  <p>Access is limited to Google accounts the site owner has approved. Everyone else who signs in is shown "Access denied" and nothing is loaded for them. Approved people can use the Maintenance tool only; Budget and Seasonal are private to the site owner. Approval is checked by a small server script run by the site owner (see below).</p>
   <h2>Information We Collect</h2>
   <ul>
     <li><strong>Your Google account email address</strong> &mdash; used to confirm you're signed in and to check that you're on the approved list. We use Google's <code>userinfo.email</code> scope for this, and nothing else about your Google account.</li>
@@ -85,7 +85,7 @@
   </ul>
   <h2>How Your Data Is Stored</h2>
   <p><strong>Maintenance (shared).</strong> The data is stored in a file in the site owner's own Google Drive. A Google Apps Script web app, running as the site owner, reads and writes that file. When you sign in, your browser sends Google's sign-in token to that script, which checks it with Google and confirms your email is on the approved list before returning or saving anything. Attachments you add are uploaded through the script into a folder in the owner's Drive that is shared (view only) with the approved people. The script also keeps periodic backup copies of the data file in the owner's Drive. Because it is the owner's Drive and script, the site owner can see everything stored in Maintenance.</p>
-  <p><strong>Budget and Seasonal (private).</strong> These tools store data in your own Google Drive using Google's <code>drive.file</code> scope, the most restrictive Drive scope Google offers. They can only see and edit files they created themselves, and cannot browse any other file in your Drive. They also confirm with the owner's script that your account is approved.</p>
+  <p><strong>Budget and Seasonal (private).</strong> These tools store data in your own Google Drive using Google's <code>drive.file</code> scope, the most restrictive Drive scope Google offers. They can only see and edit files they created themselves, and cannot browse any other file in your Drive. They are available to the site owner only, and they confirm with the owner's script that the signed-in account is the owner.</p>
   <p>There is no other database. We do not run any servers apart from the Google Apps Script described above, and no copy of your data is kept anywhere else.</p>
   <h2>What's Stored in Your Browser</h2>
   <ul>
