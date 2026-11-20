@@ -139,6 +139,10 @@ body.locked #splash{display:flex;min-height:100vh;flex-direction:column;align-it
 #splash button:disabled{opacity:.6;cursor:default}
 </style>
 <script>try{localStorage.setItem("rys_last_app","seasonal")}catch(e){}</script>
+<style>
+.side-signout{position:absolute;left:14px;right:14px;bottom:18px;background:none;border:0;padding:8px 0;text-align:left;font:inherit;font-size:13px;color:#c0392b;opacity:.85;cursor:pointer}
+.side-signout:hover{opacity:1;text-decoration:underline}
+</style>
 </head>
 <body class="locked">
 <div id="splash"><p id="splash-msg">Sign in to continue.</p><button type="button" id="splash-btn">Sign in with Google</button><small id="splash-fine">Ry's Tools &middot; <a href="privacy.html">Privacy</a> &middot; <a href="terms.html">Terms</a></small></div>
@@ -149,6 +153,7 @@ body.locked #splash{display:flex;min-height:100vh;flex-direction:column;align-it
   <a class="side-link" href="budget.html">Budget</a>
   <a class="side-link" href="seasonal.html" aria-current="page">Seasonal</a>
   <a class="side-link" href="maintenance.html" id="side-maint-link" hidden>Maintenance</a>
+  <button type="button" class="side-signout" id="side-signout">Sign out</button>
 </nav>
 <header><div class="wrap">
   <div class="titlebar"><button type="button" class="menu-btn" id="menu-btn" aria-label="Open menu" aria-expanded="false" aria-controls="side-menu"><span></span><span></span><span></span></button><h1>Seasonal</h1>
@@ -196,6 +201,7 @@ body.locked #splash{display:flex;min-height:100vh;flex-direction:column;align-it
     }
 
     function persistToken(token, expiresInSeconds) {
+      try { localStorage.removeItem('rys_signed_out'); } catch (e) {}
       try {
         localStorage.setItem(TOKEN_KEY, JSON.stringify({
           access_token: token,
@@ -284,6 +290,7 @@ body.locked #splash{display:flex;min-height:100vh;flex-direction:column;align-it
     // Google Sign-In" experience, not a real error worth surfacing.
     function trySilentSignIn() {
       return new Promise((resolve) => {
+        try { if (localStorage.getItem('rys_signed_out') === '1') { resolve(false); return; } } catch (e) {}
         if (!window.google || !google.accounts || !google.accounts.oauth2) { resolve(false); return; }
         if (!tokenClient) {
           tokenClient = google.accounts.oauth2.initTokenClient({
@@ -758,6 +765,14 @@ window.addEventListener("load", async () => {
   }
   setInterval(check, 250); check();
 })();
+</script>
+<script>
+(function(){var b=document.getElementById("side-signout");if(!b)return;
+b.addEventListener("click",function(){var K="munny_google_token",t="";
+try{var s=JSON.parse(localStorage.getItem(K)||"null");t=(s&&s.access_token)||"";}catch(e){}
+try{localStorage.setItem("rys_signed_out","1");localStorage.removeItem(K);}catch(e){}
+try{if(t&&window.google&&google.accounts&&google.accounts.oauth2)google.accounts.oauth2.revoke(t,function(){});}catch(e){}
+setTimeout(function(){location.reload();},150);});})();
 </script>
 </body>
 </html>
