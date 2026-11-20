@@ -288,6 +288,7 @@ body.locked #splash{display:flex;min-height:100vh;flex-direction:column;align-it
 #splash button:disabled{opacity:.6;cursor:default}
 </style>
 <script>try{localStorage.setItem("rys_last_app","maintenance")}catch(e){}</script>
+<style>body:not(.is-owner) .menu-btn, body:not(.is-owner) .side-menu, body:not(.is-owner) .side-overlay { display: none !important; }</style>
 </head>
 <body class="locked">
 <div id="splash"><p id="splash-msg">Sign in to continue.</p><button type="button" id="splash-btn">Sign in with Google</button><small id="splash-fine">Ry's Tools &middot; <a href="privacy.html">Privacy</a> &middot; <a href="terms.html">Terms</a></small></div>
@@ -970,6 +971,7 @@ async function afterSignIn() {
   showGate("Loading your data…", false);
   try {
     const out = await GoogleDriveSync.load(CURRENT_TOOL);
+    if (out && out.owner) document.body.classList.add("is-owner");
     if (out.data && Array.isArray(out.data.items)) { applyData(out.data); dirty = false; showApp(); }
     else if (out.owner) showGate("Nothing is saved on the server yet. Bring over the data you had in Google Drive, then click Save.", "drive");
     else showGate("Nothing has been saved here yet. Ask the owner to add the data.", false);
