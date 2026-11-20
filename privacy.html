@@ -73,42 +73,34 @@
 <div class="sheet">
   <a class="back-link" href="/">&larr; Back to Ry's Tools</a>
   <h1>Privacy Policy</h1>
-  <p class="updated">Last updated September 19, 2026</p>
-
-  <p>Ry's Tools is a personal budgeting tool. This page explains what data it touches and how.</p>
-
-  <h2>What Ry's Tools Is</h2>
-  <p>Ry's Tools is a static web app — there is no backend server. It runs entirely in your browser and, if you choose to sign in, stores your data directly in your own Google Drive.</p>
-
+  <p class="updated">Last updated November 20, 2026</p>
+  <p>Ry's Tools is a small private set of personal tools (budgeting, seasonal planning and home maintenance tracking) shared with a short list of approved people. This page explains what data it touches and how.</p>
+  <h2>Who Can Use It</h2>
+  <p>Access is limited to Google accounts the site owner has approved. Everyone else who signs in is shown "Access denied" and nothing is loaded for them. Approval is checked by a small server script run by the site owner (see below).</p>
   <h2>Information We Collect</h2>
   <ul>
-    <li><strong>Your Google account email address</strong> — shown only to confirm you're signed in (e.g. "Signed in as you@example.com"). We use Google's <code>userinfo.email</code> scope for this, and nothing else about your Google account.</li>
-    <li><strong>The budget data you enter</strong> — income, housing, food, car, utilities, savings, and subscription figures you type into the app.</li>
+    <li><strong>Your Google account email address</strong> &mdash; used to confirm you're signed in and to check that you're on the approved list. We use Google's <code>userinfo.email</code> scope for this, and nothing else about your Google account.</li>
+    <li><strong>The data you enter</strong> &mdash; budget figures, seasonal plans, and home maintenance items (titles, costs, dates, notes) and any files you attach to them.</li>
+    <li><strong>Who last saved</strong> &mdash; for shared Maintenance data, the server records the email of the person who last saved it and when, so simultaneous edits aren't silently overwritten.</li>
   </ul>
-
-  <h2>How Google Drive Access Works</h2>
-  <p>When you sign in, Ry's Tools requests Google's <code>drive.file</code> scope — the most restrictive Drive scope Google offers. This means Ry's Tools can only see and edit files it itself created (a single file named <code>munny-data.json</code>). It cannot browse, read, or modify any other file in your Drive, and never requests broader access.</p>
-
-  <h2>Where Your Data Lives</h2>
-  <p>Your budget data is stored only in that one file, in your own Google Drive. Ry's Tools has no database and no server — we never receive, see, or store a copy of your data ourselves.</p>
-
+  <h2>How Your Data Is Stored</h2>
+  <p><strong>Maintenance (shared).</strong> The data is stored in a file in the site owner's own Google Drive. A Google Apps Script web app, running as the site owner, reads and writes that file. When you sign in, your browser sends Google's sign-in token to that script, which checks it with Google and confirms your email is on the approved list before returning or saving anything. Attachments you add are uploaded through the script into a folder in the owner's Drive that is shared (view only) with the approved people. The script also keeps periodic backup copies of the data file in the owner's Drive. Because it is the owner's Drive and script, the site owner can see everything stored in Maintenance.</p>
+  <p><strong>Budget and Seasonal (private).</strong> These tools store data in your own Google Drive using Google's <code>drive.file</code> scope, the most restrictive Drive scope Google offers. They can only see and edit files they created themselves, and cannot browse any other file in your Drive. They also confirm with the owner's script that your account is approved.</p>
+  <p>There is no other database. We do not run any servers apart from the Google Apps Script described above, and no copy of your data is kept anywhere else.</p>
   <h2>What's Stored in Your Browser</h2>
   <ul>
     <li>Your appearance/theme preference (Light, Dark, Elder, Machina).</li>
-    <li>A temporary Google sign-in token, cached only so you don't have to sign in again on every page reload. It expires automatically (about an hour) and is never sent anywhere except Google's own APIs.</li>
+    <li>A temporary Google sign-in token, cached only so you don't have to sign in again on every page reload. It expires automatically (about an hour). It is sent only to Google and to the owner's script described above, and it is deleted from your browser if your account isn't approved.</li>
   </ul>
-  <p>Nothing here is shared with us or any third party — it stays in your browser's local storage on your device.</p>
-
   <h2>What We Don't Do</h2>
-  <p>Ry's Tools does not use analytics, tracking cookies, or advertising. We do not sell, rent, or share your data with any third party. We do not have access to your budget data at all — it never leaves your browser except to go directly to your own Google Drive.</p>
-
+  <p>Ry's Tools does not use analytics, tracking cookies, or advertising. We do not sell, rent, or share your data with any third party. Data you enter in Maintenance is visible to the people the owner has approved and to the owner; Budget and Seasonal data stays in your own Drive.</p>
   <h2>Deleting Your Data</h2>
   <ul>
-    <li>Delete the <code>munny-data.json</code> file from your Google Drive, and/or</li>
+    <li>For Budget and Seasonal: delete the <code>munny-data.json</code> file from your Google Drive.</li>
+    <li>For Maintenance: ask the site owner (contact below) to remove your entries, or to remove your access.</li>
     <li>Revoke access for Ry's Tools at <a href="https://myaccount.google.com/permissions" target="_blank" rel="noopener">myaccount.google.com/permissions</a>, and/or</li>
     <li>Clear your browser's local storage for this site.</li>
   </ul>
-
   <h2>Changes to This Policy</h2>
   <p>If this policy changes, the update date above will change. Continued use of Ry's Tools after a change means you accept the updated policy.</p>
 
