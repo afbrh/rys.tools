@@ -627,7 +627,9 @@ const app = $("app");
 function renderChips() {
   const box = $("chips");
   const nDone = items.filter(i => i.status === "Done").length;
-  box.innerHTML = [["Open", items.length - nDone], ["Done", nDone]].map(([s, n]) =>
+  // The Open count leaves out Wishlist and Assets (they are still listed under Open).
+  const nOpen = items.filter(i => i.status !== "Done" && i.status !== "Wishlist" && i.status !== "Assets").length;
+  box.innerHTML = [["Open", nOpen], ["Done", nDone]].map(([s, n]) =>
     `<button type="button" class="chip ${filter === s ? "on" : ""}" data-f="${s}">${s}<b>${n}</b></button>`).join("") +
     `<button type="button" class="addtop" data-addtop="1">+ Add</button>`;
 }
