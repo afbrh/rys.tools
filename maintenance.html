@@ -668,7 +668,8 @@ function pickerHtml(it) {
 }
 function metaHtml(it) {
   const n = (it.attachments || []).length;
-  return [(it.cost > 0 && (!it.estimate || fmtEst(it.estimate).startsWith("~$"))) ? fmt0(it.cost) : fmtEst(it.estimate), it.estYear ? "forecast " + fmtMonth(it.estYear) : "", it.lastInstalled ? "replaced " + fmtMonth(it.lastInstalled) : "", n ? "📎 " + n : ""].filter(Boolean).map(esc).join(" · ");
+  const eg = fmtEst(it.estimate), costTxt = (it.cost > 0 && (!it.estimate || eg.startsWith("~$"))) ? fmt0(it.cost) + " (actual)" : (eg.startsWith("~$") ? eg + " (estimated)" : eg);
+  return [costTxt, it.estYear ? "forecast " + fmtMonth(it.estYear) : "", it.lastInstalled ? "replaced " + fmtMonth(it.lastInstalled) : "", n ? "📎 " + n : ""].filter(Boolean).map(esc).join(" · ");
 }
 function rowHtml(it) {
   let detail = "";
