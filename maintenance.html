@@ -257,7 +257,7 @@ body.menu-open .side-menu { transform: none; visibility: visible; transition-del
     #app .sh h2 { font-size:20px; font-weight:700; letter-spacing:.02em; color:var(--shh, var(--ink)); }
     #app .sh .sub { color:var(--muted); font-size:13px; font-weight:500; }
     #app section[data-group="In Progress"] { --shc:#b8641f; --shh:#e58a43; }
-    #app .band { margin:18px 0 12px; padding:16px 0 0; border-top:1px solid var(--line); font-size:26px; font-weight:800; letter-spacing:.01em; color:var(--ink); line-height:1.15; text-align:left; }
+    #app .band { margin:18px 0 14px; height:0; border-top:1px solid var(--line); }
     #app > .band:first-child { margin-top:2px; padding-top:0; border-top:0; }
     @media (min-width:760px) {
       #app:not([hidden]) { display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); column-gap:20px; align-items:start; }
@@ -704,7 +704,7 @@ function render() {
   const BAND = { "Within the next year": "Near term", "In Progress": "Near term", "Before 2032": "Mid-term", "Wishlist": "Maybe Now, Maybe Never", "Assets": "Maybe Now, Maybe Never" };
   let lastBand = null;
   app.innerHTML = groups.filter(g => inFilter({ status: g.id })).map(g => {
-    const band = BAND[g.id] || null, bandHtml = band && band !== lastBand ? `<h3 class="band">${esc(band)}</h3>` : "";
+    const band = BAND[g.id] || null, bandHtml = band && band !== lastBand ? `<div class="band" role="separator"></div>` : "";
     lastBand = band;
     const all = items.filter(i => i.group === g.id), shown = g.id === BYG ? byOrder(all.filter(inFilter)) : all.filter(inFilter);
     const sum = all.reduce((a, i) => a + (i.cost || 0), 0);
