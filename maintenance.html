@@ -257,9 +257,12 @@ body.menu-open .side-menu { transform: none; visibility: visible; transition-del
     #app .sh h2 { font-size:20px; font-weight:700; letter-spacing:.02em; color:var(--shh, var(--ink)); }
     #app .sh .sub { color:var(--muted); font-size:13px; font-weight:500; }
     #app section[data-group="In Progress"] { --shc:#b8641f; --shh:#e58a43; }
+    #app .band { margin:14px 0 12px; padding:0; font-size:26px; font-weight:800; letter-spacing:.01em; color:var(--ink); line-height:1.15; }
+    #app > .band:first-child { margin-top:2px; }
     @media (min-width:760px) {
       #app:not([hidden]) { display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); column-gap:20px; align-items:start; }
       #app section { grid-column:1/-1; }
+      #app .band { grid-column:1/-1; }
       #app section[data-group="In Progress"], #app section[data-group="Within the next year"], #app section[data-group="Wishlist"], #app section[data-group="Assets"] { grid-column:auto; }
       #app section[data-group="Before 2032"] .rows { display:grid; grid-auto-flow:column; grid-template-columns:minmax(0,1fr) minmax(0,1fr); grid-template-rows:repeat(var(--n,1), auto); column-gap:20px; align-items:start; }
       #app section[data-group="Before 2032"] .rows > .empty { grid-column:1/-1; }
@@ -696,10 +699,14 @@ function render() {
     $("fspent").hidden = false; $("fspent-v").textContent = fmt0(fc);
   } }
   renderChips();
+  const BAND = { "Within the next year": "Near term", "In Progress": "Near term", "Before 2032": "Mid-term", "Wishlist": "Maybe Now, Maybe Never", "Assets": "Maybe Now, Maybe Never" };
+  let lastBand = null;
   app.innerHTML = groups.filter(g => inFilter({ status: g.id })).map(g => {
+    const band = BAND[g.id] || null, bandHtml = band && band !== lastBand ? `<h3 class="band">${esc(band)}</h3>` : "";
+    lastBand = band;
     const all = items.filter(i => i.group === g.id), shown = g.id === BYG ? byOrder(all.filter(inFilter)) : all.filter(inFilter);
     const sum = all.reduce((a, i) => a + (i.cost || 0), 0);
-    return `<section data-group="${g.id}"><div class="sh"><h2>${g.id === "Within the next year" ? `By <input type="text" class="by" data-by="1" placeholder="_____" aria-label="By when" size="${Math.max(5, byVal.length + 1)}" value="${esc(byVal)}">` : esc(g.title)}</h2></div>
+    return bandHtml + `<section data-group="${g.id}"><div class="sh"><h2>${g.id === "Within the next year" ? `By <input type="text" class="by" data-by="1" placeholder="_____" aria-label="By when" size="${Math.max(5, byVal.length + 1)}" value="${esc(byVal)}">` : esc(g.title)}</h2></div>
       <div class="rows" style="--n:${Math.max(1, Math.ceil(shown.length / 2))}">${shown.map(rowHtml).join("") || '<div class="empty">Nothing here.</div>'}</div></section>`;
   }).join("");
 }
