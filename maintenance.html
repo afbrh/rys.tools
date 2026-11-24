@@ -666,9 +666,9 @@ function pickerHtml(it) {
   const cur = String(it[pick.k] || "");
   return `<div class="mp"><div class="mph"><button type="button" data-mpy="-1" aria-label="Previous year">‹</button><b>${pick.y}</b><button type="button" data-mpy="1" aria-label="Next year">›</button><span class="mpt">${pick.k === "estYear" ? "Forecasted" : "Last Replaced"}</span><button type="button" data-mpclear="1" class="mpc">Clear</button></div><div class="mpg">${MON.map((m, i) => { const v = pick.y + "-" + String(i + 1).padStart(2, "0"); return `<button type="button" data-mpm="${v}" class="${v === cur ? "on" : ""}">${m}</button>`; }).join("")}</div></div>`;
 }
-function metaHtml(it) {
+function metaHtml(it, open) {
   const n = (it.attachments || []).length;
-  const eg = fmtEst(it.estimate), costTxt = (it.cost > 0 && (!it.estimate || eg.startsWith("~$"))) ? fmt0(it.cost) + " (actual)" : (eg.startsWith("~$") ? eg + " (estimated)" : eg);
+  const eg = fmtEst(it.estimate), costTxt = (it.cost > 0 && (!it.estimate || eg.startsWith("~$"))) ? fmt0(it.cost) + (open ? " (actual)" : "") : (eg.startsWith("~$") && open ? eg + " (estimated)" : eg);
   return [costTxt, it.estYear ? "forecast " + fmtMonth(it.estYear) : "", it.lastInstalled ? "replaced " + fmtMonth(it.lastInstalled) : "", n ? "📎 " + n : ""].filter(Boolean).map(esc).join(" · ");
 }
 function rowHtml(it) {
@@ -686,7 +686,7 @@ function rowHtml(it) {
   }
   return `<div class="it st-${sKey(it.status)} ${it.status === "Done" ? "done" : ""}" data-id="${it.id}">
     <div class="ln">
-      <div class="tx" data-open="${it.id}">${openId === it.id ? `<input type="text" class="ti-edit" data-f="title" aria-label="Story title" value="${esc(it.title)}">` : `<span class="ti">${esc(it.title)}</span>`} <span class="me">${metaHtml(it)}</span></div>
+      <div class="tx" data-open="${it.id}">${openId === it.id ? `<input type="text" class="ti-edit" data-f="title" aria-label="Story title" value="${esc(it.title)}">` : `<span class="ti">${esc(it.title)}</span>`} <span class="me">${metaHtml(it, openId === it.id)}</span></div>
       <span class="co">${fmt0(it.cost || 0)}</span></div>${detail}</div>`;
 }
 let byVal = "";
