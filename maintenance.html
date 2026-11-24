@@ -257,8 +257,8 @@ body.menu-open .side-menu { transform: none; visibility: visible; transition-del
     #app .sh h2 { font-size:20px; font-weight:700; letter-spacing:.02em; color:var(--shh, var(--ink)); }
     #app .sh .sub { color:var(--muted); font-size:13px; font-weight:500; }
     #app section[data-group="In Progress"] { --shc:#b8641f; --shh:#e58a43; }
-    #app .band { margin:14px 0 12px; padding:0; font-size:26px; font-weight:800; letter-spacing:.01em; color:var(--ink); line-height:1.15; }
-    #app > .band:first-child { margin-top:2px; }
+    #app .band { margin:18px 0 12px; padding:16px 0 0; border-top:1px solid var(--line); font-size:26px; font-weight:800; letter-spacing:.01em; color:var(--ink); line-height:1.15; text-align:left; }
+    #app > .band:first-child { margin-top:2px; padding-top:0; border-top:0; }
     @media (min-width:760px) {
       #app:not([hidden]) { display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); column-gap:20px; align-items:start; }
       #app section { grid-column:1/-1; }
